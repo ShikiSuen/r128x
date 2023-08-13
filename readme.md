@@ -1,6 +1,7 @@
-# r128x, a tool for loudness measurement of files on Mac OSX Intel. #
-# with gui now !
-#
+# r128x, a tool for loudness measurement of files on macOS. #
+
+The GUI version requires macOS 12 since v0.4 release.
+
 ![r128x-swiftui](./screenshot.png)
 
 r128x is released under GPLv3 license.
