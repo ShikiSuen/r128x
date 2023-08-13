@@ -14,8 +14,6 @@
 		565EC48217128162008B09A2 /* ExtAudioProcessor.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37321605B3FA00C3F184 /* ExtAudioProcessor.c */; };
 		565EC483171282A4008B09A2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 564C37301605B1CE00C3F184 /* AudioToolbox.framework */; };
 		565EC48417128305008B09A2 /* ebur128.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37201605AD0100C3F184 /* ebur128.c */; };
-		56CAF8C817132C480027800C /* MainWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 56CAF8C717132C480027800C /* MainWindow.m */; };
-		5BDCA1A62A6D4C6B00F7202E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1A52A6D4C6B00F7202E /* Assets.xcassets */; };
 		5BDCA1B62A6D51D400F7202E /* MainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1B52A6D51D400F7202E /* MainApp.swift */; };
 		5BDCA1B82A6D51D400F7202E /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1B72A6D51D400F7202E /* MainView.swift */; };
 		5BDCA1BD2A6D51D500F7202E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1BC2A6D51D500F7202E /* Preview Assets.xcassets */; };
@@ -25,16 +23,6 @@
 		5BDCA1C92A6D6D1400F7202E /* ebur128.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37201605AD0100C3F184 /* ebur128.c */; };
 		5BDCA1CC2A6D892F00F7202E /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = F5CDA3491713162E001649E7 /* Credits.rtf */; };
 		5BDCA1CF2A6D8AC500F7202E /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1CD2A6D8AC500F7202E /* Localizable.strings */; };
-		F5CDA33B1713162E001649E7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5CDA33A1713162E001649E7 /* Cocoa.framework */; };
-		F5CDA3451713162E001649E7 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F5CDA3431713162E001649E7 /* InfoPlist.strings */; };
-		F5CDA3471713162E001649E7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F5CDA3461713162E001649E7 /* main.m */; };
-		F5CDA34B1713162E001649E7 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = F5CDA3491713162E001649E7 /* Credits.rtf */; };
-		F5CDA34E1713162E001649E7 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F5CDA34D1713162E001649E7 /* AppDelegate.m */; };
-		F5CDA35617131726001649E7 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = F5CDA35517131726001649E7 /* MainMenu.xib */; };
-		F5CDA35717131875001649E7 /* ExtAudioProcessor.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37321605B3FA00C3F184 /* ExtAudioProcessor.c */; };
-		F5CDA35A17131924001649E7 /* FileReport.m in Sources */ = {isa = PBXBuildFile; fileRef = F5CDA35917131924001649E7 /* FileReport.m */; };
-		F5CDA35B17131993001649E7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 564C37301605B1CE00C3F184 /* AudioToolbox.framework */; };
-		F5CDA35C171319BB001649E7 /* ebur128.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37201605AD0100C3F184 /* ebur128.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -64,10 +52,7 @@
 		565EC47A17127B49008B09A2 /* r128x_cli.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = r128x_cli.1; sourceTree = "<group>"; };
 		565EC47F17128083008B09A2 /* CliController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CliController.h; sourceTree = "<group>"; };
 		565EC48017128083008B09A2 /* CliController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CliController.m; sourceTree = "<group>"; };
-		56CAF8C617132C480027800C /* MainWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainWindow.h; sourceTree = "<group>"; };
-		56CAF8C717132C480027800C /* MainWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainWindow.m; sourceTree = "<group>"; };
 		5BDCA1A52A6D4C6B00F7202E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		5BDCA1A72A6D4D2C00F7202E /* r128x-gui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "r128x-gui.entitlements"; sourceTree = "<group>"; };
 		5BDCA1B32A6D51D400F7202E /* r128x-swiftui.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "r128x-swiftui.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BDCA1B52A6D51D400F7202E /* MainApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainApp.swift; sourceTree = "<group>"; };
 		5BDCA1B72A6D51D400F7202E /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
@@ -75,24 +60,13 @@
 		5BDCA1BE2A6D51D500F7202E /* r128x_swiftui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = r128x_swiftui.entitlements; sourceTree = "<group>"; };
 		5BDCA1C32A6D6A4700F7202E /* IntelEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelEntry.swift; sourceTree = "<group>"; };
 		5BDCA1C52A6D6CC600F7202E /* r128x-swiftui-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "r128x-swiftui-Bridging-Header.h"; sourceTree = "<group>"; };
-		5BDCA1CA2A6D86AF00F7202E /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		5BDCA1CB2A6D86AF00F7202E /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = fr; path = fr.lproj/Credits.rtf; sourceTree = "<group>"; };
 		5BDCA1CE2A6D8AC500F7202E /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
-		F5CDA3391713162E001649E7 /* r128x-gui.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "r128x-gui.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5CDA33A1713162E001649E7 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		F5CDA33D1713162E001649E7 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		F5CDA33E1713162E001649E7 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		F5CDA33F1713162E001649E7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		F5CDA3421713162E001649E7 /* r128x-gui-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "r128x-gui-Info.plist"; sourceTree = "<group>"; };
-		F5CDA3441713162E001649E7 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		F5CDA3461713162E001649E7 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		F5CDA3481713162E001649E7 /* r128x-gui-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "r128x-gui-Prefix.pch"; sourceTree = "<group>"; };
 		F5CDA34A1713162E001649E7 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
-		F5CDA34C1713162E001649E7 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		F5CDA34D1713162E001649E7 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		F5CDA35517131726001649E7 /* MainMenu.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
-		F5CDA35817131924001649E7 /* FileReport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileReport.h; sourceTree = "<group>"; };
-		F5CDA35917131924001649E7 /* FileReport.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FileReport.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,15 +86,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F5CDA3361713162E001649E7 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F5CDA35B17131993001649E7 /* AudioToolbox.framework in Frameworks */,
-				F5CDA33B1713162E001649E7 /* Cocoa.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -133,7 +98,6 @@
 				564C37321605B3FA00C3F184 /* ExtAudioProcessor.c */,
 				564C371E1605AD0100C3F184 /* ebur128 */,
 				565EC47517127B49008B09A2 /* r128x-cli */,
-				F5CDA3401713162E001649E7 /* r128x-gui */,
 				5BDCA1B42A6D51D400F7202E /* r128x-swiftui */,
 				564C37111605ABFC00C3F184 /* Frameworks */,
 				564C370F1605ABFC00C3F184 /* Products */,
@@ -144,7 +108,6 @@
 			isa = PBXGroup;
 			children = (
 				565EC47217127B49008B09A2 /* r128x-cli */,
-				F5CDA3391713162E001649E7 /* r128x-gui.app */,
 				5BDCA1B32A6D51D400F7202E /* r128x-swiftui.app */,
 			);
 			name = Products;
@@ -223,33 +186,6 @@
 			name = "Other Frameworks";
 			sourceTree = "<group>";
 		};
-		F5CDA3401713162E001649E7 /* r128x-gui */ = {
-			isa = PBXGroup;
-			children = (
-				5BDCA1A72A6D4D2C00F7202E /* r128x-gui.entitlements */,
-				56CAF8C617132C480027800C /* MainWindow.h */,
-				56CAF8C717132C480027800C /* MainWindow.m */,
-				F5CDA35817131924001649E7 /* FileReport.h */,
-				F5CDA35917131924001649E7 /* FileReport.m */,
-				F5CDA35517131726001649E7 /* MainMenu.xib */,
-				F5CDA34C1713162E001649E7 /* AppDelegate.h */,
-				F5CDA34D1713162E001649E7 /* AppDelegate.m */,
-				F5CDA3411713162E001649E7 /* Supporting Files */,
-			);
-			path = "r128x-gui";
-			sourceTree = "<group>";
-		};
-		F5CDA3411713162E001649E7 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				F5CDA3421713162E001649E7 /* r128x-gui-Info.plist */,
-				F5CDA3431713162E001649E7 /* InfoPlist.strings */,
-				F5CDA3461713162E001649E7 /* main.m */,
-				F5CDA3481713162E001649E7 /* r128x-gui-Prefix.pch */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -287,23 +223,6 @@
 			productReference = 5BDCA1B32A6D51D400F7202E /* r128x-swiftui.app */;
 			productType = "com.apple.product-type.application";
 		};
-		F5CDA3381713162E001649E7 /* r128x-gui */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F5CDA3541713162F001649E7 /* Build configuration list for PBXNativeTarget "r128x-gui" */;
-			buildPhases = (
-				F5CDA3351713162E001649E7 /* Sources */,
-				F5CDA3361713162E001649E7 /* Frameworks */,
-				F5CDA3371713162E001649E7 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "r128x-gui";
-			productName = "r128x-gui";
-			productReference = F5CDA3391713162E001649E7 /* r128x-gui.app */;
-			productType = "com.apple.product-type.application";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -336,7 +255,6 @@
 			projectRoot = "";
 			targets = (
 				565EC47117127B49008B09A2 /* r128x-cli */,
-				F5CDA3381713162E001649E7 /* r128x-gui */,
 				5BDCA1B22A6D51D400F7202E /* r128x-swiftui */,
 			);
 		};
@@ -351,17 +269,6 @@
 				5BDCA1CF2A6D8AC500F7202E /* Localizable.strings in Resources */,
 				5BDCA1CC2A6D892F00F7202E /* Credits.rtf in Resources */,
 				5BDCA1C22A6D51E900F7202E /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F5CDA3371713162E001649E7 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F5CDA3451713162E001649E7 /* InfoPlist.strings in Resources */,
-				F5CDA34B1713162E001649E7 /* Credits.rtf in Resources */,
-				F5CDA35617131726001649E7 /* MainMenu.xib in Resources */,
-				5BDCA1A62A6D4C6B00F7202E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,19 +298,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F5CDA3351713162E001649E7 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				F5CDA3471713162E001649E7 /* main.m in Sources */,
-				F5CDA34E1713162E001649E7 /* AppDelegate.m in Sources */,
-				F5CDA35717131875001649E7 /* ExtAudioProcessor.c in Sources */,
-				F5CDA35A17131924001649E7 /* FileReport.m in Sources */,
-				F5CDA35C171319BB001649E7 /* ebur128.c in Sources */,
-				56CAF8C817132C480027800C /* MainWindow.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
@@ -413,15 +307,6 @@
 				5BDCA1CE2A6D8AC500F7202E /* fr */,
 			);
 			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
-		F5CDA3431713162E001649E7 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				F5CDA3441713162E001649E7 /* en */,
-				5BDCA1CA2A6D86AF00F7202E /* fr */,
-			);
-			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 		F5CDA3491713162E001649E7 /* Credits.rtf */ = {
@@ -663,57 +548,6 @@
 			};
 			name = Release;
 		};
-		F5CDA3521713162F001649E7 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CODE_SIGN_ENTITLEMENTS = "r128x-gui/r128x-gui.entitlements";
-				COMBINE_HIDPI_IMAGES = YES;
-				DEAD_CODE_STRIPPING = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "r128x-gui/r128x-gui-Prefix.pch";
-				INFOPLIST_FILE = "r128x-gui/r128x-gui-Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				PRODUCT_BUNDLE_IDENTIFIER = "net.audionuma.r128x-gui";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = app;
-			};
-			name = Debug;
-		};
-		F5CDA3531713162F001649E7 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CODE_SIGN_ENTITLEMENTS = "r128x-gui/r128x-gui.entitlements";
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 0.3;
-				DEAD_CODE_STRIPPING = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "r128x-gui/r128x-gui-Prefix.pch";
-				INFOPLIST_FILE = "r128x-gui/r128x-gui-Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				PRODUCT_BUNDLE_IDENTIFIER = "net.audionuma.r128x-gui";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				WRAPPER_EXTENSION = app;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -740,15 +574,6 @@
 			buildConfigurations = (
 				5BDCA1BF2A6D51D500F7202E /* Debug */,
 				5BDCA1C02A6D51D500F7202E /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		F5CDA3541713162F001649E7 /* Build configuration list for PBXNativeTarget "r128x-gui" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F5CDA3521713162F001649E7 /* Debug */,
-				F5CDA3531713162F001649E7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
