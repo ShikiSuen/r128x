@@ -42,6 +42,9 @@ struct MainView: View {
   @State private var highlighted: IntelEntry.ID?
   @State private var entries: [IntelEntry] = []
 
+  private let writerQueue = DispatchQueue(label: "r128x.writer")
+  @State private var currentTask: DispatchWorkItem?
+  
   var progressValue: CGFloat {
     if entries.isEmpty { return 0 }
     return CGFloat(entries.filter(\.processed).count) / CGFloat(entries.count)
@@ -114,10 +117,25 @@ struct MainView: View {
   }
 
   func batchProcess(forced: Bool = false) {
-    DispatchQueue.global().async {
-      for i in 0 ..< entries.count {
-        entries[i].process(forced: forced)
+    // cancel the current task
+    currentTask?.cancel()
+    
+    // create a work item that process concurrently
+    currentTask = DispatchWorkItem {
+      DispatchQueue.concurrentPerform(iterations: self.entries.count) { i in
+        // copy entry
+        var result = entries[i]
+        result.process(forced: forced)
+        
+        writerQueue.async {
+          self.entries[i] = result
+        }
       }
+    }
+    
+    // debounce in 0.25 seconds
+    if let t = currentTask {
+      DispatchQueue.global().asyncAfter(deadline: .now() + 0.25, execute: t)
     }
   }
 }
