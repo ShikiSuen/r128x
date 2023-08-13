@@ -30,7 +30,10 @@ public struct IntelEntry: Identifiable, Equatable {
   public var loudnessRange: Double?
   public var dBTP: Double?
   public var status: StatusForProcessing = .processing
-  var processed: Bool = false
+  
+  public var done: Bool {
+    status == .succeeded || status == .failed
+  }
 
   public init(fileName: String) {
     self.fileName = fileName
@@ -51,14 +54,16 @@ public struct IntelEntry: Identifiable, Equatable {
   }
 
   public mutating func process(forced: Bool = false) {
-    if processed, !forced { return }
+    if status == .succeeded && !forced {
+      return
+    }
+    
     status = .processing
     var osStatus: OSStatus = noErr
     var il: Double = .infinity * -1
     var lra: Double = .infinity * -1
     var max_tp: Float32 = .infinity * -1
     osStatus = ExtAudioReader(fileName as CFString, &il, &lra, &max_tp)
-    processed = true
     guard osStatus == noErr else {
       status = .failed
       return

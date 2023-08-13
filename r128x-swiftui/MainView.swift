@@ -47,14 +47,14 @@ struct MainView: View {
   
   var progressValue: CGFloat {
     if entries.isEmpty { return 0 }
-    return CGFloat(entries.filter(\.processed).count) / CGFloat(entries.count)
+    return CGFloat(entries.filter(\.done).count) / CGFloat(entries.count)
   }
 
   var queueMessage: String {
     if entries.isEmpty {
       return NSLocalizedString("Drag audio files from Finder to the table in this window.", comment: "")
     }
-    let filesPendingProcessing: Int = entries.filter(\.processed.negative).count
+    let filesPendingProcessing: Int = entries.filter(\.done.negative).count
     let invalidResults: Int = entries.reduce(0) { $0 + ($1.status == .failed ? 1 : 0) }
     guard filesPendingProcessing == 0 else {
       return String(format: NSLocalizedString("Processing files in the queue: %d remaining.", comment: ""), filesPendingProcessing)
@@ -119,6 +119,13 @@ struct MainView: View {
   func batchProcess(forced: Bool = false) {
     // cancel the current task
     currentTask?.cancel()
+    
+    // when forced = true, we reset the processing state
+    if forced {
+      for i in 0..<self.entries.count {
+        self.entries[i].status = .processing
+      }
+    }
     
     // create a work item that process concurrently
     currentTask = DispatchWorkItem {
