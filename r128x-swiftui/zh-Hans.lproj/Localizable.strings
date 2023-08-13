@@ -1,0 +1,12 @@
+"Add Files" = "添入文件";
+"All files are processed successfully." = "全部文件测量完毕。";
+"All files are processed, excepting %d failed files." = "有 %d 个文件测量失败；其余文件全部测量完毕。";
+"Clear Table" = "清空表格";
+"dBTP" = "dBTP";
+"Drag audio files from Finder to the table in this window." = "请直接从 Finder 将文件拽入至本视窗内。";
+"File Name" = "文件名称";
+"Loudness Range" = "响度范围";
+"Processing files in the queue: %d remaining." = "正在测量文件。还剩 %d 个文件待测量。";
+"Program Loudness" = "节目响度";
+"Reprocess All" = "全部重新测量";
+"Status" = "状态";

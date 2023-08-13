@@ -403,7 +403,6 @@ config.status
 coverage*[.json, .xml, .info]
 crashlytics-build.properties
 crashlytics.properties
-Credits.rtf
 csrc/
 csx/
 CTestTestfile.cmake
