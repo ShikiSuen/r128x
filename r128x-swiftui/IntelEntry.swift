@@ -30,7 +30,7 @@ public struct IntelEntry: Identifiable, Equatable {
   public var loudnessRange: Double?
   public var dBTP: Double?
   public var status: StatusForProcessing = .processing
-  
+
   public var done: Bool {
     status == .succeeded || status == .failed
   }
@@ -54,10 +54,10 @@ public struct IntelEntry: Identifiable, Equatable {
   }
 
   public mutating func process(forced: Bool = false) {
-    if status == .succeeded && !forced {
+    if status == .succeeded, !forced {
       return
     }
-    
+
     status = .processing
     var osStatus: OSStatus = noErr
     var il: Double = .infinity * -1
