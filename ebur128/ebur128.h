@@ -14,7 +14,7 @@ extern "C" {
 
 #define EBUR128_VERSION_MAJOR 1
 #define EBUR128_VERSION_MINOR 2
-#define EBUR128_VERSION_PATCH 4
+#define EBUR128_VERSION_PATCH 6
 
 #include <stddef.h> /* for size_t */
 
@@ -23,43 +23,43 @@ extern "C" {
  *  See definitions in ITU R-REC-BS 1770-4
  */
 enum channel {
-  EBUR128_UNUSED = 0, /**< unused channel (for example LFE channel) */
-  EBUR128_LEFT = 1,
-  EBUR128_Mp030 = 1, /**< itu M+030 */
-  EBUR128_RIGHT = 2,
-  EBUR128_Mm030 = 2, /**< itu M-030 */
-  EBUR128_CENTER = 3,
-  EBUR128_Mp000 = 3, /**< itu M+000 */
-  EBUR128_LEFT_SURROUND = 4,
-  EBUR128_Mp110 = 4, /**< itu M+110 */
-  EBUR128_RIGHT_SURROUND = 5,
-  EBUR128_Mm110 = 5, /**< itu M-110 */
-  EBUR128_DUAL_MONO, /**< a channel that is counted twice */
-  EBUR128_MpSC,      /**< itu M+SC */
-  EBUR128_MmSC,      /**< itu M-SC */
-  EBUR128_Mp060,     /**< itu M+060 */
-  EBUR128_Mm060,     /**< itu M-060 */
-  EBUR128_Mp090,     /**< itu M+090 */
-  EBUR128_Mm090,     /**< itu M-090 */
-  EBUR128_Mp135,     /**< itu M+135 */
-  EBUR128_Mm135,     /**< itu M-135 */
-  EBUR128_Mp180,     /**< itu M+180 */
-  EBUR128_Up000,     /**< itu U+000 */
-  EBUR128_Up030,     /**< itu U+030 */
-  EBUR128_Um030,     /**< itu U-030 */
-  EBUR128_Up045,     /**< itu U+045 */
-  EBUR128_Um045,     /**< itu U-030 */
-  EBUR128_Up090,     /**< itu U+090 */
-  EBUR128_Um090,     /**< itu U-090 */
-  EBUR128_Up110,     /**< itu U+110 */
-  EBUR128_Um110,     /**< itu U-110 */
-  EBUR128_Up135,     /**< itu U+135 */
-  EBUR128_Um135,     /**< itu U-135 */
-  EBUR128_Up180,     /**< itu U+180 */
-  EBUR128_Tp000,     /**< itu T+000 */
-  EBUR128_Bp000,     /**< itu B+000 */
-  EBUR128_Bp045,     /**< itu B+045 */
-  EBUR128_Bm045      /**< itu B-045 */
+  EBUR128_UNUSED = 0,         /**< unused channel (for example LFE channel) */
+  EBUR128_LEFT = 1,           /**<           */
+  EBUR128_Mp030 = 1,          /**< itu M+030 */
+  EBUR128_RIGHT = 2,          /**<           */
+  EBUR128_Mm030 = 2,          /**< itu M-030 */
+  EBUR128_CENTER = 3,         /**<           */
+  EBUR128_Mp000 = 3,          /**< itu M+000 */
+  EBUR128_LEFT_SURROUND = 4,  /**<           */
+  EBUR128_Mp110 = 4,          /**< itu M+110 */
+  EBUR128_RIGHT_SURROUND = 5, /**<           */
+  EBUR128_Mm110 = 5,          /**< itu M-110 */
+  EBUR128_DUAL_MONO,          /**< a channel that is counted twice */
+  EBUR128_MpSC,               /**< itu M+SC  */
+  EBUR128_MmSC,               /**< itu M-SC  */
+  EBUR128_Mp060,              /**< itu M+060 */
+  EBUR128_Mm060,              /**< itu M-060 */
+  EBUR128_Mp090,              /**< itu M+090 */
+  EBUR128_Mm090,              /**< itu M-090 */
+  EBUR128_Mp135,              /**< itu M+135 */
+  EBUR128_Mm135,              /**< itu M-135 */
+  EBUR128_Mp180,              /**< itu M+180 */
+  EBUR128_Up000,              /**< itu U+000 */
+  EBUR128_Up030,              /**< itu U+030 */
+  EBUR128_Um030,              /**< itu U-030 */
+  EBUR128_Up045,              /**< itu U+045 */
+  EBUR128_Um045,              /**< itu U-030 */
+  EBUR128_Up090,              /**< itu U+090 */
+  EBUR128_Um090,              /**< itu U-090 */
+  EBUR128_Up110,              /**< itu U+110 */
+  EBUR128_Um110,              /**< itu U-110 */
+  EBUR128_Up135,              /**< itu U+135 */
+  EBUR128_Um135,              /**< itu U-135 */
+  EBUR128_Up180,              /**< itu U+180 */
+  EBUR128_Tp000,              /**< itu T+000 */
+  EBUR128_Bp000,              /**< itu B+000 */
+  EBUR128_Bp045,              /**< itu B+045 */
+  EBUR128_Bm045               /**< itu B-045 */
 };
 
 /** \enum error
