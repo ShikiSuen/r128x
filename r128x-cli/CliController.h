@@ -26,5 +26,6 @@
 - (id)initWithPath:(NSString *)thePath;
 
 - (void)doMeasure;
+- (void)progressUpdate:(NSNotification *)notification;
 
 @end
