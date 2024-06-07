@@ -1,4 +1,3 @@
-// IntelEntry.swift
 // This file is part of r128x.
 //
 // r128x is free software: you can redistribute it and/or modify
@@ -16,6 +15,9 @@
 // copyright Manuel Naudin 2012-2013
 
 import Foundation
+import R128xSharedBackend
+
+// MARK: - StatusForProcessing
 
 public enum StatusForProcessing: String {
   case processing = "…"
@@ -23,7 +25,17 @@ public enum StatusForProcessing: String {
   case failed = "✖︎"
 }
 
+// MARK: - IntelEntry
+
 public struct IntelEntry: Identifiable, Equatable {
+  // MARK: Lifecycle
+
+  public init(fileName: String) {
+    self.fileName = fileName
+  }
+
+  // MARK: Public
+
   public let id = UUID()
   public let fileName: String
   public var programLoudness: Double?
@@ -33,10 +45,6 @@ public struct IntelEntry: Identifiable, Equatable {
 
   public var done: Bool {
     status == .succeeded || status == .failed
-  }
-
-  public init(fileName: String) {
-    self.fileName = fileName
   }
 
   public var statusDisplayed: String { status.rawValue }

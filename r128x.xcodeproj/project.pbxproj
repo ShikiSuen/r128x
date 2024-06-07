@@ -3,77 +3,35 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 53;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		565EC47417127B49008B09A2 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 565EC47317127B49008B09A2 /* Foundation.framework */; };
-		565EC47717127B49008B09A2 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 565EC47617127B49008B09A2 /* main.m */; };
-		565EC47B17127B49008B09A2 /* r128x_cli.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 565EC47A17127B49008B09A2 /* r128x_cli.1 */; };
-		565EC48117128083008B09A2 /* CliController.m in Sources */ = {isa = PBXBuildFile; fileRef = 565EC48017128083008B09A2 /* CliController.m */; };
-		565EC48217128162008B09A2 /* ExtAudioProcessor.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37321605B3FA00C3F184 /* ExtAudioProcessor.c */; };
-		565EC483171282A4008B09A2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 564C37301605B1CE00C3F184 /* AudioToolbox.framework */; };
-		565EC48417128305008B09A2 /* ebur128.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37201605AD0100C3F184 /* ebur128.c */; };
-		5B84B80F2A891C8B0049E107 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5B84B8112A891C8B0049E107 /* InfoPlist.strings */; };
+		5B517EF62C12F0D500F0FA00 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */; };
+		5B5181712C13084100F0FA00 /* R128xSPM in Resources */ = {isa = PBXBuildFile; fileRef = 5B5180642C13084000F0FA00 /* R128xSPM */; };
+		5B5181742C13085000F0FA00 /* R128xKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5B5181732C13085000F0FA00 /* R128xKit */; };
 		5BDCA1B62A6D51D400F7202E /* MainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1B52A6D51D400F7202E /* MainApp.swift */; };
-		5BDCA1B82A6D51D400F7202E /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1B72A6D51D400F7202E /* MainView.swift */; };
 		5BDCA1BD2A6D51D500F7202E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1BC2A6D51D500F7202E /* Preview Assets.xcassets */; };
 		5BDCA1C22A6D51E900F7202E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1A52A6D4C6B00F7202E /* Assets.xcassets */; };
-		5BDCA1C42A6D6A4700F7202E /* IntelEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1C32A6D6A4700F7202E /* IntelEntry.swift */; };
-		5BDCA1C82A6D6CE200F7202E /* ExtAudioProcessor.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37321605B3FA00C3F184 /* ExtAudioProcessor.c */; };
-		5BDCA1C92A6D6D1400F7202E /* ebur128.c in Sources */ = {isa = PBXBuildFile; fileRef = 564C37201605AD0100C3F184 /* ebur128.c */; };
 		5BDCA1CC2A6D892F00F7202E /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = F5CDA3491713162E001649E7 /* Credits.rtf */; };
-		5BDCA1CF2A6D8AC500F7202E /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1CD2A6D8AC500F7202E /* Localizable.strings */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		565EC47017127B49008B09A2 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-				565EC47B17127B49008B09A2 /* r128x_cli.1 in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		564C37121605ABFC00C3F184 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		564C37201605AD0100C3F184 /* ebur128.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ebur128.c; sourceTree = "<group>"; };
-		564C37211605AD0100C3F184 /* ebur128.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ebur128.h; sourceTree = "<group>"; };
-		564C372E1605B16B00C3F184 /* ExtAudioProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ExtAudioProcessor.h; path = r128x/ExtAudioProcessor.h; sourceTree = "<group>"; };
 		564C37301605B1CE00C3F184 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
-		564C37321605B3FA00C3F184 /* ExtAudioProcessor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ExtAudioProcessor.c; path = r128x/ExtAudioProcessor.c; sourceTree = "<group>"; };
-		565EC47217127B49008B09A2 /* r128x-cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "r128x-cli"; sourceTree = BUILT_PRODUCTS_DIR; };
 		565EC47317127B49008B09A2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		565EC47617127B49008B09A2 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		565EC47917127B49008B09A2 /* r128x-cli-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "r128x-cli-Prefix.pch"; sourceTree = "<group>"; };
-		565EC47A17127B49008B09A2 /* r128x_cli.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = r128x_cli.1; sourceTree = "<group>"; };
-		565EC47F17128083008B09A2 /* CliController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CliController.h; sourceTree = "<group>"; };
-		565EC48017128083008B09A2 /* CliController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CliController.m; sourceTree = "<group>"; };
+		5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		5B5180642C13084000F0FA00 /* R128xSPM */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = R128xSPM; sourceTree = "<group>"; };
 		5B84B8052A8915FE0049E107 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "zh-Hant"; path = "zh-Hant.lproj/Credits.rtf"; sourceTree = "<group>"; };
 		5B84B8062A8916040049E107 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "zh-Hans"; path = "zh-Hans.lproj/Credits.rtf"; sourceTree = "<group>"; };
 		5B84B8072A8916090049E107 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = ja; path = ja.lproj/Credits.rtf; sourceTree = "<group>"; };
-		5B84B8092A89161A0049E107 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		5B84B80A2A89161B0049E107 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		5B84B80B2A89161C0049E107 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
-		5B84B8102A891C8B0049E107 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		5B84B8122A891C8E0049E107 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		5B84B8132A891C8E0049E107 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		5B84B8142A891C8F0049E107 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		5B84B8152A891C900049E107 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		5BDCA1A52A6D4C6B00F7202E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5BDCA1B32A6D51D400F7202E /* r128x-swiftui.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "r128x-swiftui.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BDCA1B52A6D51D400F7202E /* MainApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainApp.swift; sourceTree = "<group>"; };
-		5BDCA1B72A6D51D400F7202E /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		5BDCA1BC2A6D51D500F7202E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		5BDCA1BE2A6D51D500F7202E /* r128x_swiftui.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = r128x_swiftui.entitlements; sourceTree = "<group>"; };
-		5BDCA1C32A6D6A4700F7202E /* IntelEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelEntry.swift; sourceTree = "<group>"; };
-		5BDCA1C52A6D6CC600F7202E /* r128x-swiftui-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "r128x-swiftui-Bridging-Header.h"; sourceTree = "<group>"; };
 		5BDCA1CB2A6D86AF00F7202E /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = fr; path = fr.lproj/Credits.rtf; sourceTree = "<group>"; };
-		5BDCA1CE2A6D8AC500F7202E /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		5BFD76992C1319C300EFC87D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F5CDA33A1713162E001649E7 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		F5CDA33D1713162E001649E7 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		F5CDA33E1713162E001649E7 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
@@ -82,19 +40,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		565EC46F17127B49008B09A2 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				565EC483171282A4008B09A2 /* AudioToolbox.framework in Frameworks */,
-				565EC47417127B49008B09A2 /* Foundation.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		5BDCA1B02A6D51D400F7202E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5B5181742C13085000F0FA00 /* R128xKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,12 +54,7 @@
 		564C37031605ABFC00C3F184 = {
 			isa = PBXGroup;
 			children = (
-				5B84B80C2A891A7B0049E107 /* SharedResources */,
-				5BDCA1A52A6D4C6B00F7202E /* Assets.xcassets */,
-				564C372E1605B16B00C3F184 /* ExtAudioProcessor.h */,
-				564C37321605B3FA00C3F184 /* ExtAudioProcessor.c */,
-				564C371E1605AD0100C3F184 /* ebur128 */,
-				565EC47517127B49008B09A2 /* r128x-cli */,
+				5B5180652C13084000F0FA00 /* SPMPackages */,
 				5BDCA1B42A6D51D400F7202E /* r128x-swiftui */,
 				564C37111605ABFC00C3F184 /* Frameworks */,
 				564C370F1605ABFC00C3F184 /* Products */,
@@ -119,7 +64,6 @@
 		564C370F1605ABFC00C3F184 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				565EC47217127B49008B09A2 /* r128x-cli */,
 				5BDCA1B32A6D51D400F7202E /* r128x-swiftui.app */,
 			);
 			name = Products;
@@ -137,54 +81,24 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		564C371E1605AD0100C3F184 /* ebur128 */ = {
+		5B5180652C13084000F0FA00 /* SPMPackages */ = {
 			isa = PBXGroup;
 			children = (
-				564C37201605AD0100C3F184 /* ebur128.c */,
-				564C37211605AD0100C3F184 /* ebur128.h */,
+				5B5180642C13084000F0FA00 /* R128xSPM */,
 			);
-			path = ebur128;
-			sourceTree = "<group>";
-		};
-		565EC47517127B49008B09A2 /* r128x-cli */ = {
-			isa = PBXGroup;
-			children = (
-				565EC47617127B49008B09A2 /* main.m */,
-				565EC47A17127B49008B09A2 /* r128x_cli.1 */,
-				565EC47817127B49008B09A2 /* Supporting Files */,
-				565EC47F17128083008B09A2 /* CliController.h */,
-				565EC48017128083008B09A2 /* CliController.m */,
-			);
-			path = "r128x-cli";
-			sourceTree = "<group>";
-		};
-		565EC47817127B49008B09A2 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				565EC47917127B49008B09A2 /* r128x-cli-Prefix.pch */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		5B84B80C2A891A7B0049E107 /* SharedResources */ = {
-			isa = PBXGroup;
-			children = (
-				F5CDA3491713162E001649E7 /* Credits.rtf */,
-			);
-			path = SharedResources;
+			path = SPMPackages;
 			sourceTree = "<group>";
 		};
 		5BDCA1B42A6D51D400F7202E /* r128x-swiftui */ = {
 			isa = PBXGroup;
 			children = (
-				5B84B8112A891C8B0049E107 /* InfoPlist.strings */,
-				5BDCA1CD2A6D8AC500F7202E /* Localizable.strings */,
+				5BFD76992C1319C300EFC87D /* Info.plist */,
+				5BDCA1A52A6D4C6B00F7202E /* Assets.xcassets */,
+				F5CDA3491713162E001649E7 /* Credits.rtf */,
+				5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */,
 				5BDCA1B52A6D51D400F7202E /* MainApp.swift */,
-				5BDCA1B72A6D51D400F7202E /* MainView.swift */,
-				5BDCA1C32A6D6A4700F7202E /* IntelEntry.swift */,
 				5BDCA1BE2A6D51D500F7202E /* r128x_swiftui.entitlements */,
 				5BDCA1BB2A6D51D500F7202E /* Preview Content */,
-				5BDCA1C52A6D6CC600F7202E /* r128x-swiftui-Bridging-Header.h */,
 			);
 			path = "r128x-swiftui";
 			sourceTree = "<group>";
@@ -210,23 +124,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		565EC47117127B49008B09A2 /* r128x-cli */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 565EC47E17127B49008B09A2 /* Build configuration list for PBXNativeTarget "r128x-cli" */;
-			buildPhases = (
-				565EC46E17127B49008B09A2 /* Sources */,
-				565EC46F17127B49008B09A2 /* Frameworks */,
-				565EC47017127B49008B09A2 /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "r128x-cli";
-			productName = "r128x-cli";
-			productReference = 565EC47217127B49008B09A2 /* r128x-cli */;
-			productType = "com.apple.product-type.tool";
-		};
 		5BDCA1B22A6D51D400F7202E /* r128x-swiftui */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5BDCA1C12A6D51D500F7202E /* Build configuration list for PBXNativeTarget "r128x-swiftui" */;
@@ -240,6 +137,9 @@
 			dependencies = (
 			);
 			name = "r128x-swiftui";
+			packageProductDependencies = (
+				5B5181732C13085000F0FA00 /* R128xKit */,
+			);
 			productName = "r128x-swiftui";
 			productReference = 5BDCA1B32A6D51D400F7202E /* r128x-swiftui.app */;
 			productType = "com.apple.product-type.application";
@@ -274,11 +174,13 @@
 				ja,
 			);
 			mainGroup = 564C37031605ABFC00C3F184;
+			packageReferences = (
+				5B5181722C13085000F0FA00 /* XCLocalSwiftPackageReference "SPMPackages/R128xSPM" */,
+			);
 			productRefGroup = 564C370F1605ABFC00C3F184 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				565EC47117127B49008B09A2 /* r128x-cli */,
 				5BDCA1B22A6D51D400F7202E /* r128x-swiftui */,
 			);
 		};
@@ -290,65 +192,27 @@
 			buildActionMask = 2147483647;
 			files = (
 				5BDCA1BD2A6D51D500F7202E /* Preview Assets.xcassets in Resources */,
-				5BDCA1CF2A6D8AC500F7202E /* Localizable.strings in Resources */,
+				5B517EF62C12F0D500F0FA00 /* InfoPlist.xcstrings in Resources */,
 				5BDCA1CC2A6D892F00F7202E /* Credits.rtf in Resources */,
+				5B5181712C13084100F0FA00 /* R128xSPM in Resources */,
 				5BDCA1C22A6D51E900F7202E /* Assets.xcassets in Resources */,
-				5B84B80F2A891C8B0049E107 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		565EC46E17127B49008B09A2 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				565EC47717127B49008B09A2 /* main.m in Sources */,
-				565EC48117128083008B09A2 /* CliController.m in Sources */,
-				565EC48217128162008B09A2 /* ExtAudioProcessor.c in Sources */,
-				565EC48417128305008B09A2 /* ebur128.c in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		5BDCA1AF2A6D51D400F7202E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5BDCA1B82A6D51D400F7202E /* MainView.swift in Sources */,
-				5BDCA1C42A6D6A4700F7202E /* IntelEntry.swift in Sources */,
 				5BDCA1B62A6D51D400F7202E /* MainApp.swift in Sources */,
-				5BDCA1C82A6D6CE200F7202E /* ExtAudioProcessor.c in Sources */,
-				5BDCA1C92A6D6D1400F7202E /* ebur128.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
-		5B84B8112A891C8B0049E107 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				5B84B8102A891C8B0049E107 /* ja */,
-				5B84B8122A891C8E0049E107 /* fr */,
-				5B84B8132A891C8E0049E107 /* zh-Hans */,
-				5B84B8142A891C8F0049E107 /* zh-Hant */,
-				5B84B8152A891C900049E107 /* en */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-		5BDCA1CD2A6D8AC500F7202E /* Localizable.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				5BDCA1CE2A6D8AC500F7202E /* fr */,
-				5B84B8092A89161A0049E107 /* zh-Hans */,
-				5B84B80A2A89161B0049E107 /* zh-Hant */,
-				5B84B80B2A89161C0049E107 /* ja */,
-			);
-			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
 		F5CDA3491713162E001649E7 /* Credits.rtf */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -408,6 +272,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -451,46 +316,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
 				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = macosx;
-			};
-			name = Release;
-		};
-		565EC47C17127B49008B09A2 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				DEAD_CODE_STRIPPING = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "r128x-cli/r128x-cli-Prefix.pch";
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				PRODUCT_BUNDLE_IDENTIFIER = "net.audionuma.r128x-cli";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		565EC47D17127B49008B09A2 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CURRENT_PROJECT_VERSION = 0.3;
-				DEAD_CODE_STRIPPING = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "r128x-cli/r128x-cli-Prefix.pch";
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
-				PRODUCT_BUNDLE_IDENTIFIER = "net.audionuma.r128x-cli";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -517,10 +346,16 @@
 				DEVELOPMENT_ASSET_PATHS = "\"r128x-swiftui/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/SPMPackages/Build/Intermediates.noindex/Previews/macos/R128xKit/Intermediates.noindex/EagerLinkingTBDs/Debug",
+					"$(PROJECT_DIR)/SPMPackages/Build/Intermediates.noindex/Previews/macos/R128xKit/Products/Debug/PackageFrameworks",
+				);
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "r128x-swiftui/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "r128x-swiftui";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 Manuel Naudin & Shiki Suen. All rights reserved.";
@@ -532,11 +367,10 @@
 				MARKETING_VERSION = 0.5.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "net.audionuma.r128x-swiftui";
+				PRODUCT_BUNDLE_IDENTIFIER = "net.audionuma.shikisuenForked.r128x-swiftui";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "r128x-swiftui/r128x-swiftui-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -566,10 +400,16 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/SPMPackages/Build/Intermediates.noindex/Previews/macos/R128xKit/Intermediates.noindex/EagerLinkingTBDs/Debug",
+					"$(PROJECT_DIR)/SPMPackages/Build/Intermediates.noindex/Previews/macos/R128xKit/Products/Debug/PackageFrameworks",
+				);
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "r128x-swiftui/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "r128x-swiftui";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 Manuel Naudin & Shiki Suen. All rights reserved.";
@@ -581,11 +421,10 @@
 				MARKETING_VERSION = 0.5.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "net.audionuma.r128x-swiftui";
+				PRODUCT_BUNDLE_IDENTIFIER = "net.audionuma.shikisuenForked.r128x-swiftui";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "r128x-swiftui/r128x-swiftui-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 			};
@@ -603,15 +442,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		565EC47E17127B49008B09A2 /* Build configuration list for PBXNativeTarget "r128x-cli" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				565EC47C17127B49008B09A2 /* Debug */,
-				565EC47D17127B49008B09A2 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		5BDCA1C12A6D51D500F7202E /* Build configuration list for PBXNativeTarget "r128x-swiftui" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -622,6 +452,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		5B5181722C13085000F0FA00 /* XCLocalSwiftPackageReference "SPMPackages/R128xSPM" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = SPMPackages/R128xSPM;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5B5181732C13085000F0FA00 /* R128xKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = R128xKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 564C37051605ABFC00C3F184 /* Project object */;
 }

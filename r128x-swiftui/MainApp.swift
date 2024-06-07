@@ -15,15 +15,12 @@
 // along with r128x.  If not, see <http://www.gnu.org/licenses/>.
 // copyright Manuel Naudin 2012-2013
 
+import R128xKit
 import SwiftUI
 
 @main
 struct MainApp: App {
   var body: some Scene {
-    WindowGroup {
-      MainView()
-    }.commands {
-      CommandGroup(replacing: CommandGroupPlacement.newItem) {}
-    }
+    R128xScene()
   }
 }

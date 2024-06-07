@@ -1,6 +1,6 @@
 # r128x, a tool for loudness measurement of files on macOS. #
 
-The GUI version requires macOS 12 since v0.4 release.
+Both the GUI version and the CLI version require macOS 12 since v0.5.1 release.
 
 ![r128x-swiftui](./screenshot.png)
 
@@ -9,9 +9,50 @@ r128x is released under GPLv3 license.
 > For releases earlier than 0.4, please check the repo under the previous maintainer:
 > - https://github.com/audionuma/r128x 
 
+Note: GPLv3 does not hinder the copies of the compiled binaries to be sold as long as the source code is publicly available.
+
 ## Binaries ##
- 
-v0.4 2023-JUN-24 binaries can be found in the _release_ tab.
+
+Binaries of all versions are not provided anymore since the release of v0.5.1.
+
+You are expected to either compile the binary by yourself or buy at Mac App Store.
+
+The charged fee is not mandatory since you can always compile the binaries for your own purposes.
+
+### How to Compile ###
+
+Xcode 15 is recommended for the compilation. Apple always eager to push its latest toolchain as a hard requirement for compiling Xcode projects.
+
+#### 1. GUI app ####
+
+```
+WARNING:
+// If you compile for distributing to someone else,
+// you MUST change the bundle identifier of the app in the Xcode project settings.
+```
+
+1. Use Xcode to open the `r128x.xcodeproj` project file.
+2. Menu: Product -> Archive.
+3. After the compilation finishes, the organizer shows up. If it doesn't show up, check Menu: Window -> Organizer.
+4. In the organizer, find your compiled archive, and then click the "Distribute App" button -> "Custom" -> "Direct Distribution".
+5. Specify your developer certificate during the process and finish the code-signing & notarization process.
+6. Export the app once the notarization is succeeded.
+
+If not compile-for-share but for this computer only:
+
+1. Use Xcode to open the `r128x.xcodeproj` project file.
+2. Menu: Product -> Run.
+
+#### 2. CLI app ####
+
+1. Use Xcode to open the `R128xSPM` SPM Package from the `./SPMPackages` folder.
+2. Menu: Project -> Archive.
+3. After the compilation finishes, the organizer shows up. If it doesn't show up, check Menu: Window -> Organizer.
+4. In the organizer, find your compiled archive, and then click the "Distribute App" button -> "Custom" -> "Direct Distribution".
+5. Specify your developer certificate during the process and finish the code-signing & notarization process.
+6. Export the app once the notarization is succeeded.
+
+If not compile-for-share but for this computer only, you can use commandline to compile the project. Please refer to related Swift documentation.
 
 ## Description ##
 r128x is a tool for measuring Integrated Loudness, Loudness range and Maximum True Peak of audio files on the Mac OS X system with an Intel processor.

@@ -1,4 +1,3 @@
-// MainView.swift
 // This file is part of r128x.
 //
 // r128x is free software: you can redistribute it and/or modify
@@ -18,19 +17,28 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct MainView: View {
-  private static let allowedSuffixes: [String] = ["mp3", "mp2", "m4a", "wav", "aif", "aiff", "caf", "alac", "sd2", "ac3", "flac"]
-  private static let allowedUTTypes: [UTType] = Self.allowedSuffixes.compactMap { .init(filenameExtension: $0) }
+// MARK: - R128xScene
 
-  private static let comdlg32: NSOpenPanel = {
-    let result = NSOpenPanel()
-    result.allowsMultipleSelection = true
-    result.canChooseDirectories = false
-    result.prompt = "Process"
-    result.title = "File Selector"
-    result.message = "Select files…"
-    return result
-  }()
+public struct R128xScene: Scene {
+  // MARK: Lifecycle
+
+  public init() {}
+
+  // MARK: Public
+
+  public var body: some Scene {
+    WindowGroup {
+      MainView()
+    }.commands {
+      CommandGroup(replacing: CommandGroupPlacement.newItem) {}
+    }
+  }
+}
+
+// MARK: - MainView
+
+struct MainView: View {
+  // MARK: Lifecycle
 
   // MARK: - Instance.
 
@@ -38,12 +46,7 @@ struct MainView: View {
     Self.comdlg32.allowedContentTypes = Self.allowedUTTypes
   }
 
-  @State private var dragOver = false
-  @State private var highlighted: IntelEntry.ID?
-  @State private var entries: [IntelEntry] = []
-
-  private let writerQueue = DispatchQueue(label: "r128x.writer")
-  @State private var currentTask: DispatchWorkItem?
+  // MARK: Internal
 
   var progressValue: CGFloat {
     if entries.isEmpty { return 0 }
@@ -52,27 +55,27 @@ struct MainView: View {
 
   var queueMessage: String {
     if entries.isEmpty {
-      return NSLocalizedString("Drag audio files from Finder to the table in this window.", comment: "")
+      return "Drag audio files from Finder to the table in this window.".i18n
     }
     let filesPendingProcessing: Int = entries.filter(\.done.negative).count
     let invalidResults: Int = entries.reduce(0) { $0 + ($1.status == .failed ? 1 : 0) }
     guard filesPendingProcessing == 0 else {
-      return String(format: NSLocalizedString("Processing files in the queue: %d remaining.", comment: ""), filesPendingProcessing)
+      return String(format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing)
     }
     guard invalidResults == 0 else {
-      return String(format: NSLocalizedString("All files are processed, excepting %d failed files.", comment: ""), invalidResults)
+      return String(format: "All files are processed, excepting %d failed files.".i18n, invalidResults)
     }
-    return NSLocalizedString("All files are processed successfully.", comment: "")
+    return "All files are processed successfully.".i18n
   }
 
   var body: some View {
     VStack(spacing: 5) {
       Table(entries, selection: $highlighted) {
-        TableColumn("Status", value: \.statusDisplayed).width(50)
-        TableColumn("File Name", value: \.fileName)
-        TableColumn("Program Loudness", value: \.programLoudnessDisplayed).width(170)
-        TableColumn("Loudness Range", value: \.loudnessRangeDisplayed).width(140)
-        TableColumn("dBTP", value: \.dBTPDisplayed).width(50)
+        TableColumn("Status".i18n, value: \.statusDisplayed).width(50)
+        TableColumn("File Name".i18n, value: \.fileName)
+        TableColumn("Program Loudness".i18n, value: \.programLoudnessDisplayed).width(170)
+        TableColumn("Loudness Range".i18n, value: \.loudnessRangeDisplayed).width(140)
+        TableColumn("dBTP".i18n, value: \.dBTPDisplayed).width(50)
       }.onChange(of: entries) { _ in
         batchProcess(forced: false)
       }
@@ -84,7 +87,7 @@ struct MainView: View {
             batchProcess(forced: false)
           }
         }
-        providers.forEach { provider in
+        for provider in providers {
           _ = provider.loadObject(ofClass: URL.self) { url, _ in
             guard let url else { return }
             let path = url.path
@@ -100,7 +103,7 @@ struct MainView: View {
         return true
       }
       HStack {
-        Button("Add Files") {
+        Button("Add Files".i18n) {
           guard Self.comdlg32.runModal() == .OK else { return }
           let entriesAsPaths: [String] = entries.map(\.fileName)
           let contents: [URL] = Self.comdlg32.urls.filter {
@@ -108,8 +111,8 @@ struct MainView: View {
           }
           entries.append(contentsOf: contents.map { .init(fileName: $0.path) })
         }
-        Button("Clear Table") { entries.removeAll() }
-        Button("Reprocess All") { batchProcess(forced: true) }
+        Button("Clear Table".i18n) { entries.removeAll() }
+        Button("Reprocess All".i18n) { batchProcess(forced: true) }
         ProgressView(value: progressValue) { Text(queueMessage).controlSize(.small) }
         Spacer()
       }.padding(.bottom, 10).padding([.horizontal], 10)
@@ -129,13 +132,13 @@ struct MainView: View {
 
     // create a work item that process concurrently
     currentTask = DispatchWorkItem {
-      DispatchQueue.concurrentPerform(iterations: self.entries.count) { i in
+      DispatchQueue.concurrentPerform(iterations: entries.count) { i in
         // copy entry
         var result = entries[i]
         result.process(forced: forced)
 
         writerQueue.async {
-          self.entries[i] = result
+          entries[i] = result
         }
       }
     }
@@ -145,14 +148,47 @@ struct MainView: View {
       DispatchQueue.global().asyncAfter(deadline: .now() + 0.25, execute: t)
     }
   }
+
+  // MARK: Private
+
+  private static let allowedSuffixes: [String] = [
+    "mp3",
+    "mp2",
+    "m4a",
+    "wav",
+    "aif",
+    "aiff",
+    "caf",
+    "alac",
+    "sd2",
+    "ac3",
+    "flac",
+  ]
+  private static let allowedUTTypes: [UTType] = Self.allowedSuffixes.compactMap { .init(filenameExtension: $0) }
+
+  private static let comdlg32: NSOpenPanel = {
+    let result = NSOpenPanel()
+    result.allowsMultipleSelection = true
+    result.canChooseDirectories = false
+    result.prompt = "Process"
+    result.title = "File Selector"
+    result.message = "Select files…"
+    return result
+  }()
+
+  @State private var dragOver = false
+  @State private var highlighted: IntelEntry.ID?
+  @State private var entries: [IntelEntry] = []
+
+  private let writerQueue = DispatchQueue(label: "r128x.writer")
+  @State private var currentTask: DispatchWorkItem?
 }
 
-struct ContentView_Previews: PreviewProvider {
-  static var previews: some View {
-    MainView()
-  }
+extension Bool {
+  fileprivate var negative: Bool { !self }
 }
 
-private extension Bool {
-  var negative: Bool { !self }
+#Preview {
+  MainView()
+    .environment(\.locale, .init(identifier: "en"))
 }
