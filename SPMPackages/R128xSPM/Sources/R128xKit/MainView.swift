@@ -28,7 +28,9 @@ public struct R128xScene: Scene {
 
   public var body: some Scene {
     WindowGroup {
-      MainView()
+      MainView().onDisappear {
+        NSApplication.shared.terminate(self)
+      }
     }.commands {
       CommandGroup(replacing: CommandGroupPlacement.newItem) {}
     }
