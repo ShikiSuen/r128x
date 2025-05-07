@@ -184,8 +184,9 @@ struct MainView: View {
   @State private var highlighted: IntelEntry.ID?
   @State private var entries: [IntelEntry] = []
 
-  private let writerQueue = DispatchQueue(label: "r128x.writer")
   @State private var currentTask: DispatchWorkItem?
+
+  private let writerQueue = DispatchQueue(label: "r128x.writer")
 }
 
 extension Bool {
