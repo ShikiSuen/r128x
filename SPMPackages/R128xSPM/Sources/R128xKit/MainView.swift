@@ -154,6 +154,8 @@ struct MainView: View {
   // MARK: Private
 
   private static let allowedSuffixes: [String] = [
+    "mov",
+    "mp4",
     "mp3",
     "mp2",
     "m4a",
