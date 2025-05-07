@@ -14,6 +14,10 @@ let package = Package(
       name: "R128xKit",
       targets: ["R128xKit"]
     ),
+    .library(
+      name: "EBUR128",
+      targets: ["EBUR128"]
+    ),
     .executable(
       name: "r128x-cli",
       targets: ["r128x-cli"]
@@ -24,6 +28,9 @@ let package = Package(
     // Targets can depend on other targets in this package and products from dependencies.
     .target(
       name: "libebur128"
+    ),
+    .target(
+      name: "EBUR128"
     ),
     .target(
       name: "R128xKit",
