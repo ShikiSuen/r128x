@@ -95,6 +95,7 @@ _UpgradeReport_Files/
 .idea/replstate.xml
 .idea/tasks.xml
 .idea/workspace.xml
+.index-build/
 .ionide/
 .JustCode
 .loadpath
