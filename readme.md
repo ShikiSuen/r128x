@@ -1,6 +1,12 @@
 # r128x, a tool for loudness measurement of files on macOS. #
 
-Both the GUI version and the CLI version require macOS 12 since v0.5.1 release.
+Both the GUI version and the CLI version require macOS 14 since v0.7.0 release.
+
+> This OS-requirement change is due to some needs of using newer SwiftUI APIs.
+> 
+> Tests proved that precompiled libraries in Audionuma's repo are still executable on macOS 15 (despite the CodeSign issues). Otherwise, I would probably hesistate to drop macOS 13 and earlier.
+> 
+> P.S.: Apple Silicon mac is a strong recommendation to run my fork since the libEBUR128 is completely written in Swift and the rewritten version is not hardware-accelerated as the previous C-language version. The C-language version has compilation issues on Apple Silicon while being archived for Mac App Store, hence the rewrite in Swift.
 
 ![r128x-swiftui](./screenshot.png)
 
