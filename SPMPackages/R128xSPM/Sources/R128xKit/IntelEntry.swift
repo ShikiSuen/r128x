@@ -18,20 +18,31 @@ public enum StatusForProcessing: String, Sendable {
 public struct IntelEntry: Identifiable, Equatable, Sendable {
   // MARK: Lifecycle
 
-  public init(fileName: String) {
-    self.fileName = fileName
+  public init(url: URL) {
+    // 此处暂且默认传入的 URL 是文件 URL 而非资料夹 URL。
+    self.url = url
   }
 
   // MARK: Public
 
   public let id = UUID()
-  public let fileName: String
+  public let url: URL
   public var programLoudness: Double?
   public var loudnessRange: Double?
   public var dBTP: Double?
   public var status: StatusForProcessing = .processing
   public var progressPercentage: Double?
   public var estimatedTimeRemaining: TimeInterval?
+
+  public var fileNamePath: String { url.path }
+
+  public var fileName: String {
+    url.lastPathComponent
+  }
+
+  public var folderPath: String {
+    url.deletingLastPathComponent().path
+  }
 
   public var done: Bool {
     status == .succeeded || status == .failed
@@ -60,7 +71,7 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
 
   public var timeRemainingDisplayed: String {
     guard status == .processing, let estimatedTimeRemaining = estimatedTimeRemaining else {
-      return status == .succeeded ? "Done" : (status == .failed ? "Failed" : "Waiting")
+      return status == .succeeded ? "✅" : (status == .failed ? "❌" : "…")
     }
     if estimatedTimeRemaining < 1 {
       return "< 1s"

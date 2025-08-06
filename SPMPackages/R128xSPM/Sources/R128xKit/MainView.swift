@@ -103,41 +103,14 @@ struct MainView: View {
         TableColumn("Loudness Range".i18n, value: \.loudnessRangeDisplayed).width(140)
         TableColumn("dBTP".i18n, value: \.dBTPDisplayed).width(50)
         TableColumn("Progress".i18n, value: \.progressDisplayed).width(80)
-        TableColumn("Time Left".i18n, value: \.timeRemainingDisplayed).width(90)
       }.onChange(of: entries) { _ in
         batchProcess(forced: false)
       }
       .font(.system(.body).monospacedDigit())
-      .onDrop(of: [UTType.fileURL], isTargeted: $dragOver) { providers -> Bool in
-        var counter = 0
-        defer {
-          if counter > 0 {
-            batchProcess(forced: false)
-          }
-        }
-        for provider in providers {
-          _ = provider.loadObject(ofClass: URL.self) { url, _ in
-            guard let url else { return }
-            let path = url.path
-            guard !entries.map(\.fileName).contains(path) else { return }
-            entryInsertion: for fileExtension in Self.allowedSuffixes {
-              guard path.hasSuffix(".\(fileExtension)") else { continue }
-              counter += 1
-              entries.append(.init(fileName: path))
-              break entryInsertion
-            }
-          }
-        }
-        return true
-      }
+      .onDrop(of: [UTType.fileURL], isTargeted: $dragOver, perform: handleDrop)
       HStack {
         Button("Add Files".i18n) {
-          guard Self.comdlg32.runModal() == .OK else { return }
-          let entriesAsPaths: [String] = entries.map(\.fileName)
-          let contents: [URL] = Self.comdlg32.urls.filter {
-            !entriesAsPaths.contains($0.path)
-          }
-          entries.append(contentsOf: contents.map { .init(fileName: $0.path) })
+          addFilesButtonDidPress()
         }
         Button("Clear Table".i18n) { entries.removeAll() }
         Button("Reprocess All".i18n) { batchProcess(forced: true) }
@@ -164,7 +137,7 @@ struct MainView: View {
 
             // Keep the currentFileProgress for the status message
             currentFileProgress = CurrentFileProgress(
-              fileName: entries[entryIndex].fileName,
+              fileName: entries[entryIndex].fileNamePath,
               percentage: percentage,
               framesProcessed: Int64(framesProcessed),
               totalFrames: totalFrames,
@@ -252,6 +225,46 @@ struct MainView: View {
   @State private var currentTask: DispatchWorkItem?
 
   private let writerQueue = DispatchQueue(label: "r128x.writer")
+
+  private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+    var counter = 0
+    defer {
+      if counter > 0 {
+        batchProcess(forced: false)
+      }
+    }
+    for provider in providers {
+      _ = provider.loadObject(ofClass: URL.self) { url, _ in
+        guard let url else { return }
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+        guard exists, !isDirectory.boolValue else { return }
+        let path = url.path
+        guard !entries.map(\.fileNamePath).contains(path) else { return }
+        entryInsertion: for fileExtension in Self.allowedSuffixes {
+          guard path.hasSuffix(".\(fileExtension)") else { continue }
+          counter += 1
+          entries.append(.init(url: url))
+          break entryInsertion
+        }
+      }
+    }
+    return true
+  }
+
+  private func addFilesButtonDidPress() {
+    guard Self.comdlg32.runModal() == .OK else { return }
+    let entriesAsPaths: [String] = entries.map(\.fileNamePath)
+    let contents: [URL] = Self.comdlg32.urls.filter {
+      !entriesAsPaths.contains($0.path)
+    }
+    entries.append(contentsOf: contents.compactMap {
+      var isDirectory: ObjCBool = false
+      let exists = FileManager.default.fileExists(atPath: $0.path, isDirectory: &isDirectory)
+      guard exists, !isDirectory.boolValue else { return nil }
+      return .init(url: $0)
+    })
+  }
 }
 
 extension Bool {
