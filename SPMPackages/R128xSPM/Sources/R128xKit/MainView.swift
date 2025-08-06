@@ -196,11 +196,11 @@ struct MainView: View {
       DispatchQueue.concurrentPerform(iterations: entries.count) { i in
         // copy entry
         var result = entries[i]
-        
+
         // Create task for async processing
         Task {
           await result.process(forced: forced)
-          
+
           writerQueue.async {
             entries[i] = result
           }

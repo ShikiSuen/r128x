@@ -106,8 +106,6 @@ private func AudioConverterNew(
 private func AudioConverterDispose(_ converter: AudioConverterRef) {}
 #endif
 
-
-
 // MARK: - ExtAudioProcessor
 
 /// Swift implementation of the ExtAudioProcessor functionality using Actor pattern for thread safety
@@ -137,7 +135,7 @@ public actor ExtAudioProcessor {
   /// - Parameter fileId: Unique identifier for tracking progress (optional)
   /// - Parameter progressCallback: Optional callback for progress updates
   /// - Returns: Tuple containing (integrated loudness, loudness range, maximum true peak)
-  public static func processAudioFile(
+  public func processAudioFile(
     at audioFilePath: String,
     fileId: String? = nil,
     progressCallback: ((ProcessingProgress) -> Void)? = nil
@@ -330,32 +328,42 @@ public actor ExtAudioProcessor {
         }
       }
 
-      // Use vDSP to find maximum peak values all at once
+      // Use TaskGroup to calculate peak values for multiple channels concurrently
       if needsTruePeak {
-        var localMax = 0.0
+        let channelPeaks = await withTaskGroup(of: Double.self, returning: [Double].self) { group in
+          var results: [Double] = []
 
-        // Combine peak and oversampling peak calculations
-        for ch in 0 ..< channels {
-          let channelBuffer = channelPointers[ch]!
-          var channelMax = 0.0
-          vDSP_maxmgvD(channelBuffer, 1, &channelMax, vDSP_Length(framesToRead))
+          for ch in 0 ..< channels {
+            group.addTask {
+              let channelBuffer = channelPointers[ch]!
+              var channelMax = 0.0
+              vDSP_maxmgvD(channelBuffer, 1, &channelMax, vDSP_Length(framesToRead))
 
-          // Oversampling peak (linear interpolation)
-          if overSamplingFactor > 1 {
-            var prevSample = channelBuffer[0]
-            for i in 1 ..< Int(framesToRead) {
-              let nextSample = channelBuffer[i]
-              for k in 1 ..< overSamplingFactor {
-                let t = Double(k) / Double(overSamplingFactor)
-                let value = prevSample * (1.0 - t) + nextSample * t
-                channelMax = max(channelMax, abs(value))
+              // Oversampling peak (linear interpolation)
+              if overSamplingFactor > 1 {
+                var prevSample = channelBuffer[0]
+                for i in 1 ..< Int(framesToRead) {
+                  let nextSample = channelBuffer[i]
+                  for k in 1 ..< overSamplingFactor {
+                    let t = Double(k) / Double(overSamplingFactor)
+                    let value = prevSample * (1.0 - t) + nextSample * t
+                    channelMax = max(channelMax, abs(value))
+                  }
+                  prevSample = nextSample
+                }
               }
-              prevSample = nextSample
+
+              return channelMax
             }
           }
 
-          localMax = max(localMax, channelMax)
+          for await result in group {
+            results.append(result)
+          }
+          return results
         }
+
+        let localMax = channelPeaks.max() ?? 0.0
         maxTruePeak = max(maxTruePeak, localMax)
       }
 
@@ -375,10 +383,10 @@ public actor ExtAudioProcessor {
           }
         }
 
-        try ebur128State.addFramesPointers(channelPtrs.compactMap { $0 }, framesToProcess: Int(framesToProcess))
+        try await ebur128State.addFramesPointers(channelPtrs.compactMap { $0 }, framesToProcess: Int(framesToProcess))
 
         if framesToProcess >= userData.neededFrames {
-          let momentaryLoudness = ebur128State.loudnessMomentary()
+          let momentaryLoudness = await ebur128State.loudnessMomentary()
           userData.blocks.append(momentaryLoudness)
 
           // Prevent underflow in framesLeft calculation
@@ -417,7 +425,7 @@ public actor ExtAudioProcessor {
         let estimatedRemaining = estimatedTotal - elapsed
 
         // Get current loudness estimate
-        let currentLoudness = ebur128State.loudnessMomentary()
+        let currentLoudness = await ebur128State.loudnessMomentary()
 
         let progressInfo = ProcessingProgress(
           percentage: progressPercentage,
@@ -448,7 +456,7 @@ public actor ExtAudioProcessor {
 
         await MainActor.run {
           NotificationCenter.default.post(
-            name: Notification.Name(progressNotificationName),
+            name: Notification.Name(Self.progressNotificationName),
             object: nil,
             userInfo: userInfoToSend
           )
@@ -458,8 +466,8 @@ public actor ExtAudioProcessor {
     }
 
     // Calculate final results - use Double for consistent data types
-    let integratedLoudness = ebur128State.loudnessGlobal()
-    let loudnessRange = ebur128State.loudnessRange()
+    let integratedLoudness = await ebur128State.loudnessGlobal()
+    let loudnessRange = await ebur128State.loudnessRange()
     let maxTruePeakDB = 20 * log10(maxTruePeak)
 
     return (
@@ -506,7 +514,7 @@ public actor ExtAudioProcessor {
   }
 
   // Default buffer size matching the C implementation
-  private static let DEFAULT_BUFFER_SIZE: UInt32 = 192000
+  private let DEFAULT_BUFFER_SIZE: UInt32 = 192000
 }
 
 // Helper function for atomic operations

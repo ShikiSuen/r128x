@@ -21,18 +21,18 @@ final class EBUR128Tests: XCTestCase {
     XCTAssertGreaterThan(abs(state.filterCoefA[1]), 0.01)
   }
 
-  func testSilenceProcessing() throws {
+  func testSilenceProcessing() async throws {
     let state = try EBUR128State(channels: 1, sampleRate: 48000, mode: [.I])
 
     // Process silence - should produce negative infinity loudness
     let silentFrames = Array(repeating: Array(repeating: 0.0, count: 4800), count: 1)
-    try state.addFrames(silentFrames)
+    try await state.addFrames(silentFrames)
 
-    let loudness = state.loudnessGlobal()
+    let loudness = await state.loudnessGlobal()
     XCTAssertEqual(loudness, -Double.infinity)
   }
 
-  func testSineWaveLoudness() throws {
+  func testSineWaveLoudness() async throws {
     let state = try EBUR128State(channels: 1, sampleRate: 48000, mode: [.I])
 
     // Generate a 1 kHz sine wave at known level
@@ -52,10 +52,10 @@ final class EBUR128Tests: XCTestCase {
     for start in stride(from: 0, to: frames, by: chunkSize) {
       let end = min(start + chunkSize, frames)
       let chunk = Array(sineWave[start ..< end])
-      try state.addFrames([chunk])
+      try await state.addFrames([chunk])
     }
 
-    let loudness = state.loudnessGlobal()
+    let loudness = await state.loudnessGlobal()
 
     // For a 1 kHz sine wave at -20 dBFS, after BS.1770 filtering,
     // we expect approximately -23 LUFS (this is the reference point)
@@ -64,20 +64,20 @@ final class EBUR128Tests: XCTestCase {
     print("1 kHz sine wave loudness: \(loudness) LUFS")
   }
 
-  func testChannelWeighting() throws {
+  func testChannelWeighting() async throws {
     let state = try EBUR128State(channels: 5, sampleRate: 48000, mode: [.I])
 
     // Set up 5.1 channel mapping
-    try state.setChannel(0, value: .left)
-    try state.setChannel(1, value: .right)
-    try state.setChannel(2, value: .center)
-    try state.setChannel(3, value: .leftSurround)
-    try state.setChannel(4, value: .rightSurround)
+    try await state.setChannel(0, value: .left)
+    try await state.setChannel(1, value: .right)
+    try await state.setChannel(2, value: .center)
+    try await state.setChannel(3, value: .leftSurround)
+    try await state.setChannel(4, value: .rightSurround)
 
     // Test that surround channels get proper weighting
     // This is more of a structural test
-    XCTAssertNoThrow(try state.setChannel(3, value: .leftSurround))
-    XCTAssertNoThrow(try state.setChannel(4, value: .rightSurround))
+    try await state.setChannel(3, value: .leftSurround)
+    try await state.setChannel(4, value: .rightSurround)
   }
 
   func testPerformanceComparison() throws {
@@ -209,7 +209,7 @@ final class EBUR128Tests: XCTestCase {
     XCTAssertLessThan(loudness, -15.0)
   }
 
-  func testLoudnessRangeVariation() throws {
+  func testLoudnessRangeVariation() async throws {
     let state = try EBUR128State(channels: 1, sampleRate: 48000, mode: [.I, .LRA])
 
     // Generate a signal with varying loudness over time to produce non-zero LRA
@@ -244,19 +244,19 @@ final class EBUR128Tests: XCTestCase {
       for start in stride(from: 0, to: framesPerSegment, by: chunkSize) {
         let end = min(start + chunkSize, framesPerSegment)
         let chunk = Array(segmentData[start ..< end])
-        try state.addFrames([chunk])
+        try await state.addFrames([chunk])
       }
 
       // Check intermediate measurements
       if segment > 0, segment % 2 == 0 {
-        let currentLRA = state.loudnessRange()
-        let currentGlobal = state.loudnessGlobal()
+        let currentLRA = await state.loudnessRange()
+        let currentGlobal = await state.loudnessGlobal()
         print("After segment \(segment): Global = \(currentGlobal) LUFS, LRA = \(currentLRA) LU")
       }
     }
 
-    let finalLRA = state.loudnessRange()
-    let finalGlobal = state.loudnessGlobal()
+    let finalLRA = await state.loudnessRange()
+    let finalGlobal = await state.loudnessGlobal()
 
     print("Final results: Global = \(finalGlobal) LUFS, LRA = \(finalLRA) LU")
 
@@ -265,7 +265,7 @@ final class EBUR128Tests: XCTestCase {
     XCTAssertLessThan(finalLRA, 20.0, "LRA should be reasonable (< 20 LU)")
   }
 
-  func testSwiftRewriteCompleteness() throws {
+  func testSwiftRewriteCompleteness() async throws {
     // Test that demonstrates the complete Swift rewrite works end-to-end
     let state = try EBUR128State(channels: 2, sampleRate: 44100, mode: [.I, .LRA, .samplePeak, .truePeak])
 
@@ -280,8 +280,8 @@ final class EBUR128Tests: XCTestCase {
     XCTAssertTrue(state.mode.contains(.truePeak))
 
     // Test channel mapping
-    try state.setChannel(0, value: .left)
-    try state.setChannel(1, value: .right)
+    try await state.setChannel(0, value: .left)
+    try await state.setChannel(1, value: .right)
 
     // Test with a longer audio signal to allow LRA calculation
     let totalDuration = 10.0 // 10 seconds
@@ -305,14 +305,14 @@ final class EBUR128Tests: XCTestCase {
       let end = min(start + chunkSize, frames)
       let leftChunk = Array(leftChannel[start ..< end])
       let rightChunk = Array(rightChannel[start ..< end])
-      try state.addFrames([leftChunk, rightChunk])
+      try await state.addFrames([leftChunk, rightChunk])
     }
 
     // Test all measurement functions work
-    let momentary = state.loudnessMomentary()
-    let shortTerm = state.loudnessShortTerm()
-    let global = state.loudnessGlobal()
-    let lra = state.loudnessRange()
+    let momentary = await state.loudnessMomentary()
+    let shortTerm = await state.loudnessShortTerm()
+    let global = await state.loudnessGlobal()
+    let lra = await state.loudnessRange()
 
     // Should produce valid measurements (not infinite)
     XCTAssertTrue(momentary.isFinite || momentary == -Double.infinity)
@@ -320,16 +320,16 @@ final class EBUR128Tests: XCTestCase {
     XCTAssertTrue(global.isFinite || global == -Double.infinity)
     XCTAssertGreaterThanOrEqual(lra, 0.0)
 
-    // Test peak measurements
-    XCTAssertNoThrow(try state.samplePeak(channel: 0))
-    XCTAssertNoThrow(try state.samplePeak(channel: 1))
-    XCTAssertNoThrow(try state.truePeak(channel: 0))
-    XCTAssertNoThrow(try state.truePeak(channel: 1))
+    // Test peak measurements - just verify they don't throw
+    _ = try await state.samplePeak(channel: 0)
+    _ = try await state.samplePeak(channel: 1)
+    _ = try await state.truePeak(channel: 0)
+    _ = try await state.truePeak(channel: 1)
 
-    let leftSamplePeak = try state.samplePeak(channel: 0)
-    let rightSamplePeak = try state.samplePeak(channel: 1)
-    let leftTruePeak = try state.truePeak(channel: 0)
-    let rightTruePeak = try state.truePeak(channel: 1)
+    let leftSamplePeak = try await state.samplePeak(channel: 0)
+    let rightSamplePeak = try await state.samplePeak(channel: 1)
+    let leftTruePeak = try await state.truePeak(channel: 0)
+    let rightTruePeak = try await state.truePeak(channel: 1)
 
     // Peaks should be reasonable for our test signal
     XCTAssertGreaterThan(leftSamplePeak, 0.0)
@@ -344,5 +344,41 @@ final class EBUR128Tests: XCTestCase {
     print("LRA: \(lra) LU")
     print("L Sample Peak: \(leftSamplePeak), R Sample Peak: \(rightSamplePeak)")
     print("L True Peak: \(leftTruePeak), R True Peak: \(rightTruePeak)")
+  }
+
+  func testFilterCoefficientFix() async throws {
+    let state = try EBUR128State(channels: 1, sampleRate: 48000, mode: [.I])
+
+    // Debug: Check filter coefficients (nonisolated properties)
+    print("Filter coefficients A: \(state.filterCoefA)")
+    print("Filter coefficients B: \(state.filterCoefB)")
+
+    // Generate a 1 kHz sine wave like the working test
+    let sampleRate = 48000.0
+    let frequency = 1000.0
+    let frames = 48000 * 5 // 5 seconds
+    let amplitude = pow(10.0, -20.0 / 20.0) // -20 dBFS
+
+    var sineWave = [Double]()
+    for i in 0 ..< frames {
+      let t = Double(i) / sampleRate
+      sineWave.append(amplitude * sin(2.0 * Double.pi * frequency * t))
+    }
+
+    // Process in chunks like the working test
+    let chunkSize = 4800
+    for start in stride(from: 0, to: frames, by: chunkSize) {
+      let end = min(start + chunkSize, frames)
+      let chunk = Array(sineWave[start ..< end])
+      try await state.addFrames([chunk])
+    }
+
+    let loudness = await state.loudnessGlobal()
+
+    // If filter coefficients are correct, we should get a finite loudness value around -23 LUFS
+    XCTAssertTrue(loudness.isFinite, "Loudness should be finite, got: \(loudness)")
+    XCTAssertGreaterThan(loudness, -30.0, "Loudness should be reasonable, got: \(loudness)")
+    XCTAssertLessThan(loudness, -15.0, "Loudness should be reasonable, got: \(loudness)")
+    print("Filter coefficient test - Global loudness: \(loudness) LUFS")
   }
 }

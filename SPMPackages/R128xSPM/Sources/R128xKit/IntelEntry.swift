@@ -82,10 +82,11 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
     progressPercentage = 0.0
     estimatedTimeRemaining = nil
     do {
-      let (il, lra, max_tp) = try await ExtAudioProcessor.processAudioFile(at: fileName, fileId: id.uuidString) { _ in
-        // Could potentially update UI here with progress, but for now just process
-        // The notification system will handle UI updates
-      }
+      let (il, lra, max_tp) = try await ExtAudioProcessor()
+        .processAudioFile(at: fileNamePath, fileId: id.uuidString) { _ in
+          // Could potentially update UI here with progress, but for now just process
+          // The notification system will handle UI updates
+        }
       programLoudness = il
       loudnessRange = lra
       dBTP = Double(max_tp)

@@ -8,6 +8,19 @@ import Accelerate
 #endif
 import Foundation
 
+// MARK: - Array extension for concurrent processing
+
+extension Array {
+  func asyncMap<T>(_ transform: (Element) async throws -> T) async rethrows -> [T] {
+    var result: [T] = []
+    for element in self {
+      let transformed = try await transform(element)
+      result.append(transformed)
+    }
+    return result
+  }
+}
+
 // MARK: - Cross-platform vDSP fallbacks
 
 #if !canImport(Accelerate)
@@ -185,7 +198,7 @@ private class BlockQueue {
 
 // MARK: - EBUR128State
 
-public class EBUR128State {
+public actor EBUR128State {
   // MARK: Lifecycle
 
   public init(channels: Int, sampleRate: UInt, mode: EBUR128Mode) throws {
@@ -241,9 +254,12 @@ public class EBUR128State {
     self.truePeak = Array(repeating: 0.0, count: channels)
     self.prevTruePeak = Array(repeating: 0.0, count: channels)
 
+    // 初始化 BS.1770 濾波器係數
+    let filterCoefResults = Self.initFilter(sampleRate: self.sampleRate)
+    self.filterCoefA = filterCoefResults.filterCoefA
+    self.filterCoefB = filterCoefResults.filterCoefB
+
     // 初始化濾波器
-    self.filterCoefB = Array(repeating: 0.0, count: 5)
-    self.filterCoefA = Array(repeating: 0.0, count: 5)
     self.filterState = Array(repeating: Array(repeating: 0.0, count: 5), count: channels)
 
     // 初始化塊能量隊列
@@ -257,16 +273,13 @@ public class EBUR128State {
 
     // 設置初始所需幀數
     self.neededFrames = Int(samplesIn100ms) * 4
-
-    // 初始化濾波器
-    try initFilter()
   }
 
   // MARK: Public
 
-  public let mode: EBUR128Mode
-  public private(set) var channels: Int
-  public private(set) var sampleRate: UInt
+  nonisolated public let mode: EBUR128Mode
+  nonisolated public let channels: Int
+  nonisolated public let sampleRate: UInt
 
   // 釋放資源
   public func destroy() {
@@ -284,7 +297,7 @@ public class EBUR128State {
 
   // 添加音頻幀
   // 優化 addFrames 方法 - 進一步減少記憶體分配和提高效率
-  public func addFrames(_ src: [[Double]]) throws {
+  public func addFrames(_ src: [[Double]]) async throws {
     guard src.count == channels else { throw EBUR128Error.invalidChannelIndex }
     let frames = src[0].count
 
@@ -333,7 +346,7 @@ public class EBUR128State {
         }
 
         // 使用更高效的濾波器處理
-        filterSamplesOptimized(tempBufferArray, framesToProcess: framesToProcess)
+        await filterSamplesOptimized(tempBufferArray, framesToProcess: framesToProcess)
 
         srcIndex += framesToProcess
         framesLeft -= framesToProcess
@@ -344,7 +357,7 @@ public class EBUR128State {
         // 計算門限塊
         if mode.contains(.I), framesToProcess >= neededFrames {
           var output: Double?
-          _ = calcGatingBlock(framesPerBlock: Int(samplesIn100ms) * 4, optionalOutput: &output)
+          _ = await calcGatingBlock(framesPerBlock: Int(samplesIn100ms) * 4, optionalOutput: &output)
         }
 
         // 處理短期塊（LRA）
@@ -352,7 +365,7 @@ public class EBUR128State {
           shortTermFrameCounter += framesToProcess
           if shortTermFrameCounter >= Int(samplesIn100ms) * 30 {
             var stEnergy: Double?
-            if energyShortTerm(output: &stEnergy),
+            if await energyShortTerm(output: &stEnergy),
                stEnergy! >= EBUR128State.histogramEnergyBoundaries[0] {
               if useHistogram {
                 let index = EBUR128State.findHistogramIndex(stEnergy!)
@@ -396,7 +409,7 @@ public class EBUR128State {
   }
 
   // 添加一個高效方法，可以直接處理原始指標
-  public func addFramesPointers(_ src: [UnsafePointer<Double>], framesToProcess: Int) throws {
+  public func addFramesPointers(_ src: [UnsafePointer<Double>], framesToProcess: Int) async throws {
     guard src.count == channels else { throw EBUR128Error.invalidChannelIndex }
 
     // 優化 sample peak 計算
@@ -423,7 +436,7 @@ public class EBUR128State {
     }
 
     // 處理音頻幀 - 直接使用優化的 filterSamplesPointers 方法
-    filterSamplesPointersOptimized(src, framesToProcess: framesToProcess)
+    await filterSamplesPointersOptimized(src, framesToProcess: framesToProcess)
 
     // Prevent overflow in audioDataIndex calculation
     let audioDataIndexInt64 = Int64(audioDataIndex) + Int64(framesToProcess) * Int64(channels)
@@ -432,7 +445,7 @@ public class EBUR128State {
     // 門限計算
     if mode.contains(.I) {
       var output: Double?
-      _ = calcGatingBlock(framesPerBlock: Int(samplesIn100ms) * 4, optionalOutput: &output)
+      _ = await calcGatingBlock(framesPerBlock: Int(samplesIn100ms) * 4, optionalOutput: &output)
     }
 
     // 短期計算
@@ -440,7 +453,7 @@ public class EBUR128State {
       shortTermFrameCounter += framesToProcess
       if shortTermFrameCounter >= Int(samplesIn100ms) * 30 {
         var stEnergy: Double?
-        if energyShortTerm(output: &stEnergy),
+        if await energyShortTerm(output: &stEnergy),
            stEnergy! >= EBUR128State.histogramEnergyBoundaries[0] {
           if useHistogram {
             let index = EBUR128State.findHistogramIndex(stEnergy!)
@@ -501,28 +514,28 @@ public class EBUR128State {
 
   // 公開 API 方法
 
-  public func loudnessMomentary() -> Double {
+  public func loudnessMomentary() async -> Double {
     var energy: Double?
-    if energyInInterval(intervalFrames: Int(samplesIn100ms) * 4, output: &energy), energy! > 0.0 {
+    if await energyInInterval(intervalFrames: Int(samplesIn100ms) * 4, output: &energy), energy! > 0.0 {
       return EBUR128State.energyToLoudness(energy!)
     }
     return -Double.infinity
   }
 
-  public func loudnessShortTerm() -> Double {
+  public func loudnessShortTerm() async -> Double {
     var energy: Double?
-    if energyShortTerm(output: &energy), energy! > 0.0 {
+    if await energyShortTerm(output: &energy), energy! > 0.0 {
       return EBUR128State.energyToLoudness(energy!)
     }
     return -Double.infinity
   }
 
-  public func loudnessWindow(window: UInt) -> Double {
+  public func loudnessWindow(window: UInt) async -> Double {
     guard window <= self.window else { return -Double.infinity }
 
     let frames = Int(sampleRate) * Int(window) / 1000
     var energy: Double?
-    if energyInInterval(intervalFrames: frames, output: &energy), energy! > 0.0 {
+    if await energyInInterval(intervalFrames: frames, output: &energy), energy! > 0.0 {
       return EBUR128State.energyToLoudness(energy!)
     }
     return -Double.infinity
@@ -644,8 +657,8 @@ public class EBUR128State {
   // MARK: Internal
 
   // 濾波器相關 - make filter coefficients internal for testing
-  internal var filterCoefB: [Double]
-  internal var filterCoefA: [Double]
+  nonisolated internal let filterCoefB: [Double]
+  nonisolated internal let filterCoefA: [Double]
 
   // MARK: Private
 
@@ -721,6 +734,54 @@ public class EBUR128State {
     10.0 * log10(energy) - 0.691
   }
 
+  // 初始化 BS.1770 濾波器係數
+  private static func initFilter(sampleRate givenSampleRate: UInt) -> (filterCoefA: [Double], filterCoefB: [Double]) {
+    let f0 = 1681.974450955533
+    let G = 3.999843853973347
+    let Q = 0.7071752369554196
+
+    let K = tan(.pi * f0 / Double(givenSampleRate))
+    let Vh = pow(10.0, G / 20.0)
+    let Vb = pow(Vh, 0.4996667741545416)
+
+    var pb = [0.0, 0.0, 0.0]
+    var pa = [1.0, 0.0, 0.0]
+    let rb = [1.0, -2.0, 1.0]
+    var ra = [1.0, 0.0, 0.0]
+
+    let a0 = 1.0 + K / Q + K * K
+    pb[0] = (Vh + Vb * K / Q + K * K) / a0
+    pb[1] = 2.0 * (K * K - Vh) / a0
+    pb[2] = (Vh - Vb * K / Q + K * K) / a0
+    pa[1] = 2.0 * (K * K - 1.0) / a0
+    pa[2] = (1.0 - K / Q + K * K) / a0
+
+    // 第二個濾波器（低頻濾波器）
+    let f0b = 38.13547087602444
+    let Qb = 0.5003270373238773
+    let Kb = tan(.pi * f0b / Double(givenSampleRate))
+
+    ra[1] = 2.0 * (Kb * Kb - 1.0) / (1.0 + Kb / Qb + Kb * Kb)
+    ra[2] = (1.0 - Kb / Qb + Kb * Kb) / (1.0 + Kb / Qb + Kb * Kb)
+
+    var (filterCoefA, filterCoefB) = (Array(repeating: 0.0, count: 5), Array(repeating: 0.0, count: 5))
+
+    // 組合濾波器係數
+    filterCoefB[0] = pb[0] * rb[0]
+    filterCoefB[1] = pb[0] * rb[1] + pb[1] * rb[0]
+    filterCoefB[2] = pb[0] * rb[2] + pb[1] * rb[1] + pb[2] * rb[0]
+    filterCoefB[3] = pb[1] * rb[2] + pb[2] * rb[1]
+    filterCoefB[4] = pb[2] * rb[2]
+
+    filterCoefA[0] = pa[0] * ra[0]
+    filterCoefA[1] = pa[0] * ra[1] + pa[1] * ra[0]
+    filterCoefA[2] = pa[0] * ra[2] + pa[1] * ra[1] + pa[2] * ra[0]
+    filterCoefA[3] = pa[1] * ra[2] + pa[2] * ra[1]
+    filterCoefA[4] = pa[2] * ra[2]
+
+    return (filterCoefA, filterCoefB)
+  }
+
   // 優化的 True Peak 計算
   private func calculateTruePeakOptimized(_ src: [[Double]]) {
     for c in 0 ..< channels {
@@ -763,94 +824,114 @@ public class EBUR128State {
   }
 
   // 新增超高效濾波器處理方法
-  private func filterSamplesOptimized(_ src: [[Double]], framesToProcess: Int) {
-    for c in 0 ..< channels where channelMap[c] != .unused {
-      let channelData = src[c]
+  // 並行優化版本的濾波器 - 使用 TaskGroup 進行多通道並行處理
+  private func filterSamplesOptimized(_ src: [[Double]], framesToProcess: Int) async {
+    // 獲取活躍通道列表
+    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-      if framesToProcess <= 0 { continue }
+    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
+    if activeChannels.count <= 1 {
+      for c in activeChannels {
+        await processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
+      }
+      return
+    }
 
-      // 預計算濾波器係數，減少陣列查找
-      let a1 = filterCoefA[1]
-      let a2 = filterCoefA[2]
-      let a3 = filterCoefA[3]
-      let a4 = filterCoefA[4]
-
-      let b0 = filterCoefB[0]
-      let b1 = filterCoefB[1]
-      let b2 = filterCoefB[2]
-      let b3 = filterCoefB[3]
-      let b4 = filterCoefB[4]
-
-      // 使用局部變量減少記憶體訪問
-      var s1 = filterState[c][1]
-      var s2 = filterState[c][2]
-      var s3 = filterState[c][3]
-      var s4 = filterState[c][4]
-
-      // 向量化處理大塊數據
-      if framesToProcess >= 16 {
-        let batchSize = min(framesToProcess, 64)
-        var processedFrames = 0
-
-        while processedFrames < framesToProcess {
-          let remainingFrames = framesToProcess - processedFrames
-          let currentBatchSize = min(batchSize, remainingFrames)
-
-          for i in 0 ..< currentBatchSize {
-            // Prevent overflow in frame index calculation
-            let frameIndexInt64 = Int64(processedFrames) + Int64(i)
-            let frameIndex = Int(min(frameIndexInt64, Int64(Int.max)))
-
-            // IIR 濾波器計算
-            let v0 = channelData[frameIndex] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
-
-            // 計算輸出索引，優化模除運算 - prevent overflow
-            let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(frameIndex)
-            let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
-            let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
-
-            // 計算輸出
-            audioData[c][idx] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
-
-            // 更新狀態變量
-            s4 = s3
-            s3 = s2
-            s2 = s1
-            s1 = v0
-          }
-
-          processedFrames += currentBatchSize
+    // 使用 TaskGroup 並行處理多個通道
+    await withTaskGroup(of: Void.self) { group in
+      for c in activeChannels {
+        group.addTask { [weak self] in
+          await self?.processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
         }
-      } else {
-        // 小塊數據使用直接處理
-        for i in 0 ..< framesToProcess {
-          let v0 = channelData[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
+      }
+    }
+  }
 
-          // Prevent overflow in audio index calculation
-          let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
+  // 單通道優化處理，針對並行執行優化
+  private func processSingleChannelOptimized(channel c: Int, channelData: [Double], framesToProcess: Int) async {
+    if framesToProcess <= 0 { return }
+
+    // 預計算濾波器係數，減少陣列查找
+    let a1 = filterCoefA[1]
+    let a2 = filterCoefA[2]
+    let a3 = filterCoefA[3]
+    let a4 = filterCoefA[4]
+
+    let b0 = filterCoefB[0]
+    let b1 = filterCoefB[1]
+    let b2 = filterCoefB[2]
+    let b3 = filterCoefB[3]
+    let b4 = filterCoefB[4]
+
+    // 使用局部變量減少記憶體訪問
+    var s1 = filterState[c][1]
+    var s2 = filterState[c][2]
+    var s3 = filterState[c][3]
+    var s4 = filterState[c][4]
+
+    // 向量化處理大塊數據
+    if framesToProcess >= 16 {
+      let batchSize = min(framesToProcess, 64)
+      var processedFrames = 0
+
+      while processedFrames < framesToProcess {
+        let remainingFrames = framesToProcess - processedFrames
+        let currentBatchSize = min(batchSize, remainingFrames)
+
+        for i in 0 ..< currentBatchSize {
+          // Prevent overflow in frame index calculation
+          let frameIndexInt64 = Int64(processedFrames) + Int64(i)
+          let frameIndex = Int(min(frameIndexInt64, Int64(Int.max)))
+
+          // IIR 濾波器計算
+          let v0 = channelData[frameIndex] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
+
+          // 計算輸出索引，優化模除運算 - prevent overflow
+          let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(frameIndex)
           let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
           let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
+          // 計算輸出
           audioData[c][idx] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
 
+          // 更新狀態變量
           s4 = s3
           s3 = s2
           s2 = s1
           s1 = v0
         }
+
+        processedFrames += currentBatchSize
       }
+    } else {
+      // 小塊數據使用直接處理
+      for i in 0 ..< framesToProcess {
+        let v0 = channelData[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
 
-      // 寫回濾波器狀態
-      filterState[c][1] = s1
-      filterState[c][2] = s2
-      filterState[c][3] = s3
-      filterState[c][4] = s4
+        // Prevent overflow in audio index calculation
+        let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
+        let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
+        let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
-      // 處理非常小的值以避免浮點精度問題
-      for j in 1 ... 4 {
-        if abs(filterState[c][j]) < Double.leastNormalMagnitude {
-          filterState[c][j] = 0.0
-        }
+        audioData[c][idx] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
+
+        s4 = s3
+        s3 = s2
+        s2 = s1
+        s1 = v0
+      }
+    }
+
+    // 寫回濾波器狀態
+    filterState[c][1] = s1
+    filterState[c][2] = s2
+    filterState[c][3] = s3
+    filterState[c][4] = s4
+
+    // 處理非常小的值以避免浮點精度問題
+    for j in 1 ... 4 {
+      if abs(filterState[c][j]) < Double.leastNormalMagnitude {
+        filterState[c][j] = 0.0
       }
     }
   }
@@ -948,70 +1029,89 @@ public class EBUR128State {
     }
   }
 
-  // 優化指針版本的濾波器，減少記憶體分配和提高效率
-  private func filterSamplesPointersOptimized(_ src: [UnsafePointer<Double>], framesToProcess: Int) {
+  // 並行優化版本的濾波器 - 使用 TaskGroup 進行多通道並行處理
+  private func filterSamplesPointersOptimized(_ src: [UnsafePointer<Double>], framesToProcess: Int) async {
     // 確保臨時緩衝區足夠大
     if tempBuffer.count < framesToProcess {
       tempBuffer = Array(repeating: 0.0, count: max(framesToProcess, 8192))
     }
 
-    for c in 0 ..< channels where channelMap[c] != .unused {
-      let srcPtr = src[c]
+    // 獲取活躍通道列表
+    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-      // 預計算濾波器係數，減少陣列查找
-      let a1 = filterCoefA[1]
-      let a2 = filterCoefA[2]
-      let a3 = filterCoefA[3]
-      let a4 = filterCoefA[4]
+    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
+    if activeChannels.count <= 1 {
+      for c in activeChannels {
+        await processSingleChannelFilter(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
+      }
+      return
+    }
 
-      let b0 = filterCoefB[0]
-      let b1 = filterCoefB[1]
-      let b2 = filterCoefB[2]
-      let b3 = filterCoefB[3]
-      let b4 = filterCoefB[4]
-
-      // 批次處理，減少循環開銷
-      let batchSize = 64
-      for batchStart in stride(from: 0, to: framesToProcess, by: batchSize) {
-        let batchEnd = min(batchStart + batchSize, framesToProcess)
-
-        // 預取濾波器狀態以減少重複訪問
-        var s1 = filterState[c][1]
-        var s2 = filterState[c][2]
-        var s3 = filterState[c][3]
-        var s4 = filterState[c][4]
-
-        for i in batchStart ..< batchEnd {
-          // 計算濾波器輸入
-          let v0 = srcPtr[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
-
-          // 計算輸出索引，優化模除運算 - prevent overflow
-          let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
-          let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
-          let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
-
-          // 計算輸出樣本
-          audioData[c][idx] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
-
-          // 更新狀態變量
-          s4 = s3
-          s3 = s2
-          s2 = s1
-          s1 = v0
+    // 使用 TaskGroup 並行處理多個通道
+    await withTaskGroup(of: Void.self) { group in
+      for c in activeChannels {
+        group.addTask { [weak self] in
+          await self?.processSingleChannelFilter(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
         }
+      }
+    }
+  }
 
-        // 寫回濾波器狀態
-        filterState[c][1] = s1
-        filterState[c][2] = s2
-        filterState[c][3] = s3
-        filterState[c][4] = s4
+  // 單通道濾波處理，針對並行執行優化
+  private func processSingleChannelFilter(channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int) async {
+    // 預計算濾波器係數，減少陣列查找
+    let a1 = filterCoefA[1]
+    let a2 = filterCoefA[2]
+    let a3 = filterCoefA[3]
+    let a4 = filterCoefA[4]
+
+    let b0 = filterCoefB[0]
+    let b1 = filterCoefB[1]
+    let b2 = filterCoefB[2]
+    let b3 = filterCoefB[3]
+    let b4 = filterCoefB[4]
+
+    // 批次處理，減少循環開銷
+    let batchSize = 64
+    for batchStart in stride(from: 0, to: framesToProcess, by: batchSize) {
+      let batchEnd = min(batchStart + batchSize, framesToProcess)
+
+      // 預取濾波器狀態以減少重複訪問
+      var s1 = filterState[c][1]
+      var s2 = filterState[c][2]
+      var s3 = filterState[c][3]
+      var s4 = filterState[c][4]
+
+      for i in batchStart ..< batchEnd {
+        // 計算濾波器輸入
+        let v0 = srcPtr[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
+
+        // 計算輸出索引，優化模除運算 - prevent overflow
+        let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
+        let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
+        let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
+
+        // 計算輸出樣本
+        audioData[c][idx] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
+
+        // 更新狀態變量
+        s4 = s3
+        s3 = s2
+        s2 = s1
+        s1 = v0
       }
 
-      // 處理非常小的值以避免浮點精度問題
-      for j in 1 ... 4 {
-        if abs(filterState[c][j]) < Double.leastNormalMagnitude {
-          filterState[c][j] = 0.0
-        }
+      // 寫回濾波器狀態
+      filterState[c][1] = s1
+      filterState[c][2] = s2
+      filterState[c][3] = s3
+      filterState[c][4] = s4
+    }
+
+    // 處理非常小的值以避免浮點精度問題
+    for j in 1 ... 4 {
+      if abs(filterState[c][j]) < Double.leastNormalMagnitude {
+        filterState[c][j] = 0.0
       }
     }
   }
@@ -1074,125 +1174,44 @@ public class EBUR128State {
     }
   }
 
-  // 初始化 BS.1770 濾波器係數
-  private func initFilter() throws {
-    let f0 = 1681.974450955533
-    let G = 3.999843853973347
-    let Q = 0.7071752369554196
-
-    let K = tan(.pi * f0 / Double(sampleRate))
-    let Vh = pow(10.0, G / 20.0)
-    let Vb = pow(Vh, 0.4996667741545416)
-
-    var pb = [0.0, 0.0, 0.0]
-    var pa = [1.0, 0.0, 0.0]
-    let rb = [1.0, -2.0, 1.0]
-    var ra = [1.0, 0.0, 0.0]
-
-    let a0 = 1.0 + K / Q + K * K
-    pb[0] = (Vh + Vb * K / Q + K * K) / a0
-    pb[1] = 2.0 * (K * K - Vh) / a0
-    pb[2] = (Vh - Vb * K / Q + K * K) / a0
-    pa[1] = 2.0 * (K * K - 1.0) / a0
-    pa[2] = (1.0 - K / Q + K * K) / a0
-
-    // 第二個濾波器（低頻濾波器）
-    let f0b = 38.13547087602444
-    let Qb = 0.5003270373238773
-    let Kb = tan(.pi * f0b / Double(sampleRate))
-
-    ra[1] = 2.0 * (Kb * Kb - 1.0) / (1.0 + Kb / Qb + Kb * Kb)
-    ra[2] = (1.0 - Kb / Qb + Kb * Kb) / (1.0 + Kb / Qb + Kb * Kb)
-
-    // 組合濾波器係數
-    filterCoefB[0] = pb[0] * rb[0]
-    filterCoefB[1] = pb[0] * rb[1] + pb[1] * rb[0]
-    filterCoefB[2] = pb[0] * rb[2] + pb[1] * rb[1] + pb[2] * rb[0]
-    filterCoefB[3] = pb[1] * rb[2] + pb[2] * rb[1]
-    filterCoefB[4] = pb[2] * rb[2]
-
-    filterCoefA[0] = pa[0] * ra[0]
-    filterCoefA[1] = pa[0] * ra[1] + pa[1] * ra[0]
-    filterCoefA[2] = pa[0] * ra[2] + pa[1] * ra[1] + pa[2] * ra[0]
-    filterCoefA[3] = pa[1] * ra[2] + pa[2] * ra[1]
-    filterCoefA[4] = pa[2] * ra[2]
-  }
-
   // 計算門限塊能量 - 優化版本
-  private func calcGatingBlock(framesPerBlock: Int, optionalOutput: inout Double?) -> Bool {
-    var sum = 0.0
+  // 並行優化版本的門限塊計算
+  private func calcGatingBlock(framesPerBlock: Int, optionalOutput: inout Double?) async -> Bool {
     let currentFrameIndex = audioDataIndex / channels
 
-    for c in 0 ..< channels {
-      if channelMap[c] == .unused {
-        continue
+    // 獲取活躍通道列表
+    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
+
+    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
+    let channelSums: [Double]
+    if activeChannels.count <= 1 {
+      channelSums = await activeChannels.asyncMap { c in
+        await calculateChannelSum(channel: c, currentFrameIndex: currentFrameIndex, framesPerBlock: framesPerBlock)
       }
-
-      var channelSum = 0.0
-
-      // 優化：使用向量化操作計算平方和
-      if currentFrameIndex < framesPerBlock {
-        // 處理環形緩衝區邊界 - 分兩段處理
-        let firstPartFrames = currentFrameIndex
-        let secondPartStart = audioDataFrames - (framesPerBlock - currentFrameIndex)
-        let secondPartFrames = framesPerBlock - currentFrameIndex
-
-        // 第一段
-        if firstPartFrames > 0 {
-          #if canImport(Accelerate)
-          var firstSum = 0.0
-          vDSP_svesqD(audioData[c], 1, &firstSum, vDSP_Length(firstPartFrames))
-          channelSum += firstSum
-          #else
-          for i in 0 ..< firstPartFrames {
-            channelSum += audioData[c][i] * audioData[c][i]
+    } else {
+      // 使用 TaskGroup 並行計算每個通道的能量
+      channelSums = await withTaskGroup(of: (Int, Double).self, returning: [Double].self) { group in
+        for c in activeChannels {
+          group.addTask { [weak self] in
+            let sum = await self?.calculateChannelSum(
+              channel: c,
+              currentFrameIndex: currentFrameIndex,
+              framesPerBlock: framesPerBlock
+            ) ?? 0.0
+            return (c, sum)
           }
-          #endif
         }
 
-        // 第二段
-        if secondPartFrames > 0, secondPartStart < audioDataFrames {
-          #if canImport(Accelerate)
-          var secondSum = 0.0
-          let count = min(secondPartFrames, audioDataFrames - secondPartStart)
-          let secondPartData = Array(audioData[c][secondPartStart ..< (secondPartStart + count)])
-          vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(count))
-          channelSum += secondSum
-          #else
-          let endIndex = min(secondPartStart + secondPartFrames, audioDataFrames)
-          for i in secondPartStart ..< endIndex {
-            channelSum += audioData[c][i] * audioData[c][i]
-          }
-          #endif
+        var results = Array(repeating: 0.0, count: channels)
+        for await (channel, sum) in group {
+          results[channel] = sum
         }
-      } else {
-        // 正常情況 - 連續的數據塊
-        let startIndex = currentFrameIndex - framesPerBlock
-
-        // 添加邊界檢查以防止索引越界
-        guard startIndex >= 0, currentFrameIndex <= audioData[c].count else {
-          continue // 跳過無效的通道數據
-        }
-
-        #if canImport(Accelerate)
-        var blockSum = 0.0
-        let blockData = Array(audioData[c][startIndex ..< currentFrameIndex])
-        vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
-        channelSum = blockSum
-        #else
-        for i in startIndex ..< currentFrameIndex {
-          channelSum += audioData[c][i] * audioData[c][i]
-        }
-        #endif
+        return results
       }
-
-      // 應用通道權重 - 使用預計算的權重
-      let weight = getChannelWeight(channelMap[c])
-      channelSum *= weight
-      sum += channelSum
     }
 
-    sum /= Double(framesPerBlock)
+    // 計算總和
+    let sum = channelSums.reduce(0.0, +) / Double(framesPerBlock)
 
     // Set the output value
     optionalOutput = sum
@@ -1212,6 +1231,71 @@ public class EBUR128State {
     }
 
     return true
+  }
+
+  // 單通道能量計算，針對並行執行優化
+  private func calculateChannelSum(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int) async -> Double {
+    var channelSum = 0.0
+
+    // 優化：使用向量化操作計算平方和
+    if currentFrameIndex < framesPerBlock {
+      // 處理環形緩衝區邊界 - 分兩段處理
+      let firstPartFrames = currentFrameIndex
+      let secondPartStart = audioDataFrames - (framesPerBlock - currentFrameIndex)
+      let secondPartFrames = framesPerBlock - currentFrameIndex
+
+      // 第一段
+      if firstPartFrames > 0 {
+        #if canImport(Accelerate)
+        var firstSum = 0.0
+        vDSP_svesqD(audioData[c], 1, &firstSum, vDSP_Length(firstPartFrames))
+        channelSum += firstSum
+        #else
+        for i in 0 ..< firstPartFrames {
+          channelSum += audioData[c][i] * audioData[c][i]
+        }
+        #endif
+      }
+
+      // 第二段
+      if secondPartFrames > 0, secondPartStart < audioDataFrames {
+        #if canImport(Accelerate)
+        var secondSum = 0.0
+        let count = min(secondPartFrames, audioDataFrames - secondPartStart)
+        let secondPartData = Array(audioData[c][secondPartStart ..< (secondPartStart + count)])
+        vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(count))
+        channelSum += secondSum
+        #else
+        let endIndex = min(secondPartStart + secondPartFrames, audioDataFrames)
+        for i in secondPartStart ..< endIndex {
+          channelSum += audioData[c][i] * audioData[c][i]
+        }
+        #endif
+      }
+    } else {
+      // 正常情況 - 連續的數據塊
+      let startIndex = currentFrameIndex - framesPerBlock
+
+      // 添加邊界檢查以防止索引越界
+      guard startIndex >= 0, currentFrameIndex <= audioData[c].count else {
+        return 0.0 // 返回 0 為無效的通道數據
+      }
+
+      #if canImport(Accelerate)
+      var blockSum = 0.0
+      let blockData = Array(audioData[c][startIndex ..< currentFrameIndex])
+      vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
+      channelSum = blockSum
+      #else
+      for i in startIndex ..< currentFrameIndex {
+        channelSum += audioData[c][i] * audioData[c][i]
+      }
+      #endif
+    }
+
+    // 應用通道權重 - 使用預計算的權重
+    let weight = getChannelWeight(channelMap[c])
+    return channelSum * weight
   }
 
   // 獲取通道權重 - 預計算以避免重複判斷
@@ -1254,11 +1338,11 @@ public class EBUR128State {
   }
 
   // 計算區間能量
-  private func energyInInterval(intervalFrames: Int, output: inout Double?) -> Bool {
+  private func energyInInterval(intervalFrames: Int, output: inout Double?) async -> Bool {
     guard intervalFrames <= audioDataFrames else { return false }
 
     var energy: Double?
-    let result = calcGatingBlock(framesPerBlock: intervalFrames, optionalOutput: &energy)
+    let result = await calcGatingBlock(framesPerBlock: intervalFrames, optionalOutput: &energy)
     if result, energy != nil {
       output = energy
       return true
@@ -1267,8 +1351,8 @@ public class EBUR128State {
   }
 
   // 計算短期能量
-  private func energyShortTerm(output: inout Double?) -> Bool {
-    energyInInterval(intervalFrames: Int(samplesIn100ms) * 30, output: &output)
+  private func energyShortTerm(output: inout Double?) async -> Bool {
+    await energyInInterval(intervalFrames: Int(samplesIn100ms) * 30, output: &output)
   }
 }
 
