@@ -7,7 +7,7 @@ import Foundation
 
 // MARK: - StatusForProcessing
 
-public enum StatusForProcessing: String {
+public enum StatusForProcessing: String, Sendable {
   case processing = "…"
   case succeeded = "✔︎"
   case failed = "✖︎"
@@ -15,7 +15,7 @@ public enum StatusForProcessing: String {
 
 // MARK: - IntelEntry
 
-public struct IntelEntry: Identifiable, Equatable {
+public struct IntelEntry: Identifiable, Equatable, Sendable {
   // MARK: Lifecycle
 
   public init(fileName: String) {
