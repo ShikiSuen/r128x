@@ -5,6 +5,14 @@
 
 import Foundation
 
+extension TimeInterval {
+  func formatted() -> String {
+    let minutes = Int(self) / 60
+    let seconds = Int(self) % 60
+    return String(format: "%d:%02d", minutes, seconds)
+  }
+}
+
 // MARK: - StatusForProcessing
 
 public enum StatusForProcessing: String, Sendable {
@@ -33,6 +41,7 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
   public var status: StatusForProcessing = .processing
   public var progressPercentage: Double?
   public var estimatedTimeRemaining: TimeInterval?
+  public var currentLoudness: Double?
 
   public var fileNamePath: String { url.path }
 
@@ -60,6 +69,13 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
     guard let dBTP = dBTP else { return "N/A" }
     let format = "%.\(2)f"
     return String(format: format, dBTP)
+  }
+
+  public var guardedProgressValue: Double? {
+    guard status == .processing, let progressPercentage = progressPercentage else {
+      return status == .succeeded ? 1 : (status == .failed ? 0 : nil)
+    }
+    return Swift.max(0, Swift.min(1, progressPercentage / 100))
   }
 
   public var progressDisplayed: String {
@@ -92,6 +108,7 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
     status = .processing
     progressPercentage = 0.0
     estimatedTimeRemaining = nil
+    currentLoudness = nil
     do {
       let (il, lra, max_tp) = try await ExtAudioProcessor()
         .processAudioFile(at: fileNamePath, fileId: id.uuidString) { _ in
@@ -104,10 +121,12 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
       status = .succeeded
       progressPercentage = nil
       estimatedTimeRemaining = nil
+      currentLoudness = nil
     } catch {
       status = .failed
       progressPercentage = nil
       estimatedTimeRemaining = nil
+      currentLoudness = nil
       return
     }
   }
