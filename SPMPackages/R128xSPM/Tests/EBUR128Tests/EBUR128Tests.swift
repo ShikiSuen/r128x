@@ -80,7 +80,7 @@ final class EBUR128Tests: XCTestCase {
     try await state.setChannel(4, value: .rightSurround)
   }
 
-  func testPerformanceComparison() throws {
+  func testPerformanceComparison() async throws {
     // Test different processing strategies to identify performance bottlenecks
     let state = try EBUR128State(channels: 2, sampleRate: 48000, mode: [.I, .LRA, .truePeak])
 
@@ -110,14 +110,14 @@ final class EBUR128Tests: XCTestCase {
       let end = min(start + chunkSize1, totalFrames)
       let leftChunk = Array(testData[0][start ..< end])
       let rightChunk = Array(testData[1][start ..< end])
-      try state.addFrames([leftChunk, rightChunk])
+      try await state.addFrames([leftChunk, rightChunk])
     }
     let processingTime1 = Date().timeIntervalSince(startTime1)
     let realTimeRatio1 = totalDuration / processingTime1
 
     print("Method 1 (2048 frames): \(processingTime1)s, \(realTimeRatio1)x real-time")
-    print("Final loudness: \(state.loudnessGlobal()) LUFS")
-    print("Loudness range: \(state.loudnessRange()) LU")
+    print("Final loudness: \(await state.loudnessGlobal()) LUFS")
+    print("Loudness range: \(await state.loudnessRange()) LU")
 
     // Reset state for next test
     let state2 = try EBUR128State(channels: 2, sampleRate: 48000, mode: [.I, .LRA, .truePeak])
@@ -129,7 +129,7 @@ final class EBUR128Tests: XCTestCase {
       let end = min(start + chunkSize2, totalFrames)
       let leftChunk = Array(testData[0][start ..< end])
       let rightChunk = Array(testData[1][start ..< end])
-      try state2.addFrames([leftChunk, rightChunk])
+      try await state2.addFrames([leftChunk, rightChunk])
     }
     let processingTime2 = Date().timeIntervalSince(startTime2)
     let realTimeRatio2 = totalDuration / processingTime2
@@ -144,7 +144,7 @@ final class EBUR128Tests: XCTestCase {
       let end = min(start + chunkSize3, totalFrames)
       let leftChunk = Array(testData[0][start ..< end])
       let rightChunk = Array(testData[1][start ..< end])
-      try state3.addFrames([leftChunk, rightChunk])
+      try await state3.addFrames([leftChunk, rightChunk])
     }
     let processingTime3 = Date().timeIntervalSince(startTime3)
     let realTimeRatio3 = totalDuration / processingTime3
@@ -161,7 +161,7 @@ final class EBUR128Tests: XCTestCase {
     print("Best performance: \(bestRatio)x real-time")
   }
 
-  func testPerformanceOptimizations() throws {
+  func testPerformanceOptimizations() async throws {
     let state = try EBUR128State(channels: 2, sampleRate: 48000, mode: [.I, .LRA, .truePeak])
 
     // Generate test data: 10 seconds of stereo audio
@@ -188,7 +188,7 @@ final class EBUR128Tests: XCTestCase {
       let end = min(start + chunkSize, totalFrames)
       let leftChunk = Array(testData[0][start ..< end])
       let rightChunk = Array(testData[1][start ..< end])
-      try state.addFrames([leftChunk, rightChunk])
+      try await state.addFrames([leftChunk, rightChunk])
     }
 
     let processingTime = Date().timeIntervalSince(startTime)
@@ -197,14 +197,14 @@ final class EBUR128Tests: XCTestCase {
 
     print("Processing time: \(processingTime) seconds")
     print("Real-time ratio: \(realTimeRatio)x")
-    print("Final loudness: \(state.loudnessGlobal()) LUFS")
-    print("Loudness range: \(state.loudnessRange()) LU")
+    print("Final loudness: \(await state.loudnessGlobal()) LUFS")
+    print("Loudness range: \(await state.loudnessRange()) LU")
 
     // Performance assertion: should process faster than real-time on modern hardware
     XCTAssertGreaterThan(realTimeRatio, 3.0, "Should process at least 3x faster than real-time")
 
     // Accuracy assertions: results should still be correct
-    let loudness = state.loudnessGlobal()
+    let loudness = await state.loudnessGlobal()
     XCTAssertGreaterThan(loudness, -30.0)
     XCTAssertLessThan(loudness, -15.0)
   }
@@ -380,5 +380,107 @@ final class EBUR128Tests: XCTestCase {
     XCTAssertGreaterThan(loudness, -30.0, "Loudness should be reasonable, got: \(loudness)")
     XCTAssertLessThan(loudness, -15.0, "Loudness should be reasonable, got: \(loudness)")
     print("Filter coefficient test - Global loudness: \(loudness) LUFS")
+  }
+
+  func testDownsamplingOptimization() async throws {
+    print("=== Intelligent Decimation Optimization Test ===")
+
+    // Test with very high sample rate to trigger decimation
+    let highSampleRate: UInt = 192000
+    let state = try EBUR128State(channels: 2, sampleRate: highSampleRate, mode: [.I, .LRA, .truePeak])
+
+    // Generate test data: 10 seconds at 192kHz
+    let sampleRateDouble = Double(highSampleRate)
+    let totalDuration = 10.0
+    let totalFrames = Int(sampleRateDouble * totalDuration)
+    let frequency = 1000.0
+    let amplitude = pow(10.0, -20.0 / 20.0) // -20 dBFS
+
+    var testData = Array(repeating: Array(repeating: 0.0, count: totalFrames), count: 2)
+
+    print("Generating \(totalDuration)s of test data at \(highSampleRate)Hz...")
+
+    for i in 0 ..< totalFrames {
+      let t = Double(i) / sampleRateDouble
+      let sample = amplitude * sin(2.0 * Double.pi * frequency * t)
+      testData[0][i] = sample // Left channel
+      testData[1][i] = sample * 0.8 // Right channel
+    }
+
+    // Measure performance with decimation
+    let startTime = Date()
+
+    // Process in larger chunks for better efficiency with high sample rates
+    let chunkSize = 96000 // 500ms at 192kHz (larger chunks for better efficiency)
+    for start in stride(from: 0, to: totalFrames, by: chunkSize) {
+      let end = min(start + chunkSize, totalFrames)
+      let leftChunk = Array(testData[0][start ..< end])
+      let rightChunk = Array(testData[1][start ..< end])
+      try await state.addFrames([leftChunk, rightChunk])
+    }
+
+    let processingTime = Date().timeIntervalSince(startTime)
+    let realTimeRatio = totalDuration / processingTime
+
+    print("High sample rate processing (\(highSampleRate)Hz with decimation):")
+    print("Processing time: \(processingTime) seconds")
+    print("Real-time ratio: \(realTimeRatio)x")
+    print("Final loudness: \(await state.loudnessGlobal()) LUFS")
+    print("Loudness range: \(await state.loudnessRange()) LU")
+
+    // With decimation, high sample rate should process reasonably efficiently
+    XCTAssertGreaterThan(
+      realTimeRatio,
+      5.0,
+      "High sample rate should process at least 5x faster than real-time with decimation"
+    )
+
+    // Accuracy should be maintained
+    let loudness = await state.loudnessGlobal()
+    XCTAssertTrue(loudness.isFinite, "Loudness should be finite")
+    XCTAssertGreaterThan(loudness, -30.0, "Loudness should be reasonable")
+    XCTAssertLessThan(loudness, -15.0, "Loudness should be reasonable")
+
+    // Compare with standard 48kHz processing
+    print("\n--- Comparison with 48kHz processing ---")
+    let standardState = try EBUR128State(channels: 2, sampleRate: 48000, mode: [.I, .LRA, .truePeak])
+
+    // Generate equivalent 48kHz data
+    let standardFrames = Int(48000.0 * totalDuration)
+    var standardData = Array(repeating: Array(repeating: 0.0, count: standardFrames), count: 2)
+
+    for i in 0 ..< standardFrames {
+      let t = Double(i) / 48000.0
+      let sample = amplitude * sin(2.0 * Double.pi * frequency * t)
+      standardData[0][i] = sample
+      standardData[1][i] = sample * 0.8
+    }
+
+    let standardStartTime = Date()
+    let standardChunkSize = 24000 // 500ms at 48kHz
+    for start in stride(from: 0, to: standardFrames, by: standardChunkSize) {
+      let end = min(start + standardChunkSize, standardFrames)
+      let leftChunk = Array(standardData[0][start ..< end])
+      let rightChunk = Array(standardData[1][start ..< end])
+      try await standardState.addFrames([leftChunk, rightChunk])
+    }
+
+    let standardProcessingTime = Date().timeIntervalSince(standardStartTime)
+    let standardRealTimeRatio = totalDuration / standardProcessingTime
+
+    print("Standard 48kHz processing:")
+    print("Processing time: \(standardProcessingTime) seconds")
+    print("Real-time ratio: \(standardRealTimeRatio)x")
+    print("Final loudness: \(await standardState.loudnessGlobal()) LUFS")
+
+    let relativeBenefit = realTimeRatio / standardRealTimeRatio
+    print("\nDecimation relative performance: \(relativeBenefit)x")
+
+    // With larger chunks, decimation should provide some benefit for very high sample rates
+    if relativeBenefit > 0.8 {
+      print("✅ Decimation provides acceptable performance for high sample rates")
+    } else {
+      print("⚠️  Decimation overhead still significant, but acceptable for very high sample rates")
+    }
   }
 }
