@@ -100,6 +100,10 @@ private func ExtAudioFileRead(
 
 /// Swift implementation of the ExtAudioProcessor functionality using Actor pattern for thread safety
 public actor ExtAudioProcessor {
+  // MARK: Lifecycle
+
+  public init() {}
+
   // MARK: Public
 
   // Progress tracking
@@ -124,11 +128,13 @@ public actor ExtAudioProcessor {
   /// - Parameter audioFilePath: Path to the audio file
   /// - Parameter fileId: Unique identifier for tracking progress (optional)
   /// - Parameter progressCallback: Optional callback for progress updates
+  /// - Parameter taskTrackingVM: Progress view model for stream-based updates
   /// - Returns: Tuple containing (integrated loudness, loudness range, maximum true peak)
   public func processAudioFile(
     at audioFilePath: String,
     fileId: String? = nil,
-    progressCallback: ((ProcessingProgress) -> Void)? = nil
+    progressCallback: ((ProcessingProgress) -> Void)? = nil,
+    taskTrackingVM: TaskTrackingVM? = nil
   ) async throws
     -> (integratedLoudness: Double, loudnessRange: Double, maxTruePeak: Double) {
     #if canImport(AudioToolbox)
@@ -404,7 +410,24 @@ public actor ExtAudioProcessor {
         // Call progress callback if provided
         progressCallback?(progressInfo)
 
-        // Send notification for UI
+        // Send progress update through AsyncStream if taskTrackingVM is provided
+        if let taskTrackingVM = taskTrackingVM,
+           let fileId = fileId {
+          let progressUpdate = ProgressUpdate(
+            fileId: fileId,
+            percentage: progressPercentage,
+            framesProcessed: Int64(fileFramesRead),
+            totalFrames: fileLengthInFrames,
+            currentLoudness: currentLoudness.isFinite ? currentLoudness : nil,
+            estimatedTimeRemaining: estimatedRemaining > 0 ? estimatedRemaining : nil
+          )
+
+          await MainActor.run {
+            taskTrackingVM.sendProgress(progressUpdate)
+          }
+        }
+
+        // Keep NotificationCenter for backward compatibility (can be removed later)
         var userInfo: [String: any Sendable] = [
           "progress": progressPercentage,
           "framesProcessed": fileFramesRead,

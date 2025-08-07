@@ -41,6 +41,9 @@ struct MainView: View {
 
   public init() {
     Self.comdlg32.allowedContentTypes = Self.allowedUTTypes
+
+    // Start observing progress updates
+    self.progressObservationTask = taskTrackingVM.startObserving()
   }
 
   // MARK: Internal
@@ -88,142 +91,8 @@ struct MainView: View {
   }
 
   var body: some View {
-    VStack(spacing: 5) {
-      Table(entries, selection: $highlighted) {
-        TableColumn("🕰️") { entry in
-          Text(entry.timeRemainingDisplayed)
-            .font(.caption2)
-        }
-        .width(30)
-        .alignment(.numeric)
-        TableColumn("File Name".i18n) { entry in
-          HStack {
-            VStack(alignment: .leading) {
-              ProgressView(value: entry.guardedProgressValue) {
-                HStack {
-                  Text(entry.fileName)
-                    .fontWeight(.bold)
-                    .font(.caption)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                  if entry.status == .processing {
-                    Text("\(entry.progressDisplayed)")
-                      .font(.caption2)
-                      .fixedSize()
-                  }
-                }
-              }
-              .controlSize(.small)
-            }
-            .contentShape(.rect)
-            .help(entry.fileName)
-            .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
-            if entry.done {
-              VStack {
-                HStack {
-                  Text("Program Loudness".i18n)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                  Text(entry.programLoudnessDisplayed)
-                    .fontWeight(.bold)
-                    .fontWidth(.standard)
-                    .frame(width: 35, alignment: .trailing)
-                }
-                .font(.caption)
-                HStack {
-                  Text("Loudness Range".i18n)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                  Text(entry.loudnessRangeDisplayed)
-                    .fontWidth(.condensed)
-                    .frame(width: 35, alignment: .trailing)
-                }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-              }
-              .fixedSize()
-              .fontWidth(.compressed)
-            }
-          }
-        }
-        .width(400)
-        TableColumn("dBTP".i18n) { entry in
-          Text(entry.dBTPDisplayed)
-            .fontWeight(entry.dBTP == 0 ? .bold : .regular)
-        }
-        .width(45)
-        .alignment(.numeric)
-        TableColumn("Location".i18n) { entry in
-          Text(entry.folderPath)
-            .fontWidth(.condensed)
-            .help(entry.folderPath)
-        }
-      }.onChange(of: entries) {
-        batchProcess(forced: false)
-      }
-      .font(.system(.body).monospacedDigit())
-      .onDrop(of: [UTType.fileURL], isTargeted: $dragOver, perform: handleDrop)
-      HStack {
-        Button("Add Files".i18n) {
-          addFilesButtonDidPress()
-        }
-        Button("Clear Table".i18n) { entries.removeAll() }
-        Button("Reprocess All".i18n) { batchProcess(forced: true) }
-          .disabled(entries.isEmpty || entries.count(where: \.done) == 0)
-        ProgressView(value: progressValue) { Text(queueMessage).controlSize(.small) }
-        Spacer()
-      }.padding(.bottom, 10).padding([.horizontal], 10)
-    }.frame(minWidth: 1141, minHeight: 367, alignment: .center)
-      .onReceive(
-        NotificationCenter.default
-          .publisher(for: Notification.Name(ExtAudioProcessor.progressNotificationName))
-      ) { notification in
-        if let userInfo = notification.userInfo,
-           let fileId = userInfo["fileId"] as? String {
-          let percentage = userInfo["progress"] as? Double ?? 0.0
-          let currentLoudness = userInfo["currentLoudness"]
-          let estimatedTimeRemaining = userInfo["estimatedTimeRemaining"]
-
-          // Find the specific entry by fileId and update its progress
-          if let entryIndex = entries.firstIndex(where: { $0.id.uuidString == fileId }) {
-            entries[entryIndex].progressPercentage = percentage
-            entries[entryIndex].estimatedTimeRemaining = (estimatedTimeRemaining as? TimeInterval)
-            entries[entryIndex].currentLoudness = (currentLoudness as? Double)
-          }
-        }
-      }
-  }
-
-  func batchProcess(forced: Bool = false) {
-    // cancel the current task
-    currentTask?.cancel()
-
-    // when forced = true, we reset the processing state
-    if forced {
-      for i in 0 ..< entries.count {
-        entries[i].status = .processing
-      }
-    }
-
-    // create a work item that process concurrently
-    currentTask = DispatchWorkItem {
-      DispatchQueue.concurrentPerform(iterations: entries.count) { i in
-        // copy entry
-        var result = entries[i]
-
-        // Create task for async processing
-        Task {
-          await result.process(forced: forced)
-
-          writerQueue.async {
-            entries[i] = result
-          }
-        }
-      }
-    }
-
-    // debounce in 0.25 seconds
-    if let t = currentTask {
-      DispatchQueue.global().asyncAfter(deadline: .now() + 0.25, execute: t)
-    }
+    mainContent
+      .frame(minWidth: 800, minHeight: 367, alignment: .center)
   }
 
   // MARK: Private
@@ -262,7 +131,158 @@ struct MainView: View {
 
   @State private var currentTask: DispatchWorkItem?
 
+  // Progress monitoring with AsyncStream
+  @State private var taskTrackingVM = TaskTrackingVM.shared
+
+  private var progressObservationTask: Task<Void, Never>?
+
   private let writerQueue = DispatchQueue(label: "r128x.writer")
+
+  @ViewBuilder private var mainContent: some View {
+    VStack(spacing: 5) {
+      taskTableView()
+      bottomControlsView()
+    }
+  }
+
+  @ViewBuilder
+  private func bottomControlsView() -> some View {
+    HStack {
+      Button("Add Files".i18n) {
+        addFilesButtonDidPress()
+      }
+      Button("Clear Table".i18n) { entries.removeAll() }
+      Button("Reprocess All".i18n) { batchProcess(forced: true) }
+        .disabled(entries.isEmpty || entries.count(where: \.done) == 0)
+      ProgressView(value: progressValue) { Text(queueMessage).controlSize(.small) }
+      Spacer()
+    }.padding(.bottom, 10).padding([.horizontal], 10)
+  }
+
+  @ViewBuilder
+  private func taskTableView() -> some View {
+    Table(entries, selection: $highlighted) {
+      TableColumn("🕰️") { entry in
+        Text(entry.timeRemainingDisplayed)
+          .font(.caption2)
+      }
+      .width(30)
+      .alignment(.numeric)
+      TableColumn("File Name".i18n) { entry in
+        HStack {
+          VStack(alignment: .leading) {
+            ProgressView(value: entry.guardedProgressValue) {
+              HStack {
+                Text(entry.fileName)
+                  .fontWeight(.bold)
+                  .font(.caption)
+                  .lineLimit(1)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                if entry.status == .processing {
+                  Text("\(entry.progressDisplayed)")
+                    .font(.caption2)
+                    .fixedSize()
+                }
+              }
+            }
+            .controlSize(.small)
+          }
+          .contentShape(.rect)
+          .help(entry.fileName)
+          .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+          if entry.done {
+            VStack {
+              HStack {
+                Text("Program Loudness".i18n)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                Text(entry.programLoudnessDisplayed)
+                  .fontWeight(.bold)
+                  .fontWidth(.standard)
+                  .frame(width: 35, alignment: .trailing)
+              }
+              .font(.caption)
+              HStack {
+                Text("Loudness Range".i18n)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                Text(entry.loudnessRangeDisplayed)
+                  .fontWidth(.condensed)
+                  .frame(width: 35, alignment: .trailing)
+              }
+              .font(.caption2)
+              .foregroundStyle(.secondary)
+            }
+            .fixedSize()
+            .fontWidth(.compressed)
+          }
+        }
+      }
+      .width(400)
+      TableColumn("dBTP".i18n) { entry in
+        Text(entry.dBTPDisplayed)
+          .fontWeight(entry.dBTP == 0 ? .bold : .regular)
+      }
+      .width(45)
+      .alignment(.numeric)
+      TableColumn("Location".i18n) { entry in
+        Text(entry.folderPath)
+          .fontWidth(.condensed)
+          .help(entry.folderPath)
+      }
+    }
+    .font(.system(.body).monospacedDigit())
+    .onDrop(of: [UTType.fileURL], isTargeted: $dragOver, perform: handleDrop)
+    .onChange(of: entries) {
+      batchProcess(forced: false)
+    }
+    .onChange(of: taskTrackingVM.fileProgress) { _, newProgress in
+      // Update entries with progress from TaskTrackingVM
+      for (fileId, progressUpdate) in newProgress {
+        if let entryIndex = entries.firstIndex(where: { $0.id.uuidString == fileId }) {
+          entries[entryIndex].progressPercentage = progressUpdate.percentage
+          entries[entryIndex].estimatedTimeRemaining = progressUpdate.estimatedTimeRemaining
+          entries[entryIndex].currentLoudness = progressUpdate.currentLoudness
+        }
+      }
+    }
+    .onDisappear {
+      // Cancel progress observation when view disappears
+      progressObservationTask?.cancel()
+    }
+  }
+
+  private func batchProcess(forced: Bool = false) {
+    // cancel the current task
+    currentTask?.cancel()
+
+    // when forced = true, we reset the processing state
+    if forced {
+      for i in 0 ..< entries.count {
+        entries[i].status = .processing
+      }
+    }
+
+    // create a work item that process concurrently
+    currentTask = DispatchWorkItem {
+      DispatchQueue.concurrentPerform(iterations: entries.count) { i in
+        // copy entry
+        var result = entries[i]
+
+        // Create task for async processing
+        Task {
+          await result.process(forced: forced, taskTrackingVM: taskTrackingVM)
+
+          writerQueue.async {
+            entries[i] = result
+          }
+        }
+      }
+    }
+
+    // debounce in 0.25 seconds
+    if let t = currentTask {
+      DispatchQueue.global().asyncAfter(deadline: .now() + 0.25, execute: t)
+    }
+  }
 
   private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
     var counter = 0
@@ -296,12 +316,14 @@ struct MainView: View {
     let contents: [URL] = Self.comdlg32.urls.filter {
       !entriesAsPaths.contains($0.path)
     }
-    entries.append(contentsOf: contents.compactMap {
-      var isDirectory: ObjCBool = false
-      let exists = FileManager.default.fileExists(atPath: $0.path, isDirectory: &isDirectory)
-      guard exists, !isDirectory.boolValue else { return nil }
-      return .init(url: $0)
-    })
+    entries.append(
+      contentsOf: contents.compactMap {
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: $0.path, isDirectory: &isDirectory)
+        guard exists, !isDirectory.boolValue else { return nil }
+        return .init(url: $0)
+      }
+    )
   }
 }
 

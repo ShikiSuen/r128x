@@ -100,7 +100,8 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
     }
   }
 
-  public mutating func process(forced: Bool = false) async {
+  @MainActor
+  public mutating func process(forced: Bool = false, taskTrackingVM: TaskTrackingVM? = nil) async {
     if status == .succeeded, !forced {
       return
     }
@@ -111,10 +112,15 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
     currentLoudness = nil
     do {
       let (il, lra, max_tp) = try await ExtAudioProcessor()
-        .processAudioFile(at: fileNamePath, fileId: id.uuidString) { _ in
-          // Could potentially update UI here with progress, but for now just process
-          // The notification system will handle UI updates
-        }
+        .processAudioFile(
+          at: fileNamePath,
+          fileId: id.uuidString,
+          progressCallback: { _ in
+            // Could potentially update UI here with progress, but for now just process
+            // The AsyncStream system will handle UI updates
+          },
+          taskTrackingVM: taskTrackingVM ?? TaskTrackingVM.shared
+        )
       programLoudness = il
       loudnessRange = lra
       dBTP = Double(max_tp)
@@ -122,11 +128,17 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
       progressPercentage = nil
       estimatedTimeRemaining = nil
       currentLoudness = nil
+
+      // Complete progress tracking
+      taskTrackingVM?.completeProgress(for: id.uuidString)
     } catch {
       status = .failed
       progressPercentage = nil
       estimatedTimeRemaining = nil
       currentLoudness = nil
+
+      // Complete progress tracking even on failure
+      taskTrackingVM?.completeProgress(for: id.uuidString)
       return
     }
   }
