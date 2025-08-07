@@ -161,6 +161,7 @@ struct MainView: View {
     "m4a",
     "wav",
     "aif",
+    "ogg",
     "aiff",
     "caf",
     "alac",
