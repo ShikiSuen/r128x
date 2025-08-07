@@ -14,7 +14,7 @@
 // along with r128x.  If not, see <http://www.gnu.org/licenses/>.
 // copyright Manuel Naudin 2012-2013
 
-import R128xSharedBackend
+import cExtAudioProcessor
 
 // MARK: - CliController
 
