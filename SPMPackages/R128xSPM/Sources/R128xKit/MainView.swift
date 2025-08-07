@@ -60,14 +60,14 @@ struct MainView: View {
     // Show detailed progress if we have any processing files
     if filesPendingProcessing > 0 {
       let processingEntries = entries.filter { $0.status == .processing }
-      
+
       // Find the entry with the longest estimated time remaining
       let longestRemainingEntry = processingEntries.max { entry1, entry2 in
         let time1 = entry1.estimatedTimeRemaining ?? 0
         let time2 = entry2.estimatedTimeRemaining ?? 0
         return time1 < time2
       }
-      
+
       if let longestEntry = longestRemainingEntry,
          let estimatedTime = longestEntry.estimatedTimeRemaining {
         let remaining = estimatedTime.formatted()
