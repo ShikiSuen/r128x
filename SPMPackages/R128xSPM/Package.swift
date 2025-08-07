@@ -14,6 +14,10 @@ let package = Package(
       name: "R128xKit",
       targets: ["R128xKit"]
     ),
+    .executable(
+      name: "r128x-cli",
+      targets: ["r128x-cli"]
+    ),
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -28,6 +32,12 @@ let package = Package(
       ],
       resources: [
         .process("Resources"),
+      ]
+    ),
+    .executableTarget(
+      name: "r128x-cli",
+      dependencies: [
+        "R128xKit",
       ]
     ),
     .testTarget(

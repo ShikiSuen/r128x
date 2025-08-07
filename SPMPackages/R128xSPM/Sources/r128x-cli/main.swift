@@ -14,37 +14,30 @@
 // along with r128x.  If not, see <http://www.gnu.org/licenses/>.
 // copyright Manuel Naudin 2012-2013
 
-import cExtAudioProcessor
+import Foundation
+import R128xKit
 
 // MARK: - CliController
 
-@objcMembers
-public class CliController: NSObject {
+public class CliController {
   // MARK: Lifecycle
 
   public init(path thePath: String) {
-    self.filePath = NSString(string: thePath)
-    super.init()
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(progressUpdate(_:)),
-      name: .init("R128X_Progress"),
-      object: nil
-    )
+    self.filePath = thePath
   }
 
   // MARK: Public
 
-  public private(set) var filePath: NSString
+  public private(set) var filePath: String
   public private(set) var il: Double = .nan
   public private(set) var lra: Double = .nan
-  public private(set) var maxTP: Float32 = .nan
-  public private(set) var status: OSStatus = noErr
+  public private(set) var maxTP: Double = .nan
+  public private(set) var status: Int32 = 0
 
   public var result: String {
     var blocks: [String] = []
-    blocks.append(filePath.lastPathComponent)
-    if status == noErr {
+    blocks.append((filePath as NSString).lastPathComponent)
+    if status == 0 {
       blocks.append(String(format: "%.1f", arguments: [il]))
       blocks.append(String(format: "%.1f", arguments: [lra]))
       blocks.append(String(format: "%.1f", arguments: [maxTP]))
@@ -54,14 +47,26 @@ public class CliController: NSObject {
     return blocks.joined(separator: "\t")
   }
 
-  public func doMeasure() {
-    status = ExtAudioReader(filePath as CFString, &il, &lra, &maxTP)
-    if status != noErr { resetNumericValues() }
-  }
+  public func doMeasure() async {
+    do {
+      let processor = ExtAudioProcessor()
+      let (integratedLoudness, loudnessRange, maxTruePeak) = try await processor.processAudioFile(
+        at: filePath,
+        fileId: String?.none
+      ) { progress in
+        // Update progress for CLI
+        let value = Float(progress.percentage)
+        print(String(format: "%3d%% \n\033[F\033[J", Int(floor(value))))
+      }
 
-  public func progressUpdate(_ notification: NSNotification) {
-    let value = notification.object as? Float ?? 114_514.0
-    print(String(format: "%3d%% \n\033[F\033[J", Int(floor(value))))
+      il = integratedLoudness
+      lra = loudnessRange
+      maxTP = maxTruePeak
+      status = 0
+    } catch {
+      status = -1
+      resetNumericValues()
+    }
   }
 
   // MARK: Internal
@@ -85,10 +90,15 @@ let formatter = NumberFormatter()
 formatter.maximumFractionDigits = 2
 formatter.minimumFractionDigits = 0
 
-for currentArg in CommandLine.arguments.dropFirst(1) {
-  let controller = CliController(path: currentArg.description)
-  controller.doMeasure()
-  print(controller.result)
+// Process files sequentially (async)
+Task {
+  for currentArg in CommandLine.arguments.dropFirst(1) {
+    let controller = CliController(path: currentArg.description)
+    await controller.doMeasure()
+    print(controller.result)
+  }
+  exit(0)
 }
 
-exit(0)
+// Keep the process alive for async tasks
+RunLoop.main.run()
