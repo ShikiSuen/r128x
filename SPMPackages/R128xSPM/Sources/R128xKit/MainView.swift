@@ -1,21 +1,16 @@
-// This file is part of r128x.
-//
-// r128x is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// r128x is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with r128x.  If not, see <http://www.gnu.org/licenses/>.
-// copyright Manuel Naudin 2012-2013
+// (c) (C ver. only) 2012-2013 Manuel Naudin (AGPL v3.0 License or later).
+// (c) (this Swift implementation) 2024 and onwards Shiki Suen (AGPL v3.0 License or later).
+// ====================
+// This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
 
+#if canImport(SwiftUI)
 import SwiftUI
+#endif
+#if canImport(UniformTypeIdentifiers)
 import UniformTypeIdentifiers
+#endif
+
+#if canImport(SwiftUI)
 
 // MARK: - R128xScene
 
@@ -34,6 +29,25 @@ public struct R128xScene: Scene {
     }.commands {
       CommandGroup(replacing: CommandGroupPlacement.newItem) {}
     }
+  }
+}
+
+// MARK: - Current File Progress
+
+struct CurrentFileProgress {
+  let fileName: String
+  let percentage: Double
+  let framesProcessed: Int64
+  let totalFrames: Int64
+  let currentLoudness: Double?
+  let estimatedTimeRemaining: TimeInterval?
+}
+
+extension TimeInterval {
+  func formatted() -> String {
+    let minutes = Int(self) / 60
+    let seconds = Int(self) % 60
+    return String(format: "%d:%02d", minutes, seconds)
   }
 }
 
@@ -61,6 +75,16 @@ struct MainView: View {
     }
     let filesPendingProcessing: Int = entries.filter(\.done.negative).count
     let invalidResults: Int = entries.reduce(0) { $0 + ($1.status == .failed ? 1 : 0) }
+
+    // Show detailed progress if we have current processing info
+    if let currentProgress = currentFileProgress,
+       filesPendingProcessing > 0 {
+      let fileName = URL(fileURLWithPath: currentProgress.fileName).lastPathComponent
+      let percentage = Int(currentProgress.percentage)
+      let remaining = currentProgress.estimatedTimeRemaining?.formatted() ?? "unknown"
+      return String(format: "Processing %@ (%d%%, ~%@ remaining)...".i18n, fileName, percentage, remaining)
+    }
+
     guard filesPendingProcessing == 0 else {
       return String(format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing)
     }
@@ -78,6 +102,8 @@ struct MainView: View {
         TableColumn("Program Loudness".i18n, value: \.programLoudnessDisplayed).width(170)
         TableColumn("Loudness Range".i18n, value: \.loudnessRangeDisplayed).width(140)
         TableColumn("dBTP".i18n, value: \.dBTPDisplayed).width(50)
+        TableColumn("Progress".i18n, value: \.progressDisplayed).width(80)
+        TableColumn("Time Left".i18n, value: \.timeRemainingDisplayed).width(90)
       }.onChange(of: entries) { _ in
         batchProcess(forced: false)
       }
@@ -118,7 +144,40 @@ struct MainView: View {
         ProgressView(value: progressValue) { Text(queueMessage).controlSize(.small) }
         Spacer()
       }.padding(.bottom, 10).padding([.horizontal], 10)
-    }.frame(minWidth: 971, minHeight: 367, alignment: .center)
+    }.frame(minWidth: 1141, minHeight: 367, alignment: .center)
+      .onReceive(
+        NotificationCenter.default
+          .publisher(for: Notification.Name(ExtAudioProcessor.progressNotificationName))
+      ) { notification in
+        if let userInfo = notification.userInfo,
+           let fileId = userInfo["fileId"] as? String {
+          let percentage = userInfo["progress"] as? Double ?? 0.0
+          let framesProcessed = userInfo["framesProcessed"] as? UInt32 ?? 0
+          let totalFrames = userInfo["totalFrames"] as? Int64 ?? 1
+          let currentLoudness = userInfo["currentLoudness"]
+          let estimatedTimeRemaining = userInfo["estimatedTimeRemaining"]
+
+          // Find the specific entry by fileId and update its progress
+          if let entryIndex = entries.firstIndex(where: { $0.id.uuidString == fileId }) {
+            entries[entryIndex].progressPercentage = percentage
+            entries[entryIndex].estimatedTimeRemaining = (estimatedTimeRemaining as? TimeInterval)
+
+            // Keep the currentFileProgress for the status message
+            currentFileProgress = CurrentFileProgress(
+              fileName: entries[entryIndex].fileName,
+              percentage: percentage,
+              framesProcessed: Int64(framesProcessed),
+              totalFrames: totalFrames,
+              currentLoudness: (currentLoudness as? Double),
+              estimatedTimeRemaining: (estimatedTimeRemaining as? TimeInterval)
+            )
+          }
+        }
+      }
+      .onReceive(NotificationCenter.default.publisher(for: Notification.Name("FileProcessingCompleted"))) { _ in
+        // Clear current file progress when processing completes
+        currentFileProgress = nil
+      }
   }
 
   func batchProcess(forced: Bool = false) {
@@ -137,10 +196,14 @@ struct MainView: View {
       DispatchQueue.concurrentPerform(iterations: entries.count) { i in
         // copy entry
         var result = entries[i]
-        result.process(forced: forced)
 
-        writerQueue.async {
-          entries[i] = result
+        // Create task for async processing
+        Task {
+          await result.process(forced: forced)
+
+          writerQueue.async {
+            entries[i] = result
+          }
         }
       }
     }
@@ -184,6 +247,7 @@ struct MainView: View {
   @State private var dragOver = false
   @State private var highlighted: IntelEntry.ID?
   @State private var entries: [IntelEntry] = []
+  @State private var currentFileProgress: CurrentFileProgress?
 
   @State private var currentTask: DispatchWorkItem?
 
@@ -198,3 +262,5 @@ extension Bool {
   MainView()
     .environment(\.locale, .init(identifier: "en"))
 }
+
+#endif
