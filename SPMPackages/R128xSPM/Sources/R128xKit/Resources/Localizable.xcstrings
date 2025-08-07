@@ -204,6 +204,35 @@
         }
       }
     },
+    "Location" : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emplacement"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置"
+          }
+        }
+      }
+    },
     "Loudness Range" : {
       "extractionState" : "migrated",
       "localizations" : {
@@ -233,6 +262,7 @@
         }
       }
     },
+
     "Processing files in the queue: %d remaining." : {
       "extractionState" : "migrated",
       "localizations" : {
@@ -258,6 +288,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在測量檔案。還剩 %d 個檔案待測量。"
+          }
+        }
+      }
+    },
+    "Processing files in the queue: %d remaining (~%@ remaining)..." : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traitement des fichiers dans la file d'attente : %d restant (~%@ restant)..."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイル順番測量処理中。残り：%d 点（約 %@ 残り）..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在测量文件。还剩 %d 个文件待测量（约剩余 %@）..."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在測量檔案。還剩 %d 個檔案待測量（約剩餘 %@）..."
           }
         }
       }
@@ -320,118 +379,30 @@
         }
       }
     },
-    "Status" : {
-      "extractionState" : "migrated",
+    "Results" : {
       "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Statut"
+            "value" : "Résultats"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "状態"
+            "value" : "結果"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "状态"
+            "value" : "结果"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "狀態"
-          }
-        }
-      }
-    },
-    "Progress" : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Progrès"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "進行状況"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "进度"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "進度"
-          }
-        }
-      }
-    },
-    "Time Left" : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Temps Restant"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "残り時間"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剩余时间"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "剩餘時間"
-          }
-        }
-      }
-    },
-    "Processing %@ (%d%%, ~%@ remaining)..." : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traitement de %@ (%d%%, ~%@ restant)..."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ 測量中（%d%%、残り時間～%@）…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在测量 %@ (%d%%，约 %@ 剩余)..."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在測量 %@ (%d%%，約 %@ 剩餘)..."
+            "value" : "結果"
           }
         }
       }

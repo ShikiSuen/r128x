@@ -32,25 +32,6 @@ public struct R128xScene: Scene {
   }
 }
 
-// MARK: - Current File Progress
-
-struct CurrentFileProgress {
-  let fileName: String
-  let percentage: Double
-  let framesProcessed: Int64
-  let totalFrames: Int64
-  let currentLoudness: Double?
-  let estimatedTimeRemaining: TimeInterval?
-}
-
-extension TimeInterval {
-  func formatted() -> String {
-    let minutes = Int(self) / 60
-    let seconds = Int(self) % 60
-    return String(format: "%d:%02d", minutes, seconds)
-  }
-}
-
 // MARK: - MainView
 
 struct MainView: View {
@@ -76,18 +57,30 @@ struct MainView: View {
     let filesPendingProcessing: Int = entries.filter(\.done.negative).count
     let invalidResults: Int = entries.reduce(0) { $0 + ($1.status == .failed ? 1 : 0) }
 
-    // Show detailed progress if we have current processing info
-    if let currentProgress = currentFileProgress,
-       filesPendingProcessing > 0 {
-      let fileName = URL(fileURLWithPath: currentProgress.fileName).lastPathComponent
-      let percentage = Int(currentProgress.percentage)
-      let remaining = currentProgress.estimatedTimeRemaining?.formatted() ?? "unknown"
-      return String(format: "Processing %@ (%d%%, ~%@ remaining)...".i18n, fileName, percentage, remaining)
+    // Show detailed progress if we have any processing files
+    if filesPendingProcessing > 0 {
+      let processingEntries = entries.filter { $0.status == .processing }
+
+      // Find the entry with the longest estimated time remaining
+      let longestRemainingEntry = processingEntries.max { entry1, entry2 in
+        let time1 = entry1.estimatedTimeRemaining ?? 0
+        let time2 = entry2.estimatedTimeRemaining ?? 0
+        return time1 < time2
+      }
+
+      if let longestEntry = longestRemainingEntry,
+         let estimatedTime = longestEntry.estimatedTimeRemaining {
+        let remaining = estimatedTime.formatted()
+        return String(
+          format: "Processing files in the queue: %d remaining (~%@ remaining)...".i18n,
+          filesPendingProcessing,
+          remaining
+        )
+      } else {
+        return String(format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing)
+      }
     }
 
-    guard filesPendingProcessing == 0 else {
-      return String(format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing)
-    }
     guard invalidResults == 0 else {
       return String(format: "All files are processed, excepting %d failed files.".i18n, invalidResults)
     }
@@ -97,50 +90,84 @@ struct MainView: View {
   var body: some View {
     VStack(spacing: 5) {
       Table(entries, selection: $highlighted) {
-        TableColumn("Status".i18n, value: \.statusDisplayed).width(50)
-        TableColumn("File Name".i18n, value: \.fileName)
-        TableColumn("Program Loudness".i18n, value: \.programLoudnessDisplayed).width(170)
-        TableColumn("Loudness Range".i18n, value: \.loudnessRangeDisplayed).width(140)
-        TableColumn("dBTP".i18n, value: \.dBTPDisplayed).width(50)
-        TableColumn("Progress".i18n, value: \.progressDisplayed).width(80)
-        TableColumn("Time Left".i18n, value: \.timeRemainingDisplayed).width(90)
-      }.onChange(of: entries) { _ in
-        batchProcess(forced: false)
-      }
-      .font(.system(.body).monospacedDigit())
-      .onDrop(of: [UTType.fileURL], isTargeted: $dragOver) { providers -> Bool in
-        var counter = 0
-        defer {
-          if counter > 0 {
-            batchProcess(forced: false)
-          }
+        TableColumn("🕰️") { entry in
+          Text(entry.timeRemainingDisplayed)
+            .font(.caption2)
         }
-        for provider in providers {
-          _ = provider.loadObject(ofClass: URL.self) { url, _ in
-            guard let url else { return }
-            let path = url.path
-            guard !entries.map(\.fileName).contains(path) else { return }
-            entryInsertion: for fileExtension in Self.allowedSuffixes {
-              guard path.hasSuffix(".\(fileExtension)") else { continue }
-              counter += 1
-              entries.append(.init(fileName: path))
-              break entryInsertion
+        .width(30)
+        .alignment(.numeric)
+        TableColumn("File Name".i18n) { entry in
+          HStack {
+            VStack(alignment: .leading) {
+              ProgressView(value: entry.guardedProgressValue) {
+                HStack {
+                  Text(entry.fileName)
+                    .fontWeight(.bold)
+                    .font(.caption)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                  if entry.status == .processing {
+                    Text("\(entry.progressDisplayed)")
+                      .font(.caption2)
+                      .fixedSize()
+                  }
+                }
+              }
+              .controlSize(.small)
+            }
+            .contentShape(.rect)
+            .help(entry.fileName)
+            .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+            if entry.done {
+              VStack {
+                HStack {
+                  Text("Program Loudness".i18n)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                  Text(entry.programLoudnessDisplayed)
+                    .fontWeight(.bold)
+                    .fontWidth(.standard)
+                    .frame(width: 35, alignment: .trailing)
+                }
+                .font(.caption)
+                HStack {
+                  Text("Loudness Range".i18n)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                  Text(entry.loudnessRangeDisplayed)
+                    .fontWidth(.condensed)
+                    .frame(width: 35, alignment: .trailing)
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+              }
+              .fixedSize()
+              .fontWidth(.compressed)
             }
           }
         }
-        return true
+        .width(400)
+        TableColumn("dBTP".i18n) { entry in
+          Text(entry.dBTPDisplayed)
+            .fontWeight(entry.dBTP == 0 ? .bold : .regular)
+        }
+        .width(45)
+        .alignment(.numeric)
+        TableColumn("Location".i18n) { entry in
+          Text(entry.folderPath)
+            .fontWidth(.condensed)
+            .help(entry.folderPath)
+        }
+      }.onChange(of: entries) {
+        batchProcess(forced: false)
       }
+      .font(.system(.body).monospacedDigit())
+      .onDrop(of: [UTType.fileURL], isTargeted: $dragOver, perform: handleDrop)
       HStack {
         Button("Add Files".i18n) {
-          guard Self.comdlg32.runModal() == .OK else { return }
-          let entriesAsPaths: [String] = entries.map(\.fileName)
-          let contents: [URL] = Self.comdlg32.urls.filter {
-            !entriesAsPaths.contains($0.path)
-          }
-          entries.append(contentsOf: contents.map { .init(fileName: $0.path) })
+          addFilesButtonDidPress()
         }
         Button("Clear Table".i18n) { entries.removeAll() }
         Button("Reprocess All".i18n) { batchProcess(forced: true) }
+          .disabled(entries.isEmpty || entries.count(where: \.done) == 0)
         ProgressView(value: progressValue) { Text(queueMessage).controlSize(.small) }
         Spacer()
       }.padding(.bottom, 10).padding([.horizontal], 10)
@@ -152,8 +179,6 @@ struct MainView: View {
         if let userInfo = notification.userInfo,
            let fileId = userInfo["fileId"] as? String {
           let percentage = userInfo["progress"] as? Double ?? 0.0
-          let framesProcessed = userInfo["framesProcessed"] as? UInt32 ?? 0
-          let totalFrames = userInfo["totalFrames"] as? Int64 ?? 1
           let currentLoudness = userInfo["currentLoudness"]
           let estimatedTimeRemaining = userInfo["estimatedTimeRemaining"]
 
@@ -161,22 +186,9 @@ struct MainView: View {
           if let entryIndex = entries.firstIndex(where: { $0.id.uuidString == fileId }) {
             entries[entryIndex].progressPercentage = percentage
             entries[entryIndex].estimatedTimeRemaining = (estimatedTimeRemaining as? TimeInterval)
-
-            // Keep the currentFileProgress for the status message
-            currentFileProgress = CurrentFileProgress(
-              fileName: entries[entryIndex].fileName,
-              percentage: percentage,
-              framesProcessed: Int64(framesProcessed),
-              totalFrames: totalFrames,
-              currentLoudness: (currentLoudness as? Double),
-              estimatedTimeRemaining: (estimatedTimeRemaining as? TimeInterval)
-            )
+            entries[entryIndex].currentLoudness = (currentLoudness as? Double)
           }
         }
-      }
-      .onReceive(NotificationCenter.default.publisher(for: Notification.Name("FileProcessingCompleted"))) { _ in
-        // Clear current file progress when processing completes
-        currentFileProgress = nil
       }
   }
 
@@ -247,11 +259,50 @@ struct MainView: View {
   @State private var dragOver = false
   @State private var highlighted: IntelEntry.ID?
   @State private var entries: [IntelEntry] = []
-  @State private var currentFileProgress: CurrentFileProgress?
 
   @State private var currentTask: DispatchWorkItem?
 
   private let writerQueue = DispatchQueue(label: "r128x.writer")
+
+  private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+    var counter = 0
+    defer {
+      if counter > 0 {
+        batchProcess(forced: false)
+      }
+    }
+    for provider in providers {
+      _ = provider.loadObject(ofClass: URL.self) { url, _ in
+        guard let url else { return }
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+        guard exists, !isDirectory.boolValue else { return }
+        let path = url.path
+        guard !entries.map(\.fileNamePath).contains(path) else { return }
+        entryInsertion: for fileExtension in Self.allowedSuffixes {
+          guard path.hasSuffix(".\(fileExtension)") else { continue }
+          counter += 1
+          entries.append(.init(url: url))
+          break entryInsertion
+        }
+      }
+    }
+    return true
+  }
+
+  private func addFilesButtonDidPress() {
+    guard Self.comdlg32.runModal() == .OK else { return }
+    let entriesAsPaths: [String] = entries.map(\.fileNamePath)
+    let contents: [URL] = Self.comdlg32.urls.filter {
+      !entriesAsPaths.contains($0.path)
+    }
+    entries.append(contentsOf: contents.compactMap {
+      var isDirectory: ObjCBool = false
+      let exists = FileManager.default.fileExists(atPath: $0.path, isDirectory: &isDirectory)
+      guard exists, !isDirectory.boolValue else { return nil }
+      return .init(url: $0)
+    })
+  }
 }
 
 extension Bool {

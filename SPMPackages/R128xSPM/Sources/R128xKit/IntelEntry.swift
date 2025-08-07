@@ -5,9 +5,17 @@
 
 import Foundation
 
+extension TimeInterval {
+  func formatted() -> String {
+    let minutes = Int(self) / 60
+    let seconds = Int(self) % 60
+    return String(format: "%d:%02d", minutes, seconds)
+  }
+}
+
 // MARK: - StatusForProcessing
 
-public enum StatusForProcessing: String {
+public enum StatusForProcessing: String, Sendable {
   case processing = "…"
   case succeeded = "✔︎"
   case failed = "✖︎"
@@ -15,23 +23,35 @@ public enum StatusForProcessing: String {
 
 // MARK: - IntelEntry
 
-public struct IntelEntry: Identifiable, Equatable {
+public struct IntelEntry: Identifiable, Equatable, Sendable {
   // MARK: Lifecycle
 
-  public init(fileName: String) {
-    self.fileName = fileName
+  public init(url: URL) {
+    // 此处暂且默认传入的 URL 是文件 URL 而非资料夹 URL。
+    self.url = url
   }
 
   // MARK: Public
 
   public let id = UUID()
-  public let fileName: String
+  public let url: URL
   public var programLoudness: Double?
   public var loudnessRange: Double?
   public var dBTP: Double?
   public var status: StatusForProcessing = .processing
   public var progressPercentage: Double?
   public var estimatedTimeRemaining: TimeInterval?
+  public var currentLoudness: Double?
+
+  public var fileNamePath: String { url.path }
+
+  public var fileName: String {
+    url.lastPathComponent
+  }
+
+  public var folderPath: String {
+    url.deletingLastPathComponent().path
+  }
 
   public var done: Bool {
     status == .succeeded || status == .failed
@@ -51,6 +71,13 @@ public struct IntelEntry: Identifiable, Equatable {
     return String(format: format, dBTP)
   }
 
+  public var guardedProgressValue: Double? {
+    guard status == .processing, let progressPercentage = progressPercentage else {
+      return status == .succeeded ? 1 : (status == .failed ? 0 : nil)
+    }
+    return Swift.max(0, Swift.min(1, progressPercentage / 100))
+  }
+
   public var progressDisplayed: String {
     guard status == .processing, let progressPercentage = progressPercentage else {
       return status == .succeeded ? "100%" : (status == .failed ? "Failed" : "Pending")
@@ -60,7 +87,7 @@ public struct IntelEntry: Identifiable, Equatable {
 
   public var timeRemainingDisplayed: String {
     guard status == .processing, let estimatedTimeRemaining = estimatedTimeRemaining else {
-      return status == .succeeded ? "Done" : (status == .failed ? "Failed" : "Waiting")
+      return status == .succeeded ? "✅" : (status == .failed ? "❌" : "…")
     }
     if estimatedTimeRemaining < 1 {
       return "< 1s"
@@ -81,6 +108,7 @@ public struct IntelEntry: Identifiable, Equatable {
     status = .processing
     progressPercentage = 0.0
     estimatedTimeRemaining = nil
+    currentLoudness = nil
     do {
       let (il, lra, max_tp) = try await ExtAudioProcessor()
         .processAudioFile(at: fileNamePath, fileId: id.uuidString) { _ in
@@ -93,10 +121,12 @@ public struct IntelEntry: Identifiable, Equatable {
       status = .succeeded
       progressPercentage = nil
       estimatedTimeRemaining = nil
+      currentLoudness = nil
     } catch {
       status = .failed
       progressPercentage = nil
       estimatedTimeRemaining = nil
+      currentLoudness = nil
       return
     }
   }
