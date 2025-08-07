@@ -142,46 +142,11 @@ public actor ExtAudioProcessor {
 
     var audioFile: ExtAudioFileRef?
     var status = ExtAudioFileOpenURL(fileURL as CFURL, &audioFile)
-    
-    // Special handling for MOV files - CoreAudio may not recognize .mov extension properly
-    // even though MOV and MP4 use the same QuickTime container format
-    if status != noErr && audioFilePath.lowercased().hasSuffix(".mov") {
-      // Try creating a temporary URL with .mp4 extension to help CoreAudio recognize the format
-      let tempDir = NSTemporaryDirectory()
-      let tempFileName = "\(UUID().uuidString).mp4"
-      let tempPath = (tempDir as NSString).appendingPathComponent(tempFileName)
-      
-      do {
-        // Create a symbolic link with .mp4 extension pointing to the original MOV file
-        try FileManager.default.createSymbolicLink(atPath: tempPath, withDestinationPath: audioFilePath)
-        
-        // Try opening the file with the .mp4 extension
-        if let tempURL = URL(string: "file://\(tempPath)") {
-          status = ExtAudioFileOpenURL(tempURL as CFURL, &audioFile)
-          
-          // Clean up the temporary symbolic link regardless of success
-          defer {
-            try? FileManager.default.removeItem(atPath: tempPath)
-          }
-        }
-      } catch {
-        // If symlink creation fails, fall through to the original error
-      }
-    }
-    
     guard status == noErr, let audioFile = audioFile else {
-      let errorMessage = audioFilePath.lowercased().hasSuffix(".mov") 
-        ? "Failed to open MOV file. This may be due to an unsupported audio codec or corrupted file. Try converting to MP4 format."
-        : "Failed to open audio file"
-      
       throw NSError(
         domain: "ExtAudioProcessor",
         code: Int(status),
-        userInfo: [
-          NSLocalizedDescriptionKey: errorMessage,
-          "OSStatus": status,
-          "FilePath": audioFilePath
-        ]
+        userInfo: [NSLocalizedDescriptionKey: "Failed to open audio file"]
       )
     }
 
@@ -194,26 +159,11 @@ public actor ExtAudioProcessor {
     var propSize = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
     status = ExtAudioFileGetProperty(audioFile, kExtAudioFileProperty_FileDataFormat, &propSize, &inFileASBD)
     guard status == noErr else {
-      let errorMessage = "Failed to get file format. This may indicate an unsupported audio codec in the \(audioFilePath.lowercased().hasSuffix(".mov") ? "MOV" : "") file."
       throw NSError(
         domain: "ExtAudioProcessor",
         code: Int(status),
-        userInfo: [
-          NSLocalizedDescriptionKey: errorMessage,
-          "OSStatus": status,
-          "FilePath": audioFilePath,
-          "PropertyID": kExtAudioFileProperty_FileDataFormat
-        ]
+        userInfo: [NSLocalizedDescriptionKey: "Failed to get file format"]
       )
-    }
-
-    // Log file format information for debugging MOV issues
-    if audioFilePath.lowercased().hasSuffix(".mov") {
-      print("DEBUG: MOV file opened successfully")
-      print("  - Sample Rate: \(inFileASBD.mSampleRate)")
-      print("  - Channels: \(inFileASBD.mChannelsPerFrame)")
-      print("  - Format ID: 0x\(String(inFileASBD.mFormatID, radix: 16))")
-      print("  - Format Flags: 0x\(String(inFileASBD.mFormatFlags, radix: 16))")
     }
 
     // Setup client format (float)
@@ -230,19 +180,10 @@ public actor ExtAudioProcessor {
     propSize = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
     status = ExtAudioFileSetProperty(audioFile, kExtAudioFileProperty_ClientDataFormat, propSize, &clientASBD)
     guard status == noErr else {
-      let errorMessage = audioFilePath.lowercased().hasSuffix(".mov") 
-        ? "Failed to set client format for MOV file. The audio codec may not support the required PCM conversion."
-        : "Failed to set client format"
-        
       throw NSError(
         domain: "ExtAudioProcessor",
         code: Int(status),
-        userInfo: [
-          NSLocalizedDescriptionKey: errorMessage,
-          "OSStatus": status,
-          "FilePath": audioFilePath,
-          "PropertyID": kExtAudioFileProperty_ClientDataFormat
-        ]
+        userInfo: [NSLocalizedDescriptionKey: "Failed to set client format"]
       )
     }
 
@@ -260,6 +201,12 @@ public actor ExtAudioProcessor {
     let channels = Int(clientASBD.mChannelsPerFrame)
     let sampleRate = UInt(clientASBD.mSampleRate)
     let ebur128State = try EBUR128State(channels: channels, sampleRate: sampleRate, mode: [.I, .LRA, .truePeak])
+    
+    // Special handling for MOV files - set flag for debugging loudness range issues
+    let isMovFile = audioFilePath.lowercased().hasSuffix(".mov")
+    if isMovFile {
+      await ebur128State.setMovFileProcessing(true)
+    }
 
     // Get file length
     var fileLengthInFrames: Int64 = 0

@@ -299,6 +299,16 @@ public actor EBUR128State {
   nonisolated public let channels: Int
   nonisolated public let sampleRate: UInt
 
+  // MOV file processing flag for special handling
+  private var isMovFile: Bool = false
+  
+  public func setMovFileProcessing(_ enabled: Bool) {
+    isMovFile = enabled
+    if enabled {
+      print("DEBUG: MOV file loudness range processing mode enabled")
+    }
+  }
+
   // 設置通道類型
   public func setChannel(_ channelNumber: Int, value: EBUR128Channel) throws {
     guard channelNumber < channels else { throw EBUR128Error.invalidChannelIndex }
@@ -426,15 +436,42 @@ public actor EBUR128State {
       shortTermFrameCounter += framesToProcess
       if shortTermFrameCounter >= Int(samplesIn100ms) * 30 {
         var stEnergy: Double?
-        if await energyShortTerm(output: &stEnergy),
-           stEnergy! >= EBUR128State.histogramEnergyBoundaries[0] {
-          if useHistogram {
-            let index = EBUR128State.findHistogramIndex(stEnergy!)
-            shortTermBlockEnergyHistogram[index] += 1
+        
+        // Special handling for MOV files - add debugging and alternative calculation
+        if isMovFile {
+          print("DEBUG: MOV file LRA calculation - shortTermFrameCounter: \(shortTermFrameCounter), samples100ms: \(samplesIn100ms)")
+          
+          // Force recalculation of energy with bounds checking for MOV files
+          if await energyShortTermAlternative(output: &stEnergy), let energy = stEnergy {
+            print("DEBUG: MOV file short-term energy calculated: \(energy)")
+            if energy >= EBUR128State.histogramEnergyBoundaries[0] {
+              if useHistogram {
+                let index = EBUR128State.findHistogramIndex(energy)
+                shortTermBlockEnergyHistogram[index] += 1
+                print("DEBUG: MOV file added to histogram at index \(index)")
+              } else {
+                shortTermBlockList.add(energy)
+                print("DEBUG: MOV file added to block list")
+              }
+            } else {
+              print("DEBUG: MOV file energy \(energy) below threshold \(EBUR128State.histogramEnergyBoundaries[0])")
+            }
           } else {
-            shortTermBlockList.add(stEnergy!)
+            print("DEBUG: MOV file failed to calculate short-term energy")
+          }
+        } else {
+          // Standard processing for non-MOV files
+          if await energyShortTerm(output: &stEnergy),
+             stEnergy! >= EBUR128State.histogramEnergyBoundaries[0] {
+            if useHistogram {
+              let index = EBUR128State.findHistogramIndex(stEnergy!)
+              shortTermBlockEnergyHistogram[index] += 1
+            } else {
+              shortTermBlockList.add(stEnergy!)
+            }
           }
         }
+        
         shortTermFrameCounter -= Int(samplesIn100ms) * 10 // 滑動窗口：減去1秒，保持2秒重疊
       }
     }
@@ -516,6 +553,11 @@ public actor EBUR128State {
 
   public func loudnessRange() -> Double {
     guard mode.contains(.LRA) else { return 0.0 }
+    
+    // MOV file debugging
+    if isMovFile {
+      print("DEBUG: MOV loudnessRange calculation starting")
+    }
 
     // 計算短期塊能量統計
     var stlPower = 0.0
@@ -534,8 +576,32 @@ public actor EBUR128State {
         current = entry.next
       }
     }
+    
+    // MOV file debugging
+    if isMovFile {
+      print("DEBUG: MOV stlSize: \(stlSize), stlPower: \(stlPower), useHistogram: \(useHistogram)")
+      if useHistogram {
+        let nonZeroEntries = shortTermBlockEnergyHistogram.enumerated().filter { $0.element > 0 }
+        print("DEBUG: MOV histogram non-zero entries: \(nonZeroEntries.count)")
+        for (index, count) in nonZeroEntries.prefix(10) {
+          print("DEBUG: MOV histogram[\(index)] = \(count), energy = \(EBUR128State.histogramEnergies[index])")
+        }
+      } else {
+        var entryCount = 0
+        var current = shortTermBlockList.first
+        while let entry = current {
+          print("DEBUG: MOV block entry \(entryCount): \(entry.energy)")
+          current = entry.next
+          entryCount += 1
+          if entryCount >= 10 { break } // Limit debug output
+        }
+      }
+    }
 
     if stlSize == 0 {
+      if isMovFile {
+        print("DEBUG: MOV loudnessRange returning 0.0 - no short-term blocks processed")
+      }
       return 0.0
     }
 
@@ -1572,6 +1638,162 @@ public actor EBUR128State {
   // 計算短期能量
   private func energyShortTerm(output: inout Double?) async -> Bool {
     await energyInInterval(intervalFrames: Int(samplesIn100ms) * 30, output: &output)
+  }
+  
+  // Alternative short-term energy calculation for MOV files with enhanced debugging
+  private func energyShortTermAlternative(output: inout Double?) async -> Bool {
+    let intervalFrames = Int(samplesIn100ms) * 30
+    
+    print("DEBUG: MOV energyShortTermAlternative - intervalFrames: \(intervalFrames), audioDataFrames: \(audioDataFrames)")
+    print("DEBUG: MOV audioDataIndex: \(audioDataIndex), channels: \(channels)")
+    
+    // Enhanced bounds checking for MOV files
+    guard intervalFrames > 0 && intervalFrames <= audioDataFrames else {
+      print("DEBUG: MOV intervalFrames \(intervalFrames) invalid vs audioDataFrames \(audioDataFrames)")
+      output = nil
+      return false
+    }
+    
+    // Use alternative energy calculation with stricter bounds checking
+    var energy: Double?
+    let result = await calcGatingBlockWithBoundsCheck(framesPerBlock: intervalFrames, optionalOutput: &energy)
+    
+    if result, let calculatedEnergy = energy {
+      print("DEBUG: MOV alternative energy calculated: \(calculatedEnergy)")
+      output = calculatedEnergy
+      return true
+    } else {
+      print("DEBUG: MOV alternative energy calculation failed")
+      output = nil
+      return false
+    }
+  }
+  
+  // Enhanced gating block calculation with stricter bounds checking for MOV files
+  private func calcGatingBlockWithBoundsCheck(framesPerBlock: Int, optionalOutput: inout Double?) async -> Bool {
+    let currentFrameIndex = audioDataIndex / channels
+    
+    print("DEBUG: MOV calcGatingBlock - framesPerBlock: \(framesPerBlock), currentFrameIndex: \(currentFrameIndex)")
+    
+    // Enhanced bounds checking
+    guard currentFrameIndex >= 0 && currentFrameIndex < audioDataFrames else {
+      print("DEBUG: MOV currentFrameIndex \(currentFrameIndex) out of bounds [0, \(audioDataFrames))")
+      optionalOutput = nil
+      return false
+    }
+    
+    // 直接計算所有活躍通道的能量總和
+    var totalSum = 0.0
+    var activeChannelCount = 0
+    
+    for c in 0 ..< channels where channelMap[c] != .unused {
+      let channelSum = calculateChannelSumWithBoundsCheck(
+        channel: c,
+        currentFrameIndex: currentFrameIndex,
+        framesPerBlock: framesPerBlock
+      )
+      
+      print("DEBUG: MOV channel \(c) sum: \(channelSum)")
+      totalSum += channelSum
+      activeChannelCount += 1
+    }
+    
+    print("DEBUG: MOV total sum: \(totalSum), activeChannels: \(activeChannelCount)")
+    
+    guard activeChannelCount > 0 else {
+      print("DEBUG: MOV no active channels found")
+      optionalOutput = nil
+      return false
+    }
+    
+    let sum = totalSum / Double(framesPerBlock)
+    optionalOutput = sum
+    
+    print("DEBUG: MOV final energy: \(sum)")
+    return true
+  }
+  
+  // Enhanced channel sum calculation with bounds checking for MOV files
+  private func calculateChannelSumWithBoundsCheck(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int) -> Double {
+    var channelSum = 0.0
+    
+    // Enhanced bounds checking
+    guard c < audioData.count && !audioData[c].isEmpty else {
+      print("DEBUG: MOV channel \(c) data invalid")
+      return 0.0
+    }
+    
+    if currentFrameIndex < framesPerBlock {
+      // 環形緩衝區邊界處理 - with enhanced bounds checking
+      let firstPartFrames = currentFrameIndex
+      let secondPartFrames = framesPerBlock - currentFrameIndex
+      let secondPartStart = audioDataFrames - secondPartFrames
+      
+      print("DEBUG: MOV ring buffer - firstPartFrames: \(firstPartFrames), secondPartFrames: \(secondPartFrames), secondPartStart: \(secondPartStart)")
+      
+      // 第一段 - with bounds checking
+      if firstPartFrames > 0 && firstPartFrames <= audioData[c].count {
+        #if canImport(Accelerate)
+        var firstSum = 0.0
+        vDSP_svesqD(audioData[c], 1, &firstSum, vDSP_Length(firstPartFrames))
+        channelSum += firstSum
+        #else
+        for i in 0 ..< firstPartFrames {
+          if i < audioData[c].count {
+            channelSum += audioData[c][i] * audioData[c][i]
+          }
+        }
+        #endif
+      }
+      
+      // 第二段 - with enhanced bounds checking
+      if secondPartFrames > 0 && secondPartStart >= 0 && secondPartStart < audioDataFrames {
+        let endIndex = min(secondPartStart + secondPartFrames, audioData[c].count)
+        if endIndex > secondPartStart {
+          #if canImport(Accelerate)
+          var secondSum = 0.0
+          let count = endIndex - secondPartStart
+          if count > 0 {
+            let secondPartData = Array(audioData[c][secondPartStart ..< endIndex])
+            vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(count))
+            channelSum += secondSum
+          }
+          #else
+          for i in secondPartStart ..< endIndex {
+            channelSum += audioData[c][i] * audioData[c][i]
+          }
+          #endif
+        }
+      }
+    } else {
+      // 正常連續數據塊 - with enhanced bounds checking
+      let startIndex = currentFrameIndex - framesPerBlock
+      
+      guard startIndex >= 0 && currentFrameIndex <= audioData[c].count && startIndex < currentFrameIndex else {
+        print("DEBUG: MOV normal block bounds check failed - startIndex: \(startIndex), currentFrameIndex: \(currentFrameIndex), audioData[c].count: \(audioData[c].count)")
+        return 0.0
+      }
+      
+      #if canImport(Accelerate)
+      var blockSum = 0.0
+      let blockData = Array(audioData[c][startIndex ..< currentFrameIndex])
+      vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
+      channelSum = blockSum
+      #else
+      for i in startIndex ..< currentFrameIndex {
+        if i < audioData[c].count {
+          channelSum += audioData[c][i] * audioData[c][i]
+        }
+      }
+      #endif
+    }
+    
+    // 應用通道權重
+    let weight = getChannelWeight(channelMap[c])
+    let finalSum = channelSum * weight
+    
+    print("DEBUG: MOV channel \(c) final sum: \(finalSum) (weight: \(weight))")
+    return finalSum
   }
 }
 
