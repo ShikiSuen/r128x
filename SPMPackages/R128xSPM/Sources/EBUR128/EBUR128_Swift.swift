@@ -384,9 +384,8 @@ public actor EBUR128State {
 
         srcIndex += framesToProcess
         framesLeft -= framesToProcess
-        // Prevent overflow in audioDataIndex calculation
-        let audioDataIndexInt64 = Int64(audioDataIndex) + Int64(framesToProcess) * Int64(channels)
-        audioDataIndex = Int(min(audioDataIndexInt64, Int64(Int.max)))
+        // audioDataIndex should be frame-based since audioData is planar
+        audioDataIndex += framesToProcess
 
         // 計算門限塊
         if mode.contains(.I), framesToProcess >= neededFrames {
@@ -400,12 +399,12 @@ public actor EBUR128State {
           if shortTermFrameCounter >= Int(samplesIn100ms) * 30 {
             var stEnergy: Double?
             if await energyShortTerm(output: &stEnergy),
-               stEnergy! >= EBUR128State.histogramEnergyBoundaries[0] {
+               let energy = stEnergy, energy >= EBUR128State.histogramEnergyBoundaries[0] {
               if useHistogram {
-                let index = EBUR128State.findHistogramIndex(stEnergy!)
+                let index = EBUR128State.findHistogramIndex(energy)
                 shortTermBlockEnergyHistogram[index] += 1
               } else {
-                shortTermBlockList.add(stEnergy!)
+                shortTermBlockList.add(energy)
               }
             }
             shortTermFrameCounter -= Int(samplesIn100ms) * 10 // 滑動窗口：減去1秒，保持2秒重疊
@@ -420,8 +419,8 @@ public actor EBUR128State {
           break
         }
 
-        // 環形緩衝區處理
-        if audioDataIndex >= audioDataFrames * channels {
+        // 環形緩衝區處理 - frame-based wrapping
+        if audioDataIndex >= audioDataFrames {
           audioDataIndex = 0
         }
       } else {
@@ -490,9 +489,8 @@ public actor EBUR128State {
     await filterSamplesPointersOptimized(src, framesToProcess: framesToProcess)
     #endif
 
-    // Prevent overflow in audioDataIndex calculation
-    let audioDataIndexInt64 = Int64(audioDataIndex) + Int64(framesToProcess) * Int64(channels)
-    audioDataIndex = Int(min(audioDataIndexInt64, Int64(Int.max)))
+    // audioDataIndex should be frame-based since audioData is planar
+    audioDataIndex += framesToProcess
 
     // 門限計算
     if mode.contains(.I) {
@@ -518,8 +516,8 @@ public actor EBUR128State {
       }
     }
 
-    // 環形緩衝區處理
-    if audioDataIndex >= audioDataFrames * channels {
+    // 環形緩衝區處理 - frame-based wrapping
+    if audioDataIndex >= audioDataFrames {
       audioDataIndex = 0
     }
   }
@@ -1664,7 +1662,7 @@ public actor EBUR128State {
   // 計算門限塊能量 - 優化版本
   // 並行優化版本的門限塊計算
   private func calcGatingBlock(framesPerBlock: Int, optionalOutput: inout Double?) async -> Bool {
-    let currentFrameIndex = audioDataIndex / channels
+    let currentFrameIndex = audioDataIndex // Already frame-based now
 
     // 獲取活躍通道列表
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
@@ -1724,12 +1722,22 @@ public actor EBUR128State {
   private func calculateChannelSum(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int) async -> Double {
     var channelSum = 0.0
 
+    // 添加基本邊界檢查
+    guard c < channels, c >= 0, framesPerBlock > 0 else {
+      return 0.0
+    }
+
     // 優化：使用向量化操作計算平方和
     if currentFrameIndex < framesPerBlock {
       // 處理環形緩衝區邊界 - 分兩段處理
       let firstPartFrames = currentFrameIndex
       let secondPartStart = audioDataFrames - (framesPerBlock - currentFrameIndex)
       let secondPartFrames = framesPerBlock - currentFrameIndex
+
+      // Validate circular buffer calculations
+      guard secondPartStart >= 0, secondPartStart < audioDataFrames else {
+        return 0.0
+      }
 
       // 第一段
       if firstPartFrames > 0 {
@@ -1746,43 +1754,68 @@ public actor EBUR128State {
 
       // 第二段
       if secondPartFrames > 0, secondPartStart < audioDataFrames {
-        #if canImport(Accelerate)
-        var secondSum = 0.0
-        let count = min(secondPartFrames, audioDataFrames - secondPartStart)
-        let secondPartData = Array(audioData[c][secondPartStart ..< (secondPartStart + count)])
-        vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(count))
-        channelSum += secondSum
-        #else
-        let endIndex = min(secondPartStart + secondPartFrames, audioDataFrames)
-        for i in secondPartStart ..< endIndex {
-          channelSum += audioData[c][i] * audioData[c][i]
+        let actualSecondPartFrames = min(secondPartFrames, audioDataFrames - secondPartStart)
+        if actualSecondPartFrames > 0 {
+          #if canImport(Accelerate)
+          var secondSum = 0.0
+          let secondPartData = Array(audioData[c][secondPartStart ..< (secondPartStart + actualSecondPartFrames)])
+          vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(actualSecondPartFrames))
+          channelSum += secondSum
+          #else
+          let endIndex = secondPartStart + actualSecondPartFrames
+          for i in secondPartStart ..< endIndex {
+            channelSum += audioData[c][i] * audioData[c][i]
+          }
+          #endif
         }
-        #endif
       }
     } else {
       // 正常情況 - 連續的數據塊
       let startIndex = currentFrameIndex - framesPerBlock
 
-      // 添加邊界檢查以防止索引越界
-      guard startIndex >= 0, currentFrameIndex <= audioData[c].count else {
-        return 0.0 // 返回 0 為無效的通道數據
-      }
+      // 改進邊界檢查 - 確保我們有足夠的數據
+      if startIndex >= 0, currentFrameIndex <= audioData[c].count {
+        // Normal case - sufficient data available
+        #if canImport(Accelerate)
+        var blockSum = 0.0
+        let blockData = Array(audioData[c][startIndex ..< currentFrameIndex])
+        vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
+        channelSum = blockSum
+        #else
+        for i in startIndex ..< currentFrameIndex {
+          channelSum += audioData[c][i] * audioData[c][i]
+        }
+        #endif
+      } else {
+        // Boundary case - use available data with scaling
+        let availableStartIndex = max(0, startIndex)
+        let availableEndIndex = min(currentFrameIndex, audioData[c].count)
+        let availableFrames = availableEndIndex - availableStartIndex
 
-      #if canImport(Accelerate)
-      var blockSum = 0.0
-      let blockData = Array(audioData[c][startIndex ..< currentFrameIndex])
-      vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
-      channelSum = blockSum
-      #else
-      for i in startIndex ..< currentFrameIndex {
-        channelSum += audioData[c][i] * audioData[c][i]
+        if availableFrames <= 0 {
+          return 0.0
+        }
+
+        #if canImport(Accelerate)
+        var blockSum = 0.0
+        let blockData = Array(audioData[c][availableStartIndex ..< availableEndIndex])
+        vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(availableFrames))
+        channelSum = blockSum
+        #else
+        for i in availableStartIndex ..< availableEndIndex {
+          channelSum += audioData[c][i] * audioData[c][i]
+        }
+        #endif
+
+        // Scale by the expected frame count to maintain energy consistency
+        channelSum = channelSum * Double(framesPerBlock) / Double(availableFrames)
       }
-      #endif
     }
 
     // 應用通道權重 - 使用預計算的權重
     let weight = getChannelWeight(channelMap[c])
-    return channelSum * weight
+    let weightedSum = channelSum * weight
+    return weightedSum
   }
 
   // 獲取通道權重 - 預計算以避免重複判斷

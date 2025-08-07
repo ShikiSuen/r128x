@@ -3,6 +3,8 @@ import Foundation
 @testable import R128xKit
 import Testing
 
+// MARK: - EBUR128Tests
+
 struct EBUR128Tests {
   @Test
   func testBasicInitialization() async throws {
