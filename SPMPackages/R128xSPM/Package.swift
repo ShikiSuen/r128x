@@ -32,7 +32,7 @@ let package = Package(
     ),
     .testTarget(
       name: "EBUR128Tests",
-      dependencies: ["EBUR128"]
+      dependencies: ["EBUR128", "R128xKit"]
     ),
   ]
 )
