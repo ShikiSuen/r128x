@@ -34,5 +34,9 @@ let package = Package(
       name: "EBUR128Tests",
       dependencies: ["EBUR128", "R128xKit"]
     ),
+    .testTarget(
+      name: "R128xKitTests",
+      dependencies: ["R128xKit"]
+    ),
   ]
 )
