@@ -9,6 +9,10 @@ import Foundation
 import SwiftUI
 #endif
 
+#if canImport(Observation)
+import Observation
+#endif
+
 // MARK: - ProgressUpdate
 
 /// Progress update structure for AsyncStream
@@ -44,7 +48,14 @@ public struct ProgressUpdate: Sendable, Equatable {
 // MARK: - TaskTrackingVM
 
 /// Observable progress view model using AsyncStream
+#if canImport(Observation) && !os(Linux)
 @Observable @MainActor
+#else
+@MainActor
+#endif
+
+// MARK: - TaskTrackingVM
+
 public final class TaskTrackingVM: Sendable {
   // MARK: Lifecycle
 

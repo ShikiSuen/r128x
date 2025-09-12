@@ -215,7 +215,7 @@ public struct DownsamplingStrategy: Sendable {
 
 // MARK: - EBUR128State
 
-public actor EBUR128State: Sendable {
+public actor EBUR128State {
   // MARK: Lifecycle
 
   public init(channels: Int, sampleRate: UInt, mode: EBUR128Mode) throws {
@@ -309,25 +309,23 @@ public actor EBUR128State: Sendable {
   }
 
   // 添加音頻幀
-  // 優化 addFrames 方法 - 移除 async/await 開銷，使用同步處理
+  // 優化 addFrames 方法 - 移除 async/await 開銷，使用同步處理，採用樣本位置優先處理
   public func addFrames(_ src: [[Double]]) throws {
     guard src.count == channels else { throw EBUR128Error.invalidChannelIndex }
 
     let frames = src[0].count
     guard frames > 0 else { return }
 
-    // Direct sample peak calculation - no complex vectorization overhead
-    for c in 0 ..< channels {
-      var peak = 0.0
-      for sample in src[c] {
-        let absValue = abs(sample)
-        if absValue > peak { peak = absValue }
+    // Sample-position-first peak calculation for better cache locality
+    for i in 0 ..< frames {
+      for c in 0 ..< channels {
+        let absValue = abs(src[c][i])
+        if absValue > prevSamplePeak[c] { prevSamplePeak[c] = absValue }
+        if absValue > samplePeak[c] { samplePeak[c] = absValue }
       }
-      prevSamplePeak[c] = peak
-      if peak > samplePeak[c] { samplePeak[c] = peak }
     }
 
-    // Direct filter processing - always use the simplest, fastest path
+    // Direct filter processing with sample-position-first approach
     filterSamplesDirect(src, framesToProcess: frames)
 
     // Simple index update
@@ -364,7 +362,7 @@ public actor EBUR128State: Sendable {
     // Simple needed frames update
     neededFrames = frames >= neededFrames ? Int(samplesIn100ms) : neededFrames - frames
 
-    // True peak - direct calculation
+    // True peak - direct calculation with sample-position-first approach
     if mode.contains(.truePeak) {
       calculateTruePeakDirect(src)
     }
@@ -378,8 +376,9 @@ public actor EBUR128State: Sendable {
   }
 
   // 添加一個高效方法，可以直接處理原始指標
-  public func addFramesPointers(_ src: [UnsafePointer<Double>], framesToProcess: Int) async throws {
-    guard src.count == channels else { throw EBUR128Error.invalidChannelIndex }
+  public func addFramesPointers(_ srcWrapped: [UniquePointer<Double>], framesToProcess: Int) async throws {
+    guard srcWrapped.count == channels else { throw EBUR128Error.invalidChannelIndex }
+    let src = srcWrapped.map(\.pointer)
 
     // 優化 sample peak 計算
     for c in 0 ..< channels {
@@ -757,49 +756,56 @@ public actor EBUR128State: Sendable {
 
   // MARK: - 同步化濾波器處理方法 (高效能版本)
 
-  // Direct filter processing - simplified to match C implementation performance
+  // Direct filter processing - optimized for sample-position-first processing
   private func filterSamplesDirect(_ src: [[Double]], framesToProcess: Int) {
     guard framesToProcess > 0 else { return }
 
-    // Process all channels directly - no complex optimization overhead
-    for c in 0 ..< channels where channelMap[c] != .unused {
-      processSingleChannelDirect(channel: c, channelData: src[c], framesToProcess: framesToProcess)
-    }
-  }
+    // Identify active channels upfront
+    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
+    guard !activeChannels.isEmpty else { return }
 
-  // Single channel direct processing - match C implementation simplicity
-  private func processSingleChannelDirect(channel c: Int, channelData: [Double], framesToProcess: Int) {
-    // Precompute filter coefficients - store locally for speed
+    // Precompute filter coefficients once
     let a1 = filterCoefA[1], a2 = filterCoefA[2], a3 = filterCoefA[3], a4 = filterCoefA[4]
     let b0 = filterCoefB[0], b1 = filterCoefB[1], b2 = filterCoefB[2], b3 = filterCoefB[3], b4 = filterCoefB[4]
 
-    // Load filter state locally
-    var s1 = filterState[c][1], s2 = filterState[c][2], s3 = filterState[c][3], s4 = filterState[c][4]
-
-    // Direct processing loop - matches C implementation efficiency
-    let baseAudioIndex = audioDataIndex / channels
-    for i in 0 ..< framesToProcess {
-      // IIR filter calculation
-      let v0 = channelData[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
-
-      // Output index - simple modulo for ring buffer
-      let audioIndex = (baseAudioIndex + i) % audioDataFrames
-
-      // Calculate output
-      audioData[c][audioIndex] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
-
-      // Update filter state
-      s4 = s3
-      s3 = s2
-      s2 = s1
-      s1 = v0
+    // Load filter states for active channels
+    var filterStates = activeChannels.map { c in
+      (s1: filterState[c][1], s2: filterState[c][2], s3: filterState[c][3], s4: filterState[c][4])
     }
 
-    // Store filter state back
-    filterState[c][1] = s1
-    filterState[c][2] = s2
-    filterState[c][3] = s3
-    filterState[c][4] = s4
+    let baseAudioIndex = audioDataIndex / channels
+
+    // Process sample-by-sample across all active channels
+    for i in 0 ..< framesToProcess {
+      let audioIndex = (baseAudioIndex + i) % audioDataFrames
+
+      // Process all active channels at this sample position
+      for (activeIdx, c) in activeChannels.enumerated() {
+        // IIR filter calculation
+        let v0 = src[c][i] - a1 * filterStates[activeIdx].s1 - a2 * filterStates[activeIdx].s2
+          - a3 * filterStates[activeIdx].s3 - a4 * filterStates[activeIdx].s4
+
+        // Calculate output
+        audioData[c][audioIndex] = b0 * v0 + b1 * filterStates[activeIdx].s1 + b2 * filterStates[activeIdx].s2
+          + b3 * filterStates[activeIdx].s3 + b4 * filterStates[activeIdx].s4
+
+        // Update filter state
+        filterStates[activeIdx] = (
+          s1: v0,
+          s2: filterStates[activeIdx].s1,
+          s3: filterStates[activeIdx].s2,
+          s4: filterStates[activeIdx].s3
+        )
+      }
+    }
+
+    // Store filter states back
+    for (activeIdx, c) in activeChannels.enumerated() {
+      filterState[c][1] = filterStates[activeIdx].s1
+      filterState[c][2] = filterStates[activeIdx].s2
+      filterState[c][3] = filterStates[activeIdx].s3
+      filterState[c][4] = filterStates[activeIdx].s4
+    }
   }
 
   // 簡化的門限塊計算 - 直接處理
@@ -952,26 +958,14 @@ public actor EBUR128State: Sendable {
   }
 
   // 新增超高效濾波器處理方法
-  // 並行優化版本的濾波器 - 使用 TaskGroup 進行多通道並行處理
+  // 並行優化版本的濾波器 - 使用順序處理以避免 Swift 6.1 並發問題
   private func filterSamplesOptimized(_ src: [[Double]], framesToProcess: Int) async {
     // 獲取活躍通道列表
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
-    if activeChannels.count <= 1 {
-      for c in activeChannels {
-        await processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
-      }
-      return
-    }
-
-    // 使用 TaskGroup 並行處理多個通道
-    await withTaskGroup(of: Void.self) { group in
-      for c in activeChannels {
-        group.addTask { [weak self] in
-          await self?.processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
-        }
-      }
+    // 順序處理所有通道
+    for c in activeChannels {
+      await processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
     }
   }
 
@@ -1157,7 +1151,7 @@ public actor EBUR128State: Sendable {
     }
   }
 
-  // 並行優化版本的濾波器 - 使用 TaskGroup 進行多通道並行處理
+  // 優化版本的濾波器 - 移除並行處理以避免 Swift 6.1 的 UnsafePointer 並發問題
   private func filterSamplesPointersOptimized(_ src: [UnsafePointer<Double>], framesToProcess: Int) async {
     // 確保臨時緩衝區足夠大
     if tempBuffer.count < framesToProcess {
@@ -1167,21 +1161,9 @@ public actor EBUR128State: Sendable {
     // 獲取活躍通道列表
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
-    if activeChannels.count <= 1 {
-      for c in activeChannels {
-        await processSingleChannelFilter(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
-      }
-      return
-    }
-
-    // 使用 TaskGroup 並行處理多個通道
-    await withTaskGroup(of: Void.self) { group in
-      for c in activeChannels {
-        group.addTask { [weak self] in
-          await self?.processSingleChannelFilter(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
-        }
-      }
+    // 順序處理所有通道以避免 UnsafePointer 的並發問題
+    for c in activeChannels {
+      await processSingleChannelFilter(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
     }
   }
 
@@ -1305,28 +1287,15 @@ public actor EBUR128State: Sendable {
     }
   }
 
-  // Revolutionary ultra-high performance pointer-based filter with full vectorization
   #if canImport(Accelerate)
   private func filterSamplesPointersUltraFast(_ src: [UnsafePointer<Double>], framesToProcess: Int) async {
     guard framesToProcess > 0 else { return }
 
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-    // For small frame counts or single channels, use optimized serial processing
-    if framesToProcess < 256 || activeChannels.count <= 1 {
-      for c in activeChannels {
-        await processChannelUltraFast(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
-      }
-      return
-    }
-
-    // Parallel processing for larger chunks
-    await withTaskGroup(of: Void.self) { group in
-      for c in activeChannels {
-        group.addTask { [weak self] in
-          await self?.processChannelUltraFast(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
-        }
-      }
+    // 順序處理以避免 UnsafePointer 的並發問題
+    for c in activeChannels {
+      await processChannelUltraFast(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
     }
   }
 
@@ -1394,39 +1363,22 @@ public actor EBUR128State: Sendable {
   #endif
 
   // 計算門限塊能量 - 優化版本
-  // 並行優化版本的門限塊計算
+  // 計算門限塊能量 - 順序處理版本以避免 Swift 6.1 並發問題
   private func calcGatingBlock(framesPerBlock: Int, optionalOutput: inout Double?) async -> Bool {
     let currentFrameIndex = audioDataIndex / channels
 
     // 獲取活躍通道列表
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
-    let channelSums: [Double]
-    if activeChannels.count <= 1 {
-      channelSums = await activeChannels.asyncMap { c in
-        await self.calculateChannelSum(channel: c, currentFrameIndex: currentFrameIndex, framesPerBlock: framesPerBlock)
-      }
-    } else {
-      // 使用 TaskGroup 並行計算每個通道的能量
-      channelSums = await withTaskGroup(of: (Int, Double).self, returning: [Double].self) { group in
-        for c in activeChannels {
-          group.addTask { [weak self] in
-            let sum = await self?.calculateChannelSum(
-              channel: c,
-              currentFrameIndex: currentFrameIndex,
-              framesPerBlock: framesPerBlock
-            ) ?? 0.0
-            return (c, sum)
-          }
-        }
-
-        var results = Array(repeating: 0.0, count: channels)
-        for await (channel, sum) in group {
-          results[channel] = sum
-        }
-        return results
-      }
+    // 順序計算每個通道的能量
+    var channelSums = [Double]()
+    for c in activeChannels {
+      let sum = await calculateChannelSum(
+        channel: c,
+        currentFrameIndex: currentFrameIndex,
+        framesPerBlock: framesPerBlock
+      )
+      channelSums.append(sum)
     }
 
     // 計算總和
@@ -1573,6 +1525,22 @@ public actor EBUR128State: Sendable {
   private func energyShortTerm(output: inout Double?) async -> Bool {
     await energyInInterval(intervalFrames: Int(samplesIn100ms) * 30, output: &output)
   }
+}
+
+// MARK: - UniquePointer
+
+// The underlying memory may only be accessed via a single UniquePointer instance during its lifetime.
+public struct UniquePointer<T>: @unchecked Sendable {
+  // MARK: Lifecycle
+
+  public init?(_ pointer: UnsafePointer<T>?) {
+    guard let pointer else { return nil }
+    self.pointer = pointer
+  }
+
+  // MARK: Public
+
+  public var pointer: UnsafePointer<T>
 }
 
 // MARK: - Version

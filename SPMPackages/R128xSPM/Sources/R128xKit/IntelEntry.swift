@@ -115,7 +115,7 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
         .processAudioFile(
           at: fileNamePath,
           fileId: id.uuidString,
-          progressCallback: { _ in
+          progressCallback: { @Sendable _ in
             // Could potentially update UI here with progress, but for now just process
             // The AsyncStream system will handle UI updates
           },
