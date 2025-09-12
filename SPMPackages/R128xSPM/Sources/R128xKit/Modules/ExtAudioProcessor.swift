@@ -301,42 +301,44 @@ public actor ExtAudioProcessor {
         }
       }
 
-      // Use TaskGroup to calculate peak values for multiple channels concurrently
+      // Sample-position-first true peak calculation for better cache locality
       if needsTruePeak {
-        let channelPeaks = await withTaskGroup(of: Double.self, returning: [Double].self) { group in
-          var results: [Double] = []
-
+        var localMax = 0.0
+        
+        // First pass: get basic peaks for all channels using vDSP
+        var channelMaxes = [Double](repeating: 0.0, count: channels)
+        for ch in 0 ..< channels {
+          let channelBuffer = channelPointers[ch]!
+          vDSP_maxmgvD(channelBuffer, 1, &channelMaxes[ch], vDSP_Length(framesToRead))
+        }
+        
+        // If oversampling is needed, process sample-by-sample across all channels
+        if overSamplingFactor > 1 {
+          // Initialize previous samples for all channels
+          var prevSamples = [Double](repeating: 0.0, count: channels)
           for ch in 0 ..< channels {
-            group.addTask {
+            prevSamples[ch] = channelPointers[ch]![0]
+          }
+          
+          // Process each sample position across all channels
+          for i in 1 ..< Int(framesToRead) {
+            for ch in 0 ..< channels {
               let channelBuffer = channelPointers[ch]!
-              var channelMax = 0.0
-              vDSP_maxmgvD(channelBuffer, 1, &channelMax, vDSP_Length(framesToRead))
-
-              // Oversampling peak (linear interpolation)
-              if overSamplingFactor > 1 {
-                var prevSample = channelBuffer[0]
-                for i in 1 ..< Int(framesToRead) {
-                  let nextSample = channelBuffer[i]
-                  for k in 1 ..< overSamplingFactor {
-                    let t = Double(k) / Double(overSamplingFactor)
-                    let value = prevSample * (1.0 - t) + nextSample * t
-                    channelMax = max(channelMax, abs(value))
-                  }
-                  prevSample = nextSample
-                }
+              let nextSample = channelBuffer[i]
+              
+              // Linear interpolation for oversampling
+              for k in 1 ..< overSamplingFactor {
+                let t = Double(k) / Double(overSamplingFactor)
+                let value = prevSamples[ch] * (1.0 - t) + nextSample * t
+                channelMaxes[ch] = max(channelMaxes[ch], abs(value))
               }
-
-              return channelMax
+              
+              prevSamples[ch] = nextSample
             }
           }
-
-          for await result in group {
-            results.append(result)
-          }
-          return results
         }
-
-        let localMax = channelPeaks.max() ?? 0.0
+        
+        localMax = channelMaxes.max() ?? 0.0
         maxTruePeak = max(maxTruePeak, localMax)
       }
 
