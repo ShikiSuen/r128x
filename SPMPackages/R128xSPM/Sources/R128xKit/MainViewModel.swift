@@ -48,7 +48,8 @@ public final class MainViewModel {
 
   public var progressValue: CGFloat {
     if entries.isEmpty { return 0 }
-    return CGFloat(entries.filter(\.done).count) / CGFloat(entries.count)
+    let totalProgress = entries.compactMap(\.guardedProgressValue).reduce(0, +)
+    return CGFloat(totalProgress) / CGFloat(entries.count)
   }
 
   public var queueMessage: String {
