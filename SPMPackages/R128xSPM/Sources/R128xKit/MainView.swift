@@ -53,6 +53,7 @@ struct MainView: View {
       #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
       #endif
+        .searchable(text: $viewModel.searchText, prompt: "Search files...".i18n)
         .toolbar {
           ToolbarItem(placement: .confirmationAction) {
             Button("Add Files".i18n) {
@@ -114,7 +115,7 @@ struct MainView: View {
 
   @ViewBuilder
   private func taskTableView() -> some View {
-    Table(viewModel.entries, selection: $viewModel.highlighted) {
+    Table(viewModel.filteredEntries, selection: $viewModel.highlighted) {
       TableColumn("🕰️") { entry in
         Text(entry.timeRemainingDisplayed)
           .font(.caption2)

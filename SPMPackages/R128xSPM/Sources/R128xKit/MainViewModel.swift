@@ -43,8 +43,19 @@ public final class MainViewModel {
   public var dragOver = false
   public var highlighted: IntelEntry.ID?
   public var currentTask: Task<Void, Never>?
+  public var searchText: String = ""
 
   public let taskTrackingVM = TaskTrackingVM.shared
+
+  public var filteredEntries: [IntelEntry] {
+    if searchText.isEmpty {
+      return entries
+    }
+    let searchLowercase = searchText.lowercased()
+    return entries.filter { entry in
+      entry.fileNamePath.lowercased().contains(searchLowercase)
+    }
+  }
 
   public var progressValue: CGFloat {
     if entries.isEmpty { return 0 }
