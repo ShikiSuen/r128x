@@ -11,8 +11,8 @@ import Foundation
 
 // MARK: - Array extension for concurrent processing
 
-extension Array {
-  func asyncMap<T>(_ transform: (Element) async throws -> T) async rethrows -> [T] {
+extension Array where Element: Sendable {
+  func asyncMap<T>(_ transform: @Sendable (Element) async throws -> T) async rethrows -> [T] {
     var result: [T] = []
     for element in self {
       let transformed = try await transform(element)
@@ -62,7 +62,7 @@ private typealias vDSP_Length = Int
 // MARK: - EBUR128Channel
 
 // 重构 EBUR128Channel 枚举，使用关联值代替多个相同原始值的 case
-public enum EBUR128Channel: Int, Equatable {
+public enum EBUR128Channel: Int, Equatable, Sendable {
   case unused = 0
   case left = 1
   case right = 2
@@ -118,7 +118,7 @@ public enum EBUR128Error: Error {
 
 // MARK: - EBUR128Mode
 
-public struct EBUR128Mode: OptionSet {
+public struct EBUR128Mode: OptionSet, Sendable {
   // MARK: Lifecycle
 
   public init(rawValue: Int) { self.rawValue = rawValue }
@@ -199,7 +199,7 @@ private class BlockQueue {
 
 // MARK: - DownsamplingStrategy
 
-public struct DownsamplingStrategy {
+public struct DownsamplingStrategy: Sendable {
   static let disabled = DownsamplingStrategy(
     enabled: false,
     decimationFactor: 1,
@@ -215,7 +215,7 @@ public struct DownsamplingStrategy {
 
 // MARK: - EBUR128State
 
-public actor EBUR128State {
+public actor EBUR128State: Sendable {
   // MARK: Lifecycle
 
   public init(channels: Int, sampleRate: UInt, mode: EBUR128Mode) throws {
@@ -349,7 +349,7 @@ public actor EBUR128State {
         var stEnergy: Double?
         if energyShortTermSync(output: &stEnergy),
            let energy = stEnergy,
-           energy >= EBUR128State.histogramEnergyBoundaries[0] {
+           energy >= histogramEnergyBoundaries[0] {
           if useHistogram {
             let index = EBUR128State.findHistogramIndex(energy)
             shortTermBlockEnergyHistogram[index] += 1
@@ -427,7 +427,7 @@ public actor EBUR128State {
       if shortTermFrameCounter >= Int(samplesIn100ms) * 30 {
         var stEnergy: Double?
         if await energyShortTerm(output: &stEnergy),
-           stEnergy! >= EBUR128State.histogramEnergyBoundaries[0] {
+           stEnergy! >= histogramEnergyBoundaries[0] {
           if useHistogram {
             let index = EBUR128State.findHistogramIndex(stEnergy!)
             shortTermBlockEnergyHistogram[index] += 1
@@ -458,12 +458,12 @@ public actor EBUR128State {
     var count = 0
 
     if useHistogram {
-      let startIndex = relativeThreshold < EBUR128State.histogramEnergyBoundaries[0] ?
+      let startIndex = relativeThreshold < histogramEnergyBoundaries[0] ?
         0 :
         EBUR128State.findHistogramIndex(relativeThreshold)
 
       for i in startIndex ..< 1000 {
-        sum += Double(blockEnergyHistogram[i]) * EBUR128State.histogramEnergies[i]
+        sum += Double(blockEnergyHistogram[i]) * histogramEnergies[i]
         count += blockEnergyHistogram[i]
       }
     } else {
@@ -523,7 +523,7 @@ public actor EBUR128State {
 
     if useHistogram {
       for i in 0 ..< 1000 {
-        stlPower += Double(shortTermBlockEnergyHistogram[i]) * EBUR128State.histogramEnergies[i]
+        stlPower += Double(shortTermBlockEnergyHistogram[i]) * histogramEnergies[i]
         stlSize += shortTermBlockEnergyHistogram[i]
       }
     } else {
@@ -545,9 +545,9 @@ public actor EBUR128State {
     if useHistogram {
       // 使用直方圖計算
       var startIndex = 0
-      if stlIntegrated >= EBUR128State.histogramEnergyBoundaries[0] {
+      if stlIntegrated >= histogramEnergyBoundaries[0] {
         startIndex = EBUR128State.findHistogramIndex(stlIntegrated)
-        if stlIntegrated > EBUR128State.histogramEnergies[startIndex] {
+        if stlIntegrated > histogramEnergies[startIndex] {
           startIndex += 1
         }
       }
@@ -570,13 +570,13 @@ public actor EBUR128State {
         currentCount += shortTermBlockEnergyHistogram[i]
         i += 1
       }
-      let lowEnergy = EBUR128State.histogramEnergies[i - 1]
+      let lowEnergy = histogramEnergies[i - 1]
 
       while currentCount <= highPercentile, i < 1000 {
         currentCount += shortTermBlockEnergyHistogram[i]
         i += 1
       }
-      let highEnergy = EBUR128State.histogramEnergies[i - 1]
+      let highEnergy = histogramEnergies[i - 1]
 
       return EBUR128State.energyToLoudness(highEnergy) - EBUR128State.energyToLoudness(lowEnergy)
     } else {
@@ -641,7 +641,7 @@ public actor EBUR128State {
   private static let minusTwentyDecibels = pow(10.0, -20.0 / 10.0)
 
   // 直方圖能量邊界和能量值
-  private static var histogramEnergies: [Double] = {
+  private var histogramEnergies: [Double] = {
     var energies = [Double](repeating: 0.0, count: 1000)
     for i in 0 ..< 1000 {
       energies[i] = pow(10.0, (Double(i) / 10.0 - 69.95 + 0.691) / 10.0)
@@ -649,7 +649,7 @@ public actor EBUR128State {
     return energies
   }()
 
-  private static var histogramEnergyBoundaries: [Double] = {
+  private var histogramEnergyBoundaries: [Double] = {
     var boundaries = [Double](repeating: 0.0, count: 1001)
     boundaries[0] = pow(10.0, (-70.0 + 0.691) / 10.0)
     for i in 1 ..< 1001 {
@@ -821,7 +821,7 @@ public actor EBUR128State {
 
     // 儲存能量用於門限處理
     if framesPerBlock == Int(samplesIn100ms) * 4 {
-      if sum >= EBUR128State.histogramEnergyBoundaries[0] {
+      if sum >= histogramEnergyBoundaries[0] {
         if useHistogram {
           let index = EBUR128State.findHistogramIndex(sum)
           blockEnergyHistogram[index] += 1
@@ -1405,7 +1405,7 @@ public actor EBUR128State {
     let channelSums: [Double]
     if activeChannels.count <= 1 {
       channelSums = await activeChannels.asyncMap { c in
-        await calculateChannelSum(channel: c, currentFrameIndex: currentFrameIndex, framesPerBlock: framesPerBlock)
+        await self.calculateChannelSum(channel: c, currentFrameIndex: currentFrameIndex, framesPerBlock: framesPerBlock)
       }
     } else {
       // 使用 TaskGroup 並行計算每個通道的能量
@@ -1439,7 +1439,7 @@ public actor EBUR128State {
     // We can detect this by checking if the frame count matches the standard gating block size
     if framesPerBlock == Int(samplesIn100ms) * 4 {
       // 儲存能量用於門限處理
-      if sum >= EBUR128State.histogramEnergyBoundaries[0] {
+      if sum >= histogramEnergyBoundaries[0] {
         if useHistogram {
           let index = EBUR128State.findHistogramIndex(sum)
           blockEnergyHistogram[index] += 1
@@ -1536,7 +1536,7 @@ public actor EBUR128State {
 
     if useHistogram {
       for i in 0 ..< 1000 {
-        sum += Double(blockEnergyHistogram[i]) * EBUR128State.histogramEnergies[i]
+        sum += Double(blockEnergyHistogram[i]) * histogramEnergies[i]
         count += blockEnergyHistogram[i]
       }
     } else {
