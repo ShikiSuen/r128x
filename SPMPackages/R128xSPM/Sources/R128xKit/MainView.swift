@@ -40,55 +40,13 @@ struct MainView: View {
   // MARK: - Instance.
 
   public init() {
-    Self.comdlg32.allowedContentTypes = Self.allowedUTTypes
+    Self.comdlg32.allowedContentTypes = MainViewModel.allowedUTTypes
 
     // Start observing progress updates
-    self.progressObservationTask = taskTrackingVM.startObserving()
+    self.progressObservationTask = viewModel.taskTrackingVM.startObserving()
   }
 
   // MARK: Internal
-
-  var progressValue: CGFloat {
-    if entries.isEmpty { return 0 }
-    return CGFloat(entries.filter(\.done).count) / CGFloat(entries.count)
-  }
-
-  var queueMessage: String {
-    if entries.isEmpty {
-      return "Drag audio files from Finder to the table in this window.".i18n
-    }
-    let filesPendingProcessing: Int = entries.filter(\.done.negative).count
-    let invalidResults: Int = entries.reduce(0) { $0 + ($1.status == .failed ? 1 : 0) }
-
-    // Show detailed progress if we have any processing files
-    if filesPendingProcessing > 0 {
-      let processingEntries = entries.filter { $0.status == .processing }
-
-      // Find the entry with the longest estimated time remaining
-      let longestRemainingEntry = processingEntries.max { entry1, entry2 in
-        let time1 = entry1.estimatedTimeRemaining ?? 0
-        let time2 = entry2.estimatedTimeRemaining ?? 0
-        return time1 < time2
-      }
-
-      if let longestEntry = longestRemainingEntry,
-         let estimatedTime = longestEntry.estimatedTimeRemaining {
-        let remaining = estimatedTime.formatted()
-        return String(
-          format: "Processing files in the queue: %d remaining (~%@ remaining)...".i18n,
-          filesPendingProcessing,
-          remaining
-        )
-      } else {
-        return String(format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing)
-      }
-    }
-
-    guard invalidResults == 0 else {
-      return String(format: "All files are processed, excepting %d failed files.".i18n, invalidResults)
-    }
-    return "All files are processed successfully.".i18n
-  }
 
   var body: some View {
     mainContent
@@ -96,24 +54,6 @@ struct MainView: View {
   }
 
   // MARK: Private
-
-  private static let allowedSuffixes: [String] = [
-    "mov",
-    "mp4",
-    "mp3",
-    "mp2",
-    "m4a",
-    "wav",
-    "aif",
-    "ogg",
-    "aiff",
-    "caf",
-    "alac",
-    "sd2",
-    "ac3",
-    "flac",
-  ]
-  private static let allowedUTTypes: [UTType] = Self.allowedSuffixes.compactMap { .init(filenameExtension: $0) }
 
   private static let comdlg32: NSOpenPanel = {
     let result = NSOpenPanel()
@@ -125,18 +65,9 @@ struct MainView: View {
     return result
   }()
 
-  @State private var dragOver = false
-  @State private var highlighted: IntelEntry.ID?
-  @State private var entries: [IntelEntry] = []
-
-  @State private var currentTask: DispatchWorkItem?
-
-  // Progress monitoring with AsyncStream
-  @State private var taskTrackingVM = TaskTrackingVM.shared
+  @State private var viewModel = MainViewModel()
 
   private var progressObservationTask: Task<Void, Never>?
-
-  private let writerQueue = DispatchQueue(label: "r128x.writer")
 
   @ViewBuilder private var mainContent: some View {
     VStack(spacing: 5) {
@@ -151,17 +82,23 @@ struct MainView: View {
       Button("Add Files".i18n) {
         addFilesButtonDidPress()
       }
-      Button("Clear Table".i18n) { entries.removeAll() }
-      Button("Reprocess All".i18n) { batchProcess(forced: true) }
-        .disabled(entries.isEmpty || entries.count(where: \.done) == 0)
-      ProgressView(value: progressValue) { Text(queueMessage).controlSize(.small) }
+      Button("Clear Table".i18n) {
+        viewModel.clearEntries()
+      }
+      Button("Reprocess All".i18n) {
+        viewModel.batchProcess(forced: true)
+      }
+      .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
+      ProgressView(value: viewModel.progressValue) {
+        Text(viewModel.queueMessage).controlSize(.small)
+      }
       Spacer()
     }.padding(.bottom, 10).padding([.horizontal], 10)
   }
 
   @ViewBuilder
   private func taskTableView() -> some View {
-    Table(entries, selection: $highlighted) {
+    Table(viewModel.entries, selection: $viewModel.highlighted) {
       TableColumn("🕰️") { entry in
         Text(entry.timeRemainingDisplayed)
           .font(.caption2)
@@ -230,19 +167,9 @@ struct MainView: View {
       }
     }
     .font(.system(.body).monospacedDigit())
-    .onDrop(of: [UTType.fileURL], isTargeted: $dragOver, perform: handleDrop)
-    .onChange(of: entries) {
-      batchProcess(forced: false)
-    }
-    .onChange(of: taskTrackingVM.fileProgress) { _, newProgress in
-      // Update entries with progress from TaskTrackingVM
-      for (fileId, progressUpdate) in newProgress {
-        if let entryIndex = entries.firstIndex(where: { $0.id.uuidString == fileId }) {
-          entries[entryIndex].progressPercentage = progressUpdate.percentage
-          entries[entryIndex].estimatedTimeRemaining = progressUpdate.estimatedTimeRemaining
-          entries[entryIndex].currentLoudness = progressUpdate.currentLoudness
-        }
-      }
+    .onDrop(of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop)
+    .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
+      viewModel.updateProgress(newProgress)
     }
     .onDisappear {
       // Cancel progress observation when view disappears
@@ -250,80 +177,9 @@ struct MainView: View {
     }
   }
 
-  private func batchProcess(forced: Bool = false) {
-    // cancel the current task
-    currentTask?.cancel()
-
-    // when forced = true, we reset the processing state
-    if forced {
-      for i in 0 ..< entries.count {
-        entries[i].status = .processing
-      }
-    }
-
-    // create a work item that process concurrently
-    currentTask = DispatchWorkItem {
-      DispatchQueue.concurrentPerform(iterations: entries.count) { i in
-        // copy entry
-        var result = entries[i]
-
-        // Create task for async processing
-        Task {
-          await result.process(forced: forced, taskTrackingVM: taskTrackingVM)
-
-          writerQueue.async {
-            entries[i] = result
-          }
-        }
-      }
-    }
-
-    // debounce in 0.25 seconds
-    if let t = currentTask {
-      DispatchQueue.global().asyncAfter(deadline: .now() + 0.25, execute: t)
-    }
-  }
-
-  private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
-    var counter = 0
-    defer {
-      if counter > 0 {
-        batchProcess(forced: false)
-      }
-    }
-    for provider in providers {
-      _ = provider.loadObject(ofClass: URL.self) { url, _ in
-        guard let url else { return }
-        var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-        guard exists, !isDirectory.boolValue else { return }
-        let path = url.path
-        guard !entries.map(\.fileNamePath).contains(path) else { return }
-        entryInsertion: for fileExtension in Self.allowedSuffixes {
-          guard path.hasSuffix(".\(fileExtension)") else { continue }
-          counter += 1
-          entries.append(.init(url: url))
-          break entryInsertion
-        }
-      }
-    }
-    return true
-  }
-
   private func addFilesButtonDidPress() {
     guard Self.comdlg32.runModal() == .OK else { return }
-    let entriesAsPaths: [String] = entries.map(\.fileNamePath)
-    let contents: [URL] = Self.comdlg32.urls.filter {
-      !entriesAsPaths.contains($0.path)
-    }
-    entries.append(
-      contentsOf: contents.compactMap {
-        var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: $0.path, isDirectory: &isDirectory)
-        guard exists, !isDirectory.boolValue else { return nil }
-        return .init(url: $0)
-      }
-    )
+    viewModel.addFiles(urls: Self.comdlg32.urls)
   }
 }
 
