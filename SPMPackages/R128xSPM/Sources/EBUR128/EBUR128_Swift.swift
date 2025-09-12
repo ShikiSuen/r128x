@@ -952,26 +952,14 @@ public actor EBUR128State: Sendable {
   }
 
   // 新增超高效濾波器處理方法
-  // 並行優化版本的濾波器 - 使用 TaskGroup 進行多通道並行處理
+  // 並行優化版本的濾波器 - 使用順序處理以避免 Swift 6.1 並發問題
   private func filterSamplesOptimized(_ src: [[Double]], framesToProcess: Int) async {
     // 獲取活躍通道列表
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
-    if activeChannels.count <= 1 {
-      for c in activeChannels {
-        await processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
-      }
-      return
-    }
-
-    // 使用 TaskGroup 並行處理多個通道
-    await withTaskGroup(of: Void.self) { group in
-      for c in activeChannels {
-        group.addTask { [weak self] in
-          await self?.processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
-        }
-      }
+    // 順序處理所有通道
+    for c in activeChannels {
+      await processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
     }
   }
 
@@ -1157,7 +1145,7 @@ public actor EBUR128State: Sendable {
     }
   }
 
-  // 並行優化版本的濾波器 - 使用 TaskGroup 進行多通道並行處理
+  // 優化版本的濾波器 - 移除並行處理以避免 Swift 6.1 的 UnsafePointer 並發問題
   private func filterSamplesPointersOptimized(_ src: [UnsafePointer<Double>], framesToProcess: Int) async {
     // 確保臨時緩衝區足夠大
     if tempBuffer.count < framesToProcess {
@@ -1167,21 +1155,9 @@ public actor EBUR128State: Sendable {
     // 獲取活躍通道列表
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
-    if activeChannels.count <= 1 {
-      for c in activeChannels {
-        await processSingleChannelFilter(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
-      }
-      return
-    }
-
-    // 使用 TaskGroup 並行處理多個通道
-    await withTaskGroup(of: Void.self) { group in
-      for c in activeChannels {
-        group.addTask { [weak self] in
-          await self?.processSingleChannelFilter(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
-        }
-      }
+    // 順序處理所有通道以避免 UnsafePointer 的並發問題
+    for c in activeChannels {
+      await processSingleChannelFilter(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
     }
   }
 
@@ -1305,28 +1281,15 @@ public actor EBUR128State: Sendable {
     }
   }
 
-  // Revolutionary ultra-high performance pointer-based filter with full vectorization
   #if canImport(Accelerate)
   private func filterSamplesPointersUltraFast(_ src: [UnsafePointer<Double>], framesToProcess: Int) async {
     guard framesToProcess > 0 else { return }
 
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-    // For small frame counts or single channels, use optimized serial processing
-    if framesToProcess < 256 || activeChannels.count <= 1 {
-      for c in activeChannels {
-        await processChannelUltraFast(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
-      }
-      return
-    }
-
-    // Parallel processing for larger chunks
-    await withTaskGroup(of: Void.self) { group in
-      for c in activeChannels {
-        group.addTask { [weak self] in
-          await self?.processChannelUltraFast(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
-        }
-      }
+    // 順序處理以避免 UnsafePointer 的並發問題
+    for c in activeChannels {
+      await processChannelUltraFast(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
     }
   }
 
@@ -1394,39 +1357,22 @@ public actor EBUR128State: Sendable {
   #endif
 
   // 計算門限塊能量 - 優化版本
-  // 並行優化版本的門限塊計算
+  // 計算門限塊能量 - 順序處理版本以避免 Swift 6.1 並發問題
   private func calcGatingBlock(framesPerBlock: Int, optionalOutput: inout Double?) async -> Bool {
     let currentFrameIndex = audioDataIndex / channels
 
     // 獲取活躍通道列表
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
 
-    // 如果只有一個活躍通道，直接處理避免 TaskGroup 開銷
-    let channelSums: [Double]
-    if activeChannels.count <= 1 {
-      channelSums = await activeChannels.asyncMap { c in
-        await self.calculateChannelSum(channel: c, currentFrameIndex: currentFrameIndex, framesPerBlock: framesPerBlock)
-      }
-    } else {
-      // 使用 TaskGroup 並行計算每個通道的能量
-      channelSums = await withTaskGroup(of: (Int, Double).self, returning: [Double].self) { group in
-        for c in activeChannels {
-          group.addTask { [weak self] in
-            let sum = await self?.calculateChannelSum(
-              channel: c,
-              currentFrameIndex: currentFrameIndex,
-              framesPerBlock: framesPerBlock
-            ) ?? 0.0
-            return (c, sum)
-          }
-        }
-
-        var results = Array(repeating: 0.0, count: channels)
-        for await (channel, sum) in group {
-          results[channel] = sum
-        }
-        return results
-      }
+    // 順序計算每個通道的能量
+    var channelSums = [Double]()
+    for c in activeChannels {
+      let sum = await calculateChannelSum(
+        channel: c,
+        currentFrameIndex: currentFrameIndex,
+        framesPerBlock: framesPerBlock
+      )
+      channelSums.append(sum)
     }
 
     // 計算總和
