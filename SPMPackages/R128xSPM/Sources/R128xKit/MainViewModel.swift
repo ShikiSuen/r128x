@@ -1,0 +1,232 @@
+// filepath: /Users/shikisuen/Repos/_AtelierInmuApps/r128x/SPMPackages/R128xSPM/Sources/R128xKit/MainViewModel.swift
+// (c) (C ver. only) 2012-2013 Manuel Naudin (AGPL v3.0 License or later).
+// (c) (this Swift implementation) 2024 and onwards Shiki Suen (AGPL v3.0 License or later).
+// ====================
+// This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
+
+#if canImport(SwiftUI)
+import SwiftUI
+#endif
+#if canImport(UniformTypeIdentifiers)
+import UniformTypeIdentifiers
+#endif
+import Foundation
+
+// MARK: - MainViewModel
+
+@MainActor
+@Observable
+public final class MainViewModel {
+  // MARK: Public
+
+  // Static properties moved here to avoid main actor isolation issues
+  public static let allowedSuffixes: [String] = [
+    "mov",
+    "mp4",
+    "mp3",
+    "mp2",
+    "m4a",
+    "wav",
+    "aif",
+    "ogg",
+    "aiff",
+    "caf",
+    "alac",
+    "sd2",
+    "ac3",
+    "flac",
+  ]
+
+  public static let allowedUTTypes: [UTType] = allowedSuffixes.compactMap { .init(filenameExtension: $0) }
+
+  public var entries: [IntelEntry] = []
+  public var dragOver = false
+  public var highlighted: IntelEntry.ID?
+  public var currentTask: Task<Void, Never>?
+
+  public let taskTrackingVM = TaskTrackingVM.shared
+
+  public var progressValue: CGFloat {
+    if entries.isEmpty { return 0 }
+    return CGFloat(entries.filter(\.done).count) / CGFloat(entries.count)
+  }
+
+  public var queueMessage: String {
+    if entries.isEmpty {
+      return "Drag audio files from Finder to the table in this window.".i18n
+    }
+    let filesPendingProcessing: Int = entries.filter(\.done.negative).count
+    let invalidResults: Int = entries.reduce(0) { $0 + ($1.status == .failed ? 1 : 0) }
+
+    // Show detailed progress if we have any processing files
+    if filesPendingProcessing > 0 {
+      let processingEntries = entries.filter { $0.status == .processing }
+
+      // Find the entry with the longest estimated time remaining
+      let longestRemainingEntry = processingEntries.max { entry1, entry2 in
+        let time1 = entry1.estimatedTimeRemaining ?? 0
+        let time2 = entry2.estimatedTimeRemaining ?? 0
+        return time1 < time2
+      }
+
+      if let longestEntry = longestRemainingEntry,
+         let estimatedTime = longestEntry.estimatedTimeRemaining {
+        let remaining = estimatedTime.formatted()
+        return String(
+          format: "Processing files in the queue: %d remaining (~%@ remaining)...".i18n,
+          filesPendingProcessing,
+          remaining
+        )
+      } else {
+        return String(format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing)
+      }
+    }
+
+    guard invalidResults == 0 else {
+      return String(format: "All files are processed, excepting %d failed files.".i18n, invalidResults)
+    }
+    return "All files are processed successfully.".i18n
+  }
+
+  // MARK: - Methods
+
+  public func batchProcess(forced: Bool = false) {
+    // Cancel any existing task
+    currentTask?.cancel()
+
+    // When forced = true, reset processing state
+    if forced {
+      for i in 0 ..< entries.count {
+        entries[i].status = .processing
+      }
+    } else {
+      // For non-forced processing, check if there are any files that need processing
+      let hasFilesToProcess = entries.contains { entry in
+        entry.status == .processing || (entry.status != .succeeded && entry.status != .failed)
+      }
+
+      guard hasFilesToProcess else {
+        // No files need processing, exit early
+        return
+      }
+    }
+
+    // Create a new task that properly handles main actor isolation
+    currentTask = Task { @MainActor [weak self] in
+      // Add debounce delay
+      try? await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
+
+      guard let self = self, !Task.isCancelled else { return }
+
+      // Create a copy of entry data for concurrent processing, only for entries that need processing
+      let entrySnapshots = self.entries.enumerated().compactMap { index, entry -> (index: Int, entry: IntelEntry)? in
+        // Only process entries that are not already completed successfully
+        guard entry.status != .succeeded else { return nil }
+        return (index: index, entry: entry)
+      }
+
+      guard !entrySnapshots.isEmpty else { return }
+
+      // Process entries concurrently with proper isolation
+      await withTaskGroup(of: (Int, IntelEntry)?.self) { group in
+        for snapshot in entrySnapshots {
+          group.addTask {
+            guard !Task.isCancelled else { return nil }
+
+            var entry = snapshot.entry
+            await entry.process(forced: forced, taskTrackingVM: self.taskTrackingVM)
+            return (snapshot.index, entry)
+          }
+        }
+
+        // Collect results back to main actor
+        for await result in group {
+          guard let (index, updatedEntry) = result,
+                index < self.entries.count,
+                !Task.isCancelled else { continue }
+
+          self.entries[index] = updatedEntry
+        }
+      }
+    }
+  }
+
+  public func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+    Task { @MainActor in
+      var counter = 0
+      let allowedSuffixes = Self.allowedSuffixes
+      let currentEntries = entries
+
+      for provider in providers {
+        if let url = await withCheckedContinuation({ continuation in
+          _ = provider.loadObject(ofClass: URL.self) { url, _ in
+            continuation.resume(returning: url)
+          }
+        }) {
+          var isDirectory: ObjCBool = false
+          let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+          guard exists, !isDirectory.boolValue else { continue }
+          let path = url.path
+          guard !currentEntries.map(\.fileNamePath).contains(path) else { continue }
+
+          for fileExtension in allowedSuffixes {
+            guard path.hasSuffix(".\(fileExtension)") else { continue }
+            counter += 1
+            entries.append(.init(url: url))
+            break
+          }
+        }
+      }
+
+      if counter > 0 {
+        batchProcess(forced: false)
+      }
+    }
+    return true
+  }
+
+  public func addFiles(urls: [URL]) {
+    let entriesAsPaths: [String] = entries.map(\.fileNamePath)
+    let contents: [URL] = urls.filter {
+      !entriesAsPaths.contains($0.path)
+    }
+    let newEntries: [IntelEntry] = contents.compactMap {
+      var isDirectory: ObjCBool = false
+      let exists = FileManager.default.fileExists(atPath: $0.path, isDirectory: &isDirectory)
+      guard exists, !isDirectory.boolValue else { return nil }
+      return IntelEntry(url: $0)
+    }
+
+    guard !newEntries.isEmpty else { return }
+
+    entries.append(contentsOf: newEntries)
+
+    // Only trigger batch processing when new files are actually added
+    batchProcess(forced: false)
+  }
+
+  public func clearEntries() {
+    entries.removeAll()
+  }
+
+  public func updateProgress(_ newProgress: [String: ProgressUpdate]) {
+    for (fileId, progressUpdate) in newProgress {
+      if let entryIndex = entries.firstIndex(where: { $0.id.uuidString == fileId }) {
+        // Only update if the entry is still in processing state to avoid unnecessary updates
+        guard entries[entryIndex].status == .processing else { continue }
+
+        entries[entryIndex].progressPercentage = progressUpdate.percentage
+        entries[entryIndex].estimatedTimeRemaining = progressUpdate.estimatedTimeRemaining
+        entries[entryIndex].currentLoudness = progressUpdate.currentLoudness
+      }
+    }
+  }
+
+  // MARK: Private
+
+  private let writerQueue = DispatchQueue(label: "r128x.writer")
+}
+
+extension Bool {
+  fileprivate var negative: Bool { !self }
+}
