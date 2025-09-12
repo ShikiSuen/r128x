@@ -215,7 +215,7 @@ public struct DownsamplingStrategy: Sendable {
 
 // MARK: - EBUR128State
 
-public actor EBUR128State: Sendable {
+public actor EBUR128State {
   // MARK: Lifecycle
 
   public init(channels: Int, sampleRate: UInt, mode: EBUR128Mode) throws {
@@ -376,8 +376,9 @@ public actor EBUR128State: Sendable {
   }
 
   // 添加一個高效方法，可以直接處理原始指標
-  public func addFramesPointers(_ src: [UnsafePointer<Double>], framesToProcess: Int) async throws {
-    guard src.count == channels else { throw EBUR128Error.invalidChannelIndex }
+  public func addFramesPointers(_ srcWrapped: [UniquePointer<Double>], framesToProcess: Int) async throws {
+    guard srcWrapped.count == channels else { throw EBUR128Error.invalidChannelIndex }
+    let src = srcWrapped.map(\.pointer)
 
     // 優化 sample peak 計算
     for c in 0 ..< channels {
@@ -777,19 +778,24 @@ public actor EBUR128State: Sendable {
     // Process sample-by-sample across all active channels
     for i in 0 ..< framesToProcess {
       let audioIndex = (baseAudioIndex + i) % audioDataFrames
-      
+
       // Process all active channels at this sample position
       for (activeIdx, c) in activeChannels.enumerated() {
         // IIR filter calculation
-        let v0 = src[c][i] - a1 * filterStates[activeIdx].s1 - a2 * filterStates[activeIdx].s2 
-                           - a3 * filterStates[activeIdx].s3 - a4 * filterStates[activeIdx].s4
+        let v0 = src[c][i] - a1 * filterStates[activeIdx].s1 - a2 * filterStates[activeIdx].s2
+          - a3 * filterStates[activeIdx].s3 - a4 * filterStates[activeIdx].s4
 
         // Calculate output
-        audioData[c][audioIndex] = b0 * v0 + b1 * filterStates[activeIdx].s1 + b2 * filterStates[activeIdx].s2 
-                                        + b3 * filterStates[activeIdx].s3 + b4 * filterStates[activeIdx].s4
+        audioData[c][audioIndex] = b0 * v0 + b1 * filterStates[activeIdx].s1 + b2 * filterStates[activeIdx].s2
+          + b3 * filterStates[activeIdx].s3 + b4 * filterStates[activeIdx].s4
 
         // Update filter state
-        filterStates[activeIdx] = (s1: v0, s2: filterStates[activeIdx].s1, s3: filterStates[activeIdx].s2, s4: filterStates[activeIdx].s3)
+        filterStates[activeIdx] = (
+          s1: v0,
+          s2: filterStates[activeIdx].s1,
+          s3: filterStates[activeIdx].s2,
+          s4: filterStates[activeIdx].s3
+        )
       }
     }
 
@@ -1519,6 +1525,22 @@ public actor EBUR128State: Sendable {
   private func energyShortTerm(output: inout Double?) async -> Bool {
     await energyInInterval(intervalFrames: Int(samplesIn100ms) * 30, output: &output)
   }
+}
+
+// MARK: - UniquePointer
+
+// The underlying memory may only be accessed via a single UniquePointer instance during its lifetime.
+public struct UniquePointer<T>: @unchecked Sendable {
+  // MARK: Lifecycle
+
+  public init?(_ pointer: UnsafePointer<T>?) {
+    guard let pointer else { return nil }
+    self.pointer = pointer
+  }
+
+  // MARK: Public
+
+  public var pointer: UnsafePointer<T>
 }
 
 // MARK: - Version

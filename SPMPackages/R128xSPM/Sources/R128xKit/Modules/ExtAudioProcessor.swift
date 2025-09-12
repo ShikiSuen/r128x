@@ -304,14 +304,14 @@ public actor ExtAudioProcessor {
       // Sample-position-first true peak calculation for better cache locality
       if needsTruePeak {
         var localMax = 0.0
-        
+
         // First pass: get basic peaks for all channels using vDSP
         var channelMaxes = [Double](repeating: 0.0, count: channels)
         for ch in 0 ..< channels {
           let channelBuffer = channelPointers[ch]!
           vDSP_maxmgvD(channelBuffer, 1, &channelMaxes[ch], vDSP_Length(framesToRead))
         }
-        
+
         // If oversampling is needed, process sample-by-sample across all channels
         if overSamplingFactor > 1 {
           // Initialize previous samples for all channels
@@ -319,25 +319,25 @@ public actor ExtAudioProcessor {
           for ch in 0 ..< channels {
             prevSamples[ch] = channelPointers[ch]![0]
           }
-          
+
           // Process each sample position across all channels
           for i in 1 ..< Int(framesToRead) {
             for ch in 0 ..< channels {
               let channelBuffer = channelPointers[ch]!
               let nextSample = channelBuffer[i]
-              
+
               // Linear interpolation for oversampling
               for k in 1 ..< overSamplingFactor {
                 let t = Double(k) / Double(overSamplingFactor)
                 let value = prevSamples[ch] * (1.0 - t) + nextSample * t
                 channelMaxes[ch] = max(channelMaxes[ch], abs(value))
               }
-              
+
               prevSamples[ch] = nextSample
             }
           }
         }
-        
+
         localMax = channelMaxes.max() ?? 0.0
         maxTruePeak = max(maxTruePeak, localMax)
       }
@@ -358,7 +358,10 @@ public actor ExtAudioProcessor {
           }
         }
 
-        try await ebur128State.addFramesPointers(channelPtrs.compactMap { $0 }, framesToProcess: Int(framesToProcess))
+        try await ebur128State.addFramesPointers(
+          channelPtrs.compactMap { UniquePointer<Double>($0) },
+          framesToProcess: Int(framesToProcess)
+        )
 
         if framesToProcess >= neededFrames {
           // Note: We removed momentaryLoudness tracking as it wasn't being used
