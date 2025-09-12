@@ -53,6 +53,9 @@ public struct ProgressUpdate: Sendable, Equatable {
 #else
 @MainActor
 #endif
+
+// MARK: - TaskTrackingVM
+
 public final class TaskTrackingVM: Sendable {
   // MARK: Lifecycle
 
