@@ -88,6 +88,41 @@
         }
       }
     },
+    "app.windowTitle" : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "r128x"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "r128x"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "百二十八禁"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "百二十八禁"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "百二十八禁"
+          }
+        }
+      }
+    },
     "Clear Table" : {
       "extractionState" : "migrated",
       "localizations" : {
@@ -262,36 +297,6 @@
         }
       }
     },
-
-    "Processing files in the queue: %d remaining." : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traitement des fichiers dans la file d'attente : %d restant."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ファイル順番測量処理中。残り：%d 点。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在测量文件。还剩 %d 个文件待测量。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在測量檔案。還剩 %d 個檔案待測量。"
-          }
-        }
-      }
-    },
     "Processing files in the queue: %d remaining (~%@ remaining)..." : {
       "extractionState" : "migrated",
       "localizations" : {
@@ -317,6 +322,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在測量檔案。還剩 %d 個檔案待測量（約剩餘 %@）..."
+          }
+        }
+      }
+    },
+    "Processing files in the queue: %d remaining." : {
+      "extractionState" : "migrated",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traitement des fichiers dans la file d'attente : %d restant."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイル順番測量処理中。残り：%d 点。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在测量文件。还剩 %d 个文件待测量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在測量檔案。還剩 %d 個檔案待測量。"
           }
         }
       }

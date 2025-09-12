@@ -24,7 +24,7 @@ public struct R128xScene: Scene {
   public var body: some Scene {
     WindowGroup {
       MainView().onDisappear {
-        NSApplication.shared.terminate(self)
+        exit(0)
       }
     }.commands {
       CommandGroup(replacing: CommandGroupPlacement.newItem) {}
@@ -40,8 +40,6 @@ struct MainView: View {
   // MARK: - Instance.
 
   public init() {
-    Self.comdlg32.allowedContentTypes = MainViewModel.allowedUTTypes
-
     // Start observing progress updates
     self.progressObservationTask = viewModel.taskTrackingVM.startObserving()
   }
@@ -49,51 +47,69 @@ struct MainView: View {
   // MARK: Internal
 
   var body: some View {
-    mainContent
-      .frame(minWidth: 800, minHeight: 367, alignment: .center)
+    NavigationStack {
+      taskTableView()
+        .navigationTitle("app.windowTitle".i18n)
+      #if !os(macOS)
+        .navigationBarTitleDisplayMode(.inline)
+      #endif
+        .toolbar {
+          ToolbarItem(placement: .confirmationAction) {
+            Button("Add Files".i18n) {
+              addFilesButtonDidPress()
+            }
+          }
+          ToolbarItem(placement: .cancellationAction) {
+            Button("Clear Table".i18n) {
+              viewModel.clearEntries()
+            }
+          }
+          ToolbarItem(placement: .confirmationAction) {
+            Button("Reprocess All".i18n) {
+              viewModel.batchProcess(forced: true)
+            }
+            .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
+          }
+        }
+        .safeAreaInset(edge: .bottom) {
+          controlsView()
+            .padding(10)
+            .padding(.horizontal, 10)
+            .background(.regularMaterial)
+        }
+    }
+    #if os(macOS)
+    .frame(minWidth: 800, minHeight: 367, alignment: .center)
+    #endif
+    .fileImporter(
+      isPresented: $isFileImporterPresented,
+      allowedContentTypes: MainViewModel.allowedUTTypes,
+      allowsMultipleSelection: true
+    ) { result in
+      switch result {
+      case let .success(urls):
+        viewModel.addFiles(urls: urls)
+      case let .failure(error):
+        print("File selection error: \(error)")
+      }
+    }
   }
 
   // MARK: Private
 
-  private static let comdlg32: NSOpenPanel = {
-    let result = NSOpenPanel()
-    result.allowsMultipleSelection = true
-    result.canChooseDirectories = false
-    result.prompt = "Process"
-    result.title = "File Selector"
-    result.message = "Select files…"
-    return result
-  }()
-
   @State private var viewModel = MainViewModel()
+  @State private var isFileImporterPresented = false
 
   private var progressObservationTask: Task<Void, Never>?
 
-  @ViewBuilder private var mainContent: some View {
-    VStack(spacing: 5) {
-      taskTableView()
-      bottomControlsView()
-    }
-  }
-
   @ViewBuilder
-  private func bottomControlsView() -> some View {
+  private func controlsView() -> some View {
     HStack {
-      Button("Add Files".i18n) {
-        addFilesButtonDidPress()
-      }
-      Button("Clear Table".i18n) {
-        viewModel.clearEntries()
-      }
-      Button("Reprocess All".i18n) {
-        viewModel.batchProcess(forced: true)
-      }
-      .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
       ProgressView(value: viewModel.progressValue) {
         Text(viewModel.queueMessage).controlSize(.small)
       }
       Spacer()
-    }.padding(.bottom, 10).padding([.horizontal], 10)
+    }
   }
 
   @ViewBuilder
@@ -178,8 +194,7 @@ struct MainView: View {
   }
 
   private func addFilesButtonDidPress() {
-    guard Self.comdlg32.runModal() == .OK else { return }
-    viewModel.addFiles(urls: Self.comdlg32.urls)
+    isFileImporterPresented = true
   }
 }
 
