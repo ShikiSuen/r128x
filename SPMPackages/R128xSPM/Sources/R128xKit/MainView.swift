@@ -232,88 +232,13 @@ struct MainView: View {
 
   @ViewBuilder
   private func taskListView() -> some View {
-    List {
-      ForEach(Array(viewModel.filteredEntries.enumerated()), id: \.offset) { index, entry in
-        HStack {
-          VStack(alignment: .leading) {
-            let mainLabel = HStack {
-              HStack {
-                Text(entry.fileName)
-                  .fontWeight(.bold)
-                  .font(.caption)
-                  .lineLimit(1)
-                  .help(entry.folderPath)
-              }
-              .frame(maxWidth: .infinity, alignment: .leading)
-              if entry.status == .processing {
-                Text("\(entry.progressDisplayed)")
-                  .font(.caption2)
-                  .fixedSize()
-              }
-              if entry.done {
-                HStack {
-                  Text(verbatim: "dBTP")
-                  Text(entry.dBTPDisplayed)
-                    .fontWeight(entry.dBTP == 0 ? .bold : .regular)
-                }
-                .font(.caption2)
-                .help(Text("dBTP".i18n))
-              }
-            }
-            if entry.done {
-              VStack(alignment: .leading) {
-                mainLabel
-                Text(entry.folderPath)
-                  .lineLimit(1)
-                  .truncationMode(.head)
-                  .fontWidth(.condensed)
-                  .font(.caption2)
-                  .foregroundStyle(.secondary)
-              }
-            } else {
-              ProgressView(value: entry.guardedProgressValue) {
-                mainLabel
-              }
-              .controlSize(.small)
-            }
-          }
-          if entry.done {
-            Divider()
-            VStack {
-              HStack {
-                Text(verbatim: "iL")
-                Spacer()
-                Text(entry.programLoudnessDisplayed)
-                  .fontWeight(.bold)
-              }
-              .font(.caption)
-              .help(Text("Program Loudness".i18n))
-              HStack {
-                Text(verbatim: "lRa")
-                Spacer()
-                Text(entry.loudnessRangeDisplayed)
-              }
-              .font(.caption2)
-              .foregroundStyle(.secondary)
-              .help(Text("Loudness Range".i18n))
-            }
-            .frame(width: 60)
-            .colorMultiply(entry.isResultInvalid ? .red : .primary)
-          }
-        }
-        .font(.system(.body).monospacedDigit())
-        #if os(macOS)
-          .padding(.horizontal, 10)
-        #else
-          .listRowBackground(index % 2 == 0 ? Color.gray.opacity(0.2) : Color.clear)
-        #endif
+    Table(viewModel.filteredEntries) {
+      TableColumn("".description) { entry in
+        drawEntry(entry)
+          .foregroundStyle(.primary)
       }
     }
-    #if os(macOS)
-    .listStyle(.bordered(alternatesRowBackgrounds: true))
-    #else
-    .listStyle(.plain)
-    #endif
+    .tableColumnHeaders(.hidden)
     .overlay {
       if viewModel.entries.isEmpty {
         Color.clear.background(.regularMaterial)
@@ -346,6 +271,78 @@ struct MainView: View {
           }
       }
     }
+  }
+
+  @ViewBuilder
+  private func drawEntry(_ entry: IntelEntry) -> some View {
+    HStack {
+      VStack(alignment: .leading) {
+        let mainLabel = HStack {
+          HStack {
+            Text(entry.fileName)
+              .fontWeight(.bold)
+              .font(.caption)
+              .lineLimit(1)
+              .help(entry.folderPath)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          if entry.status == .processing {
+            Text("\(entry.progressDisplayed)")
+              .font(.caption2)
+              .fixedSize()
+          }
+          if entry.done {
+            HStack {
+              Text(verbatim: "dBTP")
+              Text(entry.dBTPDisplayed)
+                .fontWeight(entry.dBTP == 0 ? .bold : .regular)
+            }
+            .font(.caption2)
+            .help(Text("dBTP".i18n))
+          }
+        }
+        if entry.done {
+          VStack(alignment: .leading) {
+            mainLabel
+            Text(entry.folderPath)
+              .lineLimit(1)
+              .truncationMode(.head)
+              .fontWidth(.condensed)
+              .font(.caption2)
+              .foregroundStyle(.secondary)
+          }
+        } else {
+          ProgressView(value: entry.guardedProgressValue) {
+            mainLabel
+          }
+          .controlSize(.small)
+        }
+      }
+      if entry.done {
+        Divider()
+        VStack {
+          HStack {
+            Text(verbatim: "iL")
+            Spacer()
+            Text(entry.programLoudnessDisplayed)
+              .fontWeight(.bold)
+          }
+          .font(.caption)
+          .help(Text("Program Loudness".i18n))
+          HStack {
+            Text(verbatim: "lRa")
+            Spacer()
+            Text(entry.loudnessRangeDisplayed)
+          }
+          .font(.caption2)
+          .foregroundStyle(.secondary)
+          .help(Text("Loudness Range".i18n))
+        }
+        .frame(width: 60)
+        .colorMultiply(entry.isResultInvalid ? .red : .primary)
+      }
+    }
+    .font(.system(.body).monospacedDigit())
   }
 
   private func addFilesButtonDidPress() {
