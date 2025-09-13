@@ -69,6 +69,13 @@ public struct R128xScene: Scene {
 
       // Filter URLs to only include supported audio files and folders
       let filteredURLs = urlsToProcess.filter { url in
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer {
+          if accessing {
+            url.stopAccessingSecurityScopedResource()
+          }
+        }
+
         var isDirectory: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
 

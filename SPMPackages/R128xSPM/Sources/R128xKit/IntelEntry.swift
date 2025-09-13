@@ -114,6 +114,14 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
     estimatedTimeRemaining = nil
     currentLoudness = nil
 
+    // Start accessing security-scoped resource for file processing
+    let accessing = url.startAccessingSecurityScopedResource()
+    defer {
+      if accessing {
+        url.stopAccessingSecurityScopedResource()
+      }
+    }
+
     do {
       let (il, lra, max_tp) = try await ExtAudioProcessor()
         .processAudioFile(

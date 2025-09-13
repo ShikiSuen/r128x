@@ -190,6 +190,14 @@ public final class MainViewModel {
             continuation.resume(returning: url)
           }
         }) {
+          // Start accessing security-scoped resource for drag-and-drop
+          let accessing = url.startAccessingSecurityScopedResource()
+          defer {
+            if accessing {
+              url.stopAccessingSecurityScopedResource()
+            }
+          }
+
           var isDirectory: ObjCBool = false
           let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
           guard exists else { continue }
@@ -236,6 +244,14 @@ public final class MainViewModel {
 
     for url in urls {
       guard !allEntriesPaths.contains(url.path) else { continue }
+
+      // Start accessing security-scoped resource for file importer and shared files
+      let accessing = url.startAccessingSecurityScopedResource()
+      defer {
+        if accessing {
+          url.stopAccessingSecurityScopedResource()
+        }
+      }
 
       var isDirectory: ObjCBool = false
       let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
