@@ -48,7 +48,17 @@ struct MainView: View {
 
   var body: some View {
     NavigationStack {
-      taskTableView()
+      taskListView() // taskTableView()
+        .onDrop(
+          of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop
+        )
+        .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
+          viewModel.updateProgress(newProgress)
+        }
+        .onDisappear {
+          // Cancel progress observation when view disappears
+          progressObservationTask?.cancel()
+        }
         .navigationTitle("app.windowTitle".i18n)
       #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -56,18 +66,24 @@ struct MainView: View {
         .searchable(text: $viewModel.searchText, prompt: "Search files...".i18n)
         .toolbar {
           ToolbarItem(placement: .confirmationAction) {
-            Button("Add Files".i18n) {
+            Button {
               addFilesButtonDidPress()
+            } label: {
+              Label("Add Files".i18n, systemImage: "folder.badge.plus")
             }
           }
           ToolbarItem(placement: .cancellationAction) {
-            Button("Clear Table".i18n) {
+            Button {
               viewModel.clearEntries()
+            } label: {
+              Label("Clear Table".i18n, systemImage: "trash")
             }
           }
           ToolbarItem(placement: .confirmationAction) {
-            Button("Reprocess All".i18n) {
+            Button {
               viewModel.batchProcess(forced: true)
+            } label: {
+              Label("Reprocess All".i18n, systemImage: "gobackward")
             }
             .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
           }
@@ -80,7 +96,7 @@ struct MainView: View {
         }
     }
     #if os(macOS)
-    .frame(minWidth: 800, minHeight: 367, alignment: .center)
+    .frame(minWidth: 300, minHeight: 367, alignment: .center)
     #endif
     .fileImporter(
       isPresented: $isFileImporterPresented,
@@ -101,97 +117,105 @@ struct MainView: View {
   @State private var viewModel = MainViewModel()
   @State private var isFileImporterPresented = false
 
+  @Environment(\.horizontalSizeClass) private var horizontalSizeClass: UserInterfaceSizeClass?
+
   private var progressObservationTask: Task<Void, Never>?
 
   @ViewBuilder
   private func controlsView() -> some View {
     HStack {
       ProgressView(value: viewModel.progressValue) {
-        Text(viewModel.queueMessage).controlSize(.small)
+        Text(viewModel.queueMessage)
+          .font(.caption)
       }
+      .controlSize(.small)
       Spacer()
     }
   }
 
   @ViewBuilder
-  private func taskTableView() -> some View {
-    Table(viewModel.filteredEntries, selection: $viewModel.highlighted) {
-      TableColumn("🕰️") { entry in
-        Text(entry.timeRemainingDisplayed)
-          .font(.caption2)
-      }
-      .width(30)
-      .alignment(.numeric)
-      TableColumn("File Name".i18n) { entry in
+  private func taskListView() -> some View {
+    List {
+      ForEach(Array(viewModel.filteredEntries.enumerated()), id: \.offset) { index, entry in
         HStack {
           VStack(alignment: .leading) {
-            ProgressView(value: entry.guardedProgressValue) {
+            let mainLabel = HStack {
               HStack {
                 Text(entry.fileName)
                   .fontWeight(.bold)
                   .font(.caption)
                   .lineLimit(1)
-                  .frame(maxWidth: .infinity, alignment: .leading)
-                if entry.status == .processing {
-                  Text("\(entry.progressDisplayed)")
-                    .font(.caption2)
-                    .fixedSize()
+                  .help(entry.folderPath)
+              }
+              .frame(maxWidth: .infinity, alignment: .leading)
+              if entry.status == .processing {
+                Text("\(entry.progressDisplayed)")
+                  .font(.caption2)
+                  .fixedSize()
+              }
+              if entry.done {
+                HStack {
+                  Text(verbatim: "dBTP")
+                  Text(entry.dBTPDisplayed)
+                    .fontWeight(entry.dBTP == 0 ? .bold : .regular)
                 }
+                .font(.caption2)
+                .help(Text("dBTP".i18n))
               }
             }
-            .controlSize(.small)
+            if entry.done {
+              VStack(alignment: .leading) {
+                mainLabel
+                Text(entry.folderPath)
+                  .lineLimit(1)
+                  .truncationMode(.tail)
+                  .fontWidth(.condensed)
+                  .font(.caption2)
+                  .foregroundStyle(.secondary)
+              }
+            } else {
+              ProgressView(value: entry.guardedProgressValue) {
+                mainLabel
+              }
+              .controlSize(.small)
+            }
           }
-          .contentShape(.rect)
-          .help(entry.fileName)
-          .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
           if entry.done {
+            Divider()
             VStack {
               HStack {
-                Text("Program Loudness".i18n)
-                  .frame(maxWidth: .infinity, alignment: .leading)
+                Text(verbatim: "iL")
+                Spacer()
                 Text(entry.programLoudnessDisplayed)
                   .fontWeight(.bold)
-                  .fontWidth(.standard)
-                  .frame(width: 35, alignment: .trailing)
               }
               .font(.caption)
+              .help(Text("Program Loudness".i18n))
               HStack {
-                Text("Loudness Range".i18n)
-                  .frame(maxWidth: .infinity, alignment: .leading)
+                Text(verbatim: "lRa")
+                Spacer()
                 Text(entry.loudnessRangeDisplayed)
-                  .fontWidth(.condensed)
-                  .frame(width: 35, alignment: .trailing)
               }
               .font(.caption2)
               .foregroundStyle(.secondary)
+              .help(Text("Loudness Range".i18n))
             }
-            .fixedSize()
-            .fontWidth(.compressed)
+            .frame(width: 60)
           }
         }
-      }
-      .width(400)
-      TableColumn("dBTP".i18n) { entry in
-        Text(entry.dBTPDisplayed)
-          .fontWeight(entry.dBTP == 0 ? .bold : .regular)
-      }
-      .width(45)
-      .alignment(.numeric)
-      TableColumn("Location".i18n) { entry in
-        Text(entry.folderPath)
-          .fontWidth(.condensed)
-          .help(entry.folderPath)
+        .font(.system(.body).monospacedDigit())
+        #if os(macOS)
+          .padding(.horizontal, 10)
+        #else
+          .listRowBackground(index % 2 == 0 ? Color.gray.opacity(0.2) : Color.clear)
+        #endif
       }
     }
-    .font(.system(.body).monospacedDigit())
-    .onDrop(of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop)
-    .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
-      viewModel.updateProgress(newProgress)
-    }
-    .onDisappear {
-      // Cancel progress observation when view disappears
-      progressObservationTask?.cancel()
-    }
+    #if os(macOS)
+      .listStyle(.bordered(alternatesRowBackgrounds: true))
+    #else
+      .listStyle(.plain)
+    #endif
   }
 
   private func addFilesButtonDidPress() {

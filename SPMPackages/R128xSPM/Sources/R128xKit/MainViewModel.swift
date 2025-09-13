@@ -4,13 +4,14 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
 
+import Foundation
+
 #if canImport(SwiftUI)
 import SwiftUI
 #endif
 #if canImport(UniformTypeIdentifiers)
 import UniformTypeIdentifiers
 #endif
-import Foundation
 
 // MARK: - MainViewModel
 
@@ -37,7 +38,9 @@ public final class MainViewModel {
     "flac",
   ]
 
-  public static let allowedUTTypes: [UTType] = allowedSuffixes.compactMap { .init(filenameExtension: $0) }
+  public static let allowedUTTypes: [UTType] = allowedSuffixes.compactMap {
+    .init(filenameExtension: $0)
+  }
 
   public var entries: [IntelEntry] = []
   public var dragOver = false
@@ -90,12 +93,16 @@ public final class MainViewModel {
           remaining
         )
       } else {
-        return String(format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing)
+        return String(
+          format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing
+        )
       }
     }
 
     guard invalidResults == 0 else {
-      return String(format: "All files are processed, excepting %d failed files.".i18n, invalidResults)
+      return String(
+        format: "All files are processed, excepting %d failed files.".i18n, invalidResults
+      )
     }
     return "All files are processed successfully.".i18n
   }
@@ -131,7 +138,8 @@ public final class MainViewModel {
       guard let self = self, !Task.isCancelled else { return }
 
       // Create a copy of entry data for concurrent processing, only for entries that need processing
-      let entrySnapshots = self.entries.enumerated().compactMap { index, entry -> (index: Int, entry: IntelEntry)? in
+      let entrySnapshots = self.entries.enumerated().compactMap {
+        index, entry -> (index: Int, entry: IntelEntry)? in
         // Only process entries that are not already completed successfully
         guard entry.status != .succeeded else { return nil }
         return (index: index, entry: entry)
@@ -155,7 +163,8 @@ public final class MainViewModel {
         for await result in group {
           guard let (index, updatedEntry) = result,
                 index < self.entries.count,
-                !Task.isCancelled else { continue }
+                !Task.isCancelled
+          else { continue }
 
           self.entries[index] = updatedEntry
         }
