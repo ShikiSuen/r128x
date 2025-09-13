@@ -252,18 +252,11 @@ struct MainView: View {
                 Text("emptyState.title".i18n)
                   .font(.title3)
                   .fontWeight(.medium)
-
-                #if os(macOS)
-                Text("emptyState.dragHint.macOS".i18n)
+                // The following i18n key automatically differs between iOS and macOS.
+                Text("emptyState.dragHint".i18n)
                   .font(.body)
                   .foregroundStyle(.secondary)
-                  .multilineTextAlignment(.center)
-                #else
-                Text("emptyState.dragHint.iOS".i18n)
-                  .font(.body)
-                  .foregroundStyle(.secondary)
-                  .multilineTextAlignment(.center)
-                #endif
+                  .multilineTextAlignment(.leading)
               }
             }
             .frame(maxWidth: 300)
