@@ -210,6 +210,111 @@
         }
       }
     },
+    "emptyState.dragHint.iOS" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the \"Add Files\" button to select audio files for analysis."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilisez le bouton \"Ajouter des Fichiers\" pour sélectionner des fichiers audio à analyser."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「ファイル添付」ボタンを押して音声ファイルを選択してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请点击「添入文件」按钮来选择待分析的音频文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請點擊「添入檔案」按鈕來選擇待分析的音訊檔案。"
+          }
+        }
+      }
+    },
+    "emptyState.dragHint.macOS" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag audio files or folders from Finder to this window to start analyzing their loudness."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites glisser des fichiers audio ou des dossiers du Finder vers cette fenêtre pour commencer à analyser leur niveau sonore."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder から音声ファイルやフォルダを弊ウィンドウにドラッグしてラウドネス解析を開始してください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从 Finder 拖拽音频文件或文件夹到此窗口，即可开始分析其响度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從 Finder 拖拽音訊檔案或資料夾到此視窗，即可開始分析其響度。"
+          }
+        }
+      }
+    },
+    "emptyState.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Audio Files Yet"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun Fichier Audio"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音声ファイルがありません"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚无音频文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚無音訊檔案"
+          }
+        }
+      }
+    },
     "File Name" : {
       "extractionState" : "migrated",
       "localizations" : {
