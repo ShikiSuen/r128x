@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		5B517EF62C12F0D500F0FA00 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */; };
-		5B5181712C13084100F0FA00 /* R128xSPM in Resources */ = {isa = PBXBuildFile; fileRef = 5B5180642C13084000F0FA00 /* R128xSPM */; };
 		5B5181742C13085000F0FA00 /* R128xKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5B5181732C13085000F0FA00 /* R128xKit */; };
 		5B7044082E756AB100EB0114 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5B7044072E756AB100EB0114 /* AppIcon.icon */; };
 		5BDCA1B62A6D51D400F7202E /* MainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1B52A6D51D400F7202E /* MainApp.swift */; };
@@ -197,7 +196,6 @@
 				5BDCA1BD2A6D51D500F7202E /* Preview Assets.xcassets in Resources */,
 				5B517EF62C12F0D500F0FA00 /* InfoPlist.xcstrings in Resources */,
 				5BDCA1CC2A6D892F00F7202E /* Credits.rtf in Resources */,
-				5B5181712C13084100F0FA00 /* R128xSPM in Resources */,
 				5BDCA1C22A6D51E900F7202E /* Assets.xcassets in Resources */,
 				5B7044082E756AB100EB0114 /* AppIcon.icon in Resources */,
 			);
