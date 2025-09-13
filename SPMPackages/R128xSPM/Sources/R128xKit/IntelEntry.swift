@@ -110,6 +110,7 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
     progressPercentage = 0.0
     estimatedTimeRemaining = nil
     currentLoudness = nil
+
     do {
       let (il, lra, max_tp) = try await ExtAudioProcessor()
         .processAudioFile(
@@ -132,6 +133,7 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
       // Complete progress tracking
       taskTrackingVM?.completeProgress(for: id.uuidString)
     } catch {
+      print("Error processing file \(fileName): \(error)")
       status = .failed
       progressPercentage = nil
       estimatedTimeRemaining = nil
