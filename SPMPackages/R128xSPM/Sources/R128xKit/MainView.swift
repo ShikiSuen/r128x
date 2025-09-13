@@ -313,25 +313,50 @@ struct MainView: View {
       }
       if entry.done {
         Divider()
-        VStack {
-          HStack {
-            Text(verbatim: "iL")
-            Spacer()
-            Text(entry.programLoudnessDisplayed)
-              .fontWeight(.bold)
+        ViewThatFits {
+          VStack {
+            HStack {
+              Text("Program Loudness".i18n)
+              Spacer()
+              Text(entry.programLoudnessDisplayed)
+                .fontWeight(.bold)
+                .frame(width: 35)
+            }
+            .font(.caption)
+            .help(Text("Program Loudness".i18n))
+            HStack {
+              Text("Loudness Range".i18n)
+              Spacer()
+              Text(entry.loudnessRangeDisplayed)
+                .frame(width: 35)
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .help(Text("Loudness Range".i18n))
           }
-          .font(.caption)
-          .help(Text("Program Loudness".i18n))
-          HStack {
-            Text(verbatim: "lRa")
-            Spacer()
-            Text(entry.loudnessRangeDisplayed)
+          .fixedSize()
+          VStack {
+            HStack {
+              Text(verbatim: "iL")
+              Spacer()
+              Text(entry.programLoudnessDisplayed)
+                .fontWeight(.bold)
+                .frame(width: 35)
+            }
+            .font(.caption)
+            .help(Text("Program Loudness".i18n))
+            HStack {
+              Text(verbatim: "lRa")
+              Spacer()
+              Text(entry.loudnessRangeDisplayed)
+                .frame(width: 35)
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .help(Text("Loudness Range".i18n))
           }
-          .font(.caption2)
-          .foregroundStyle(.secondary)
-          .help(Text("Loudness Range".i18n))
+          .fixedSize()
         }
-        .frame(width: 60)
         .colorMultiply(entry.isResultInvalid ? .red : .primary)
       }
     }
