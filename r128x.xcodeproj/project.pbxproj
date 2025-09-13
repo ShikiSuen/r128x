@@ -10,6 +10,7 @@
 		5B517EF62C12F0D500F0FA00 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */; };
 		5B5181712C13084100F0FA00 /* R128xSPM in Resources */ = {isa = PBXBuildFile; fileRef = 5B5180642C13084000F0FA00 /* R128xSPM */; };
 		5B5181742C13085000F0FA00 /* R128xKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5B5181732C13085000F0FA00 /* R128xKit */; };
+		5B7044082E756AB100EB0114 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5B7044072E756AB100EB0114 /* AppIcon.icon */; };
 		5BDCA1B62A6D51D400F7202E /* MainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1B52A6D51D400F7202E /* MainApp.swift */; };
 		5BDCA1BD2A6D51D500F7202E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1BC2A6D51D500F7202E /* Preview Assets.xcassets */; };
 		5BDCA1C22A6D51E900F7202E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1A52A6D4C6B00F7202E /* Assets.xcassets */; };
@@ -22,6 +23,7 @@
 		565EC47317127B49008B09A2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		5B5180642C13084000F0FA00 /* R128xSPM */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = R128xSPM; sourceTree = "<group>"; };
+		5B7044072E756AB100EB0114 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		5B84B8052A8915FE0049E107 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "zh-Hant"; path = "zh-Hant.lproj/Credits.rtf"; sourceTree = "<group>"; };
 		5B84B8062A8916040049E107 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "zh-Hans"; path = "zh-Hans.lproj/Credits.rtf"; sourceTree = "<group>"; };
 		5B84B8072A8916090049E107 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = ja; path = ja.lproj/Credits.rtf; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				5BDCA1B52A6D51D400F7202E /* MainApp.swift */,
 				5BDCA1BE2A6D51D500F7202E /* r128x_swiftui.entitlements */,
 				5BDCA1BB2A6D51D500F7202E /* Preview Content */,
+				5B7044072E756AB100EB0114 /* AppIcon.icon */,
 			);
 			path = "r128x-swiftui";
 			sourceTree = "<group>";
@@ -196,6 +199,7 @@
 				5BDCA1CC2A6D892F00F7202E /* Credits.rtf in Resources */,
 				5B5181712C13084100F0FA00 /* R128xSPM in Resources */,
 				5BDCA1C22A6D51E900F7202E /* Assets.xcassets in Resources */,
+				5B7044082E756AB100EB0114 /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
