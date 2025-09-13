@@ -25,7 +25,9 @@ public struct R128xScene: Scene {
       MainView().onDisappear {
         exit(0)
       }
+      #if os(macOS)
       .presentedWindowToolbarStyle(.unifiedCompact)
+      #endif
       .onOpenURL { url in
         handleSharedURL(url)
       }
