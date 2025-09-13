@@ -71,6 +71,7 @@ struct MainView: View {
             } label: {
               Label("Add Files".i18n, systemImage: "folder.badge.plus")
             }
+            .help("Add Files".i18n)
           }
           ToolbarItem(placement: .cancellationAction) {
             Button {
@@ -78,6 +79,7 @@ struct MainView: View {
             } label: {
               Label("Clear Table".i18n, systemImage: "trash")
             }
+            .help("Clear Table".i18n)
           }
           ToolbarItem(placement: .confirmationAction) {
             Button {
@@ -86,6 +88,7 @@ struct MainView: View {
               Label("Reprocess All".i18n, systemImage: "gobackward")
             }
             .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
+            .help("Reprocess All".i18n)
           }
         }
         .safeAreaInset(edge: .bottom) {
