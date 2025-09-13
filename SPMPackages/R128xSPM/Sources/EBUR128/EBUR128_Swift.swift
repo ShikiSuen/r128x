@@ -802,12 +802,16 @@ public actor EBUR128State {
       // Process all active channels at this sample position
       for (activeIdx, c) in activeChannels.enumerated() {
         // IIR filter calculation
-        let v0 = src[c][i] - a1 * filterStates[activeIdx].s1 - a2 * filterStates[activeIdx].s2
-          - a3 * filterStates[activeIdx].s3 - a4 * filterStates[activeIdx].s4
+        var v0 = src[c][i] - a1 * filterStates[activeIdx].s1
+        v0 -= a2 * filterStates[activeIdx].s2
+        v0 -= a3 * filterStates[activeIdx].s3
+        v0 -= a4 * filterStates[activeIdx].s4
 
         // Calculate output
-        audioData[c][audioIndex] = b0 * v0 + b1 * filterStates[activeIdx].s1 + b2 * filterStates[activeIdx].s2
-          + b3 * filterStates[activeIdx].s3 + b4 * filterStates[activeIdx].s4
+        audioData[c][audioIndex] = b0 * v0 + b1 * filterStates[activeIdx].s1
+        audioData[c][audioIndex] += b2 * filterStates[activeIdx].s2
+        audioData[c][audioIndex] += b3 * filterStates[activeIdx].s3
+        audioData[c][audioIndex] += b4 * filterStates[activeIdx].s4
 
         // Update filter state
         filterStates[activeIdx] = (
@@ -1114,11 +1118,11 @@ public actor EBUR128State {
 
           for i in batchStart ..< batchEnd {
             // 計算 IIR 濾波器輸入
-            let v0 = channelData[i] -
-              a1 * filterState[c][1] -
-              a2 * filterState[c][2] -
-              a3 * filterState[c][3] -
-              a4 * filterState[c][4]
+            var v0 = channelData[i]
+            v0 -= a1 * filterState[c][1]
+            v0 -= a2 * filterState[c][2]
+            v0 -= a3 * filterState[c][3]
+            v0 -= a4 * filterState[c][4]
 
             // 計算輸出索引，減少模除運算 - prevent overflow
             let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
@@ -1126,11 +1130,11 @@ public actor EBUR128State {
             let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
             // 計算濾波器輸出
-            audioData[c][idx] = b0 * v0 +
-              b1 * filterState[c][1] +
-              b2 * filterState[c][2] +
-              b3 * filterState[c][3] +
-              b4 * filterState[c][4]
+            audioData[c][idx] = b0 * v0
+            audioData[c][idx] += b1 * filterState[c][1]
+            audioData[c][idx] += b2 * filterState[c][2]
+            audioData[c][idx] += b3 * filterState[c][3]
+            audioData[c][idx] += b4 * filterState[c][4]
 
             // 優化狀態更新 - 使用位移而非逐個賦值
             filterState[c][4] = filterState[c][3]
@@ -1142,22 +1146,22 @@ public actor EBUR128State {
       } else {
         // 對於較小的幀數使用直接循環
         for i in 0 ..< framesCount {
-          let v0 = channelData[i] -
-            filterCoefA[1] * filterState[c][1] -
-            filterCoefA[2] * filterState[c][2] -
-            filterCoefA[3] * filterState[c][3] -
-            filterCoefA[4] * filterState[c][4]
+          var v0 = channelData[i]
+          v0 -= filterCoefA[1] * filterState[c][1]
+          v0 -= filterCoefA[2] * filterState[c][2]
+          v0 -= filterCoefA[3] * filterState[c][3]
+          v0 -= filterCoefA[4] * filterState[c][4]
 
           // Prevent overflow in audio index calculation
           let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
           let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
           let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
-          audioData[c][idx] = filterCoefB[0] * v0 +
-            filterCoefB[1] * filterState[c][1] +
-            filterCoefB[2] * filterState[c][2] +
-            filterCoefB[3] * filterState[c][3] +
-            filterCoefB[4] * filterState[c][4]
+          audioData[c][idx] = filterCoefB[0] * v0
+          audioData[c][idx] += filterCoefB[1] * filterState[c][1]
+          audioData[c][idx] += filterCoefB[2] * filterState[c][2]
+          audioData[c][idx] += filterCoefB[3] * filterState[c][3]
+          audioData[c][idx] += filterCoefB[4] * filterState[c][4]
 
           // 更新濾波器狀態
           filterState[c][4] = filterState[c][3]
@@ -1284,11 +1288,11 @@ public actor EBUR128State {
           let idx = audioIndex % audioData[c].count
 
           // 计算输出样本
-          audioData[c][idx] = filterCoefB[0] * v0Buffer[i] +
-            filterCoefB[1] * filterState[c][1] +
-            filterCoefB[2] * filterState[c][2] +
-            filterCoefB[3] * filterState[c][3] +
-            filterCoefB[4] * filterState[c][4]
+          audioData[c][idx] = filterCoefB[0] * v0Buffer[i]
+          audioData[c][idx] += filterCoefB[1] * filterState[c][1]
+          audioData[c][idx] += filterCoefB[2] * filterState[c][2]
+          audioData[c][idx] += filterCoefB[3] * filterState[c][3]
+          audioData[c][idx] += filterCoefB[4] * filterState[c][4]
 
           // 更新滤波器状态
           if i < framesToProcess - 1 {
@@ -1356,9 +1360,17 @@ public actor EBUR128State {
         let inputSample = srcPtr[processedFrames + i]
 
         // Ultra-optimized IIR filter calculation
-        let v0 = inputSample - filterA.0 * state.0 - filterA.1 * state.1 - filterA.2 * state.2 - filterA.3 * state.3
-        let output = filterB.0 * v0 + filterB.1 * state.0 + filterB.2 * state.1 + filterB.3 * state.2 + filterB
-          .4 * state.3
+        var v0 = inputSample
+        v0 -= filterA.0 * state.0
+        v0 -= filterA.1 * state.1
+        v0 -= filterA.2 * state.2
+        v0 -= filterA.3 * state.3
+
+        var output = filterB.0 * v0
+        output += filterB.1 * state.0
+        output += filterB.2 * state.1
+        output += filterB.3 * state.2
+        output += filterB.4 * state.3
 
         // Ultra-fast index calculation with proper bounds checking
         let audioIndex = baseAudioIndex + processedFrames + i
