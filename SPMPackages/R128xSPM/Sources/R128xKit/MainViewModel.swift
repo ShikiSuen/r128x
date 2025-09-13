@@ -176,6 +176,7 @@ public final class MainViewModel {
       var counter = 0
       let allowedSuffixes = Self.allowedSuffixes
       let currentEntries = entries
+      var allEntriesPaths = Set(currentEntries.map(\.fileNamePath)) // Use a Set for faster lookups
 
       for provider in providers {
         if let url = await withCheckedContinuation({ continuation in
@@ -185,15 +186,32 @@ public final class MainViewModel {
         }) {
           var isDirectory: ObjCBool = false
           let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-          guard exists, !isDirectory.boolValue else { continue }
-          let path = url.path
-          guard !currentEntries.map(\.fileNamePath).contains(path) else { continue }
+          guard exists else { continue }
 
-          for fileExtension in allowedSuffixes {
-            guard path.hasSuffix(".\(fileExtension)") else { continue }
-            counter += 1
-            entries.append(.init(url: url))
-            break
+          if isDirectory.boolValue {
+            // Handle folder drop - recursively enumerate audio files
+            let audioFiles = recursivelyEnumerateAudioFiles(
+              in: url, allowedSuffixes: allowedSuffixes
+            )
+            for audioFile in audioFiles {
+              let path = audioFile.path
+              guard !allEntriesPaths.contains(path) else { continue }
+              counter += 1
+              entries.append(.init(url: audioFile))
+              allEntriesPaths.insert(path) // Track newly added paths
+            }
+          } else {
+            // Handle individual file drop
+            let path = url.path
+            guard !allEntriesPaths.contains(path) else { continue }
+
+            for fileExtension in allowedSuffixes {
+              guard path.hasSuffix(".\(fileExtension)") else { continue }
+              counter += 1
+              entries.append(.init(url: url))
+              allEntriesPaths.insert(path) // Track newly added paths
+              break
+            }
           }
         }
       }
@@ -207,14 +225,31 @@ public final class MainViewModel {
 
   public func addFiles(urls: [URL]) {
     let entriesAsPaths: [String] = entries.map(\.fileNamePath)
-    let contents: [URL] = urls.filter {
-      !entriesAsPaths.contains($0.path)
-    }
-    let newEntries: [IntelEntry] = contents.compactMap {
+    var newEntries: [IntelEntry] = []
+    var allEntriesPaths = Set(entriesAsPaths) // Use a Set for faster lookups
+
+    for url in urls {
+      guard !allEntriesPaths.contains(url.path) else { continue }
+
       var isDirectory: ObjCBool = false
-      let exists = FileManager.default.fileExists(atPath: $0.path, isDirectory: &isDirectory)
-      guard exists, !isDirectory.boolValue else { return nil }
-      return IntelEntry(url: $0)
+      let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+      guard exists else { continue }
+
+      if isDirectory.boolValue {
+        // Handle folder - recursively enumerate audio files
+        let audioFiles = recursivelyEnumerateAudioFiles(
+          in: url, allowedSuffixes: Self.allowedSuffixes
+        )
+        for audioFile in audioFiles {
+          guard !allEntriesPaths.contains(audioFile.path) else { continue }
+          newEntries.append(IntelEntry(url: audioFile))
+          allEntriesPaths.insert(audioFile.path) // Track newly added paths
+        }
+      } else {
+        // Handle individual file
+        newEntries.append(IntelEntry(url: url))
+        allEntriesPaths.insert(url.path) // Track newly added paths
+      }
     }
 
     guard !newEntries.isEmpty else { return }
@@ -245,6 +280,40 @@ public final class MainViewModel {
   // MARK: Private
 
   @ObservationIgnored private let writerQueue = DispatchQueue(label: "r128x.writer")
+
+  private func recursivelyEnumerateAudioFiles(in directoryURL: URL, allowedSuffixes: [String])
+    -> [URL] {
+    var audioFiles: [URL] = []
+
+    guard let enumerator = FileManager.default.enumerator(
+      at: directoryURL,
+      includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey],
+      options: [.skipsHiddenFiles, .skipsPackageDescendants]
+    )
+    else {
+      return audioFiles
+    }
+
+    for case let fileURL as URL in enumerator {
+      do {
+        let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+        if let isRegularFile = resourceValues.isRegularFile, isRegularFile {
+          let path = fileURL.path
+          for fileExtension in allowedSuffixes {
+            if path.hasSuffix(".\(fileExtension)") {
+              audioFiles.append(fileURL)
+              break
+            }
+          }
+        }
+      } catch {
+        // Skip files that can't be checked
+        continue
+      }
+    }
+
+    return audioFiles
+  }
 }
 
 extension Bool {

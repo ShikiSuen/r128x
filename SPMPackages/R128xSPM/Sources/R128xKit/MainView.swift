@@ -48,26 +48,32 @@ struct MainView: View {
 
   var body: some View {
     NavigationStack {
-      taskListView() // taskTableView()
-        .onDrop(
-          of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop
-        )
-        .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
-          Task { @MainActor in
-            await viewModel.progressDebouncer.debounceProgress(newProgress) { progress in
-              viewModel.updateProgress(progress)
-            }
+      Group {
+        if !viewModel.entries.isEmpty {
+          taskListView() // taskTableView()
+            .searchable(text: $viewModel.searchText, prompt: "Search files...".i18n)
+        } else {
+          taskListView() // taskTableView()
+        }
+      }
+      .onDrop(
+        of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop
+      )
+      .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
+        Task { @MainActor in
+          await viewModel.progressDebouncer.debounceProgress(newProgress) { progress in
+            viewModel.updateProgress(progress)
           }
         }
-        .onDisappear {
-          // Cancel progress observation when view disappears
-          progressObservationTask?.cancel()
-        }
-        .navigationTitle("app.windowTitle".i18n)
+      }
+      .onDisappear {
+        // Cancel progress observation when view disappears
+        progressObservationTask?.cancel()
+      }
+      .navigationTitle("app.windowTitle".i18n)
       #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
       #endif
-        .searchable(text: $viewModel.searchText, prompt: "Search files...".i18n)
         .toolbar {
           ToolbarItem(placement: .confirmationAction) {
             Button {
@@ -77,29 +83,33 @@ struct MainView: View {
             }
             .help("Add Files".i18n)
           }
-          ToolbarItem(placement: .cancellationAction) {
-            Button {
-              viewModel.clearEntries()
-            } label: {
-              Label("Clear Table".i18n, systemImage: "trash")
+          if !viewModel.entries.isEmpty {
+            ToolbarItem(placement: .cancellationAction) {
+              Button {
+                viewModel.clearEntries()
+              } label: {
+                Label("Clear Table".i18n, systemImage: "trash")
+              }
+              .help("Clear Table".i18n)
             }
-            .help("Clear Table".i18n)
-          }
-          ToolbarItem(placement: .confirmationAction) {
-            Button {
-              viewModel.batchProcess(forced: true)
-            } label: {
-              Label("Reprocess All".i18n, systemImage: "gobackward")
+            ToolbarItem(placement: .confirmationAction) {
+              Button {
+                viewModel.batchProcess(forced: true)
+              } label: {
+                Label("Reprocess All".i18n, systemImage: "gobackward")
+              }
+              .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
+              .help("Reprocess All".i18n)
             }
-            .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
-            .help("Reprocess All".i18n)
           }
         }
         .safeAreaInset(edge: .bottom) {
-          controlsView()
-            .padding(10)
-            .padding(.horizontal, 10)
-            .background(.regularMaterial)
+          if !viewModel.entries.isEmpty {
+            controlsView()
+              .padding(10)
+              .padding(.horizontal, 10)
+              .background(.regularMaterial)
+          }
         }
     }
     #if os(macOS)
@@ -223,6 +233,35 @@ struct MainView: View {
     #else
       .listStyle(.plain)
     #endif
+      .overlay {
+        if viewModel.entries.isEmpty {
+          VStack(spacing: 16) {
+            Image(systemName: "waveform.path")
+              .font(.system(size: 48))
+              .foregroundStyle(.secondary)
+
+            VStack(spacing: 8) {
+              Text("emptyState.title".i18n)
+                .font(.title3)
+                .fontWeight(.medium)
+
+              #if os(macOS)
+              Text("emptyState.dragHint.macOS".i18n)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+              #else
+              Text("emptyState.dragHint.iOS".i18n)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+              #endif
+            }
+          }
+          .frame(maxWidth: 300)
+          .padding()
+        }
+      }
   }
 
   private func addFilesButtonDidPress() {
