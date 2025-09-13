@@ -7,8 +7,9 @@ import SwiftUI
 
 // MARK: - SharedFileManager
 
+@Observable
 @MainActor
-public final class SharedFileManager: ObservableObject {
+public final class SharedFileManager {
   // MARK: Lifecycle
 
   private init() {}
@@ -17,7 +18,7 @@ public final class SharedFileManager: ObservableObject {
 
   public static let shared = SharedFileManager()
 
-  @Published public var pendingSharedFiles: [URL] = []
+  public var pendingSharedFiles: [URL] = []
 
   public func handleSharedFiles(_ urls: [URL]) {
     // Log incoming shared files for debugging
