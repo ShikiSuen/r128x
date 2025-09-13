@@ -218,6 +218,7 @@ struct MainView: View {
               .help(Text("Loudness Range".i18n))
             }
             .frame(width: 60)
+            .colorMultiply(entry.isResultInvalid ? .red : .primary)
           }
         }
         .font(.system(.body).monospacedDigit())

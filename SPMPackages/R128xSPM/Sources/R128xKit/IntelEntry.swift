@@ -56,6 +56,10 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
     status == .succeeded || status == .failed
   }
 
+  public var isResultInvalid: Bool {
+    [programLoudness, loudnessRange, dBTP].allSatisfy { $0 == nil } && status != .processing
+  }
+
   public var statusDisplayed: String { status.rawValue }
   public var programLoudnessDisplayed: String { programLoudness?.description ?? "N/A" }
   public var loudnessRangeDisplayed: String {
