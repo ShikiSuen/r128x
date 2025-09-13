@@ -62,6 +62,16 @@ jobs:
         TAP_NAME="${OWNER}/r128x"
         mkdir -p local-tap/Formula
         cp r128x.rb local-tap/Formula/r128x.rb
+        
+        # Initialize the local tap as a git repository (required by brew tap)
+        cd local-tap
+        git init
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add .
+        git commit -m "Add r128x formula for testing"
+        cd ..
+        
         # Tap the local directory (brew accepts a local path as a tap)
         brew tap "${TAP_NAME}" "$(pwd)/local-tap"
         # Audit by tap/name (audit by path is disabled)
