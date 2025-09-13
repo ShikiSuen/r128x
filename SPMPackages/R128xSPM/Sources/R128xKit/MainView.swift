@@ -230,39 +230,42 @@ struct MainView: View {
       }
     }
     #if os(macOS)
-      .listStyle(.bordered(alternatesRowBackgrounds: true))
+    .listStyle(.bordered(alternatesRowBackgrounds: true))
     #else
-      .listStyle(.plain)
+    .listStyle(.plain)
     #endif
-      .overlay {
-        if viewModel.entries.isEmpty {
-          VStack(spacing: 16) {
-            Image(systemName: "waveform.path")
-              .font(.system(size: 48))
-              .foregroundStyle(.secondary)
-
-            VStack(spacing: 8) {
-              Text("emptyState.title".i18n)
-                .font(.title3)
-                .fontWeight(.medium)
-
-              #if os(macOS)
-              Text("emptyState.dragHint.macOS".i18n)
-                .font(.body)
+    .overlay {
+      if viewModel.entries.isEmpty {
+        Color.clear.background(.regularMaterial)
+          .overlay {
+            VStack(spacing: 16) {
+              Image(systemName: "waveform.path")
+                .font(.system(size: 48))
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-              #else
-              Text("emptyState.dragHint.iOS".i18n)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-              #endif
+
+              VStack(spacing: 8) {
+                Text("emptyState.title".i18n)
+                  .font(.title3)
+                  .fontWeight(.medium)
+
+                #if os(macOS)
+                Text("emptyState.dragHint.macOS".i18n)
+                  .font(.body)
+                  .foregroundStyle(.secondary)
+                  .multilineTextAlignment(.center)
+                #else
+                Text("emptyState.dragHint.iOS".i18n)
+                  .font(.body)
+                  .foregroundStyle(.secondary)
+                  .multilineTextAlignment(.center)
+                #endif
+              }
             }
+            .frame(maxWidth: 300)
+            .padding()
           }
-          .frame(maxWidth: 300)
-          .padding()
-        }
       }
+    }
   }
 
   private func addFilesButtonDidPress() {
