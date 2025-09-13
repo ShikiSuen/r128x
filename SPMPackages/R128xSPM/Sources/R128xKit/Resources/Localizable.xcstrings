@@ -216,31 +216,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Use the \"Add Files\" button to select audio files for analysis."
+            "value" : "Please add audio files to proceed. You may use the following methods:\n- Use the \"Add Files\" button;\n- Share files to this app from other apps using iOS's built-in share feature."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Utilisez le bouton \"Ajouter des Fichiers\" pour sélectionner des fichiers audio à analyser."
+            "value" : "Veuillez ajouter des fichiers audio pour continuer. Vous pouvez utiliser les méthodes suivantes :\n- Utilisant le bouton \"Ajouter des Fichiers\" ;\n- Partageant des fichiers vers cette app depuis d'autres apps en utilisant la fonction de partage intégrée d'iOS."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「ファイル添付」ボタンを押して音声ファイルを選択してください。"
+            "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- iOS標準の共有機能を使って他のアプリから弊アプリにファイルを共有。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请点击「添入文件」按钮来选择待分析的音频文件。"
+            "value" : "请添加音频文件以继续。您可以使用以下方法：\n- 点击「添入文件」按钮\n- 通过 iOS 分享功能从其他 App 发送文件过来"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請點擊「添入檔案」按鈕來選擇待分析的音訊檔案。"
+            "value" : "請添加音訊檔案以繼續。您可以使用以下方法：\n- 點擊「添入檔案」按鈕\n- 透過 iOS 分享功能從其他 App 傳送檔案過來"
           }
         }
       }
@@ -251,31 +251,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Drag audio files or folders from Finder to this window to start analyzing their loudness."
+            "value" : "Please add audio files to proceed. You may use the following methods:\n- Use the \"Add Files\" button;\n- Drag audio files or folders from Finder to this window;\n- Share files to this app from other apps using macOS's built-in share feature."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Faites glisser des fichiers audio ou des dossiers du Finder vers cette fenêtre pour commencer à analyser leur niveau sonore."
+            "value" : "Veuillez ajouter des fichiers audio pour continuer. Vous pouvez utiliser les méthodes suivantes :\n- Utilisant le bouton \"Ajouter des Fichiers\" ;\n- Faisant glisser des fichiers audio ou des dossiers du Finder vers cette fenêtre ;\n- Partageant des fichiers vers cette app depuis d'autres apps en utilisant la fonction de partage intégrée de macOS."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finder から音声ファイルやフォルダを弊ウィンドウにドラッグしてラウドネス解析を開始してください。"
+            "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- Finder から音声ファイルやフォルダを弊ウィンドウにドラッグ；\n- macOS標準のファイル共有機能を使って他のアプリから弊アプリにファイルを送信。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "从 Finder 拖拽音频文件或文件夹到此窗口，即可开始分析其响度。"
+            "value" : "请添加音频文件以继续。您可以使用以下方法：\n- 点击「添入文件」按钮\n- 从 Finder 拖拽文件或文件夹到这里\n- 通过 macOS 分享功能从其他 App 发送文件过来"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "從 Finder 拖拽音訊檔案或資料夾到此視窗，即可開始分析其響度。"
+            "value" : "請添加音訊檔案以繼續。您可以使用以下方法：\n- 點擊「添入檔案」按鈕\n- 從 Finder 拖拽檔案或資料夾到這裡\n- 透過 macOS 分享功能從其他 App 傳送檔案過來"
           }
         }
       }
