@@ -1,6 +1,6 @@
 # r128x, a tool for loudness measurement of files on macOS. #
 
-Both the GUI version and the CLI version require macOS 14 since v0.7.0 release.
+Both the GUI version and the CLI version require macOS 14 since v0.7.0 release. However, if you want to compile, then Xcode 16.4 and macOS 15 Sequoia is required since v0.8.0 release as the develop environment for r128x-cli app. If GUI app, then Xcode 26 and macOS 26 is needed due to the support of icon composer projects.
 
 > This OS-requirement change is due to some needs of using newer SwiftUI APIs.
 > 
