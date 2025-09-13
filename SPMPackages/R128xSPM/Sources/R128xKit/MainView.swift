@@ -246,7 +246,7 @@ struct MainView: View {
                 mainLabel
                 Text(entry.folderPath)
                   .lineLimit(1)
-                  .truncationMode(.tail)
+                  .truncationMode(.head)
                   .fontWidth(.condensed)
                   .font(.caption2)
                   .foregroundStyle(.secondary)
