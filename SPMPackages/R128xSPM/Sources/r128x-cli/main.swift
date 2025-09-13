@@ -59,10 +59,26 @@ public class CliController {
         at: filePath,
         fileId: String?.none
       ) { progress in
-        // Update progress for CLI
+        // Always show progress, regardless of file size
         let value = Float(progress.percentage)
-        print(String(format: "%3d%% \n\033[F\033[J", Int(floor(value))))
+        let percentage = Int(floor(value))
+
+        // Create visual progress bar: =============--------------
+        let totalWidth = 30
+        let filledWidth = Int(Double(totalWidth) * progress.percentage / 100.0)
+        let emptyWidth = totalWidth - filledWidth
+
+        let filledPart = String(repeating: "=", count: filledWidth)
+        let emptyPart = String(repeating: "-", count: emptyWidth)
+        let progressBar = filledPart + emptyPart
+
+        // Use carriage return to overwrite the current line
+        print(String(format: "\r[%@] %3d%%", progressBar, percentage), terminator: "")
+        fflush(stdout)
       }
+
+      // Clear the progress line after completion and add newline
+      print("\r" + String(repeating: " ", count: 40) + "\r", terminator: "")
 
       il = integratedLoudness
       lra = loudnessRange
