@@ -86,18 +86,60 @@ L / R / C / LFE / Ls / Rs.
 You will have incorrect results if your file's channels mapping is different.
 As r128x uses CoreAudio to read audio files, only file formats/codecs supported by CoreAudio are supported by r128x.
 
-### RF64 Format Support ###
-RF64 is an extension of the WAV format that supports files larger than 4GB by using 64-bit size fields. This format is useful for long-duration, multi-channel recordings.
+## RF64 Format Support
 
-**Current Status:**
-- r128x can detect RF64 files and will provide informative error messages
-- If CoreAudio supports RF64 on your macOS version, r128x will process the files normally
-- If CoreAudio doesn't support RF64, r128x will display detailed information about the file and suggest alternatives
+This version of r128x includes comprehensive support for detecting and handling RF64 audio files.
 
-**Workarounds for unsupported RF64 files:**
-1. Convert RF64 to multiple smaller WAV files using tools like FFmpeg or SoX
-2. Use audio conversion software that can split large files
-3. Convert RF64 to a CoreAudio-supported format while preserving audio quality
+### What is RF64?
+
+RF64 is an extension of the WAV format designed to handle audio files larger than 4GB. It was defined by the European Broadcasting Union (EBU) and is commonly used for:
+
+- Long-duration recordings (>2 hours at high quality)
+- Multi-channel audio (5.1, 7.1 surround sound)
+- High sample rates and bit depths
+- Professional audio production
+
+### Current Implementation
+
+**Detection & Analysis:**
+- r128x automatically detects RF64 files
+- Parses RF64 headers and extracts size information
+- Tests CoreAudio compatibility automatically
+
+**Smart Error Handling:**
+- If CoreAudio supports RF64: processes normally
+- If not supported: provides detailed error messages with file information
+- Suggests practical workarounds and alternatives
+
+**Example Error Message:**
+```
+RF64 file detected (8.50 GB data). CoreAudio does not support RF64 on this system. 
+Consider converting to multiple smaller WAV files or using a different tool.
+```
+
+### Workarounds for Unsupported RF64 Files
+
+1. **Split into smaller files:**
+   ```bash
+   ffmpeg -i large_file.rf64 -t 3600 -c copy part_%03d.wav
+   ```
+
+2. **Convert to supported format:**
+   ```bash
+   ffmpeg -i file.rf64 -c:a pcm_f32le -ar 48000 output.wav
+   ```
+
+3. **Use professional tools:**
+   - Pro Tools, Logic Pro, Reaper (native RF64 support)
+   - SoX audio processor
+   - Audacity (with plugins)
+
+### Technical Notes
+
+- RF64 support will automatically work if Apple adds CoreAudio RF64 support in future macOS versions
+- The implementation follows EBU Technical Specification 3306
+- Handles both RF64 and BWF (Broadcast Wave Format) variants
+- Thread-safe and memory-efficient parsing
 
 ** CoreAudio may support new formats per certain macOS releases. Please file issues if new formats are implementable in r128x.**
 
