@@ -42,6 +42,16 @@ public struct R128xScene: Scene {
 
   private func handleSharedURL(_ url: URL) {
     // Handle shared files from the share extension and other sources
+    print("R128xScene: Received shared URL: \(url)")
+    // Start accessing security-scoped resource
+
+    let accessing = url.startAccessingSecurityScopedResource()
+    defer {
+      if accessing {
+        url.stopAccessingSecurityScopedResource()
+      }
+    }
+
     Task { @MainActor in
       var urlsToProcess: [URL] = []
 
@@ -89,79 +99,19 @@ struct MainView: View {
 
   // MARK: - Instance.
 
-  public init() {
-    // Start observing progress updates
-    self.progressObservationTask = viewModel.taskTrackingVM.startObserving()
-  }
+  public init() {}
 
   // MARK: Internal
 
   var body: some View {
     NavigationStack {
-      Group {
-        if !viewModel.entries.isEmpty {
-          taskListView() // taskTableView()
-            .searchable(text: $viewModel.searchText, prompt: "Search files...".i18n)
-        } else {
-          taskListView() // taskTableView()
-        }
-      }
-      .onDrop(
-        of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop
-      )
-      .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
-        Task { @MainActor in
-          await viewModel.progressDebouncer.debounceProgress(newProgress) { progress in
-            viewModel.updateProgress(progress)
-          }
-        }
-      }
-      .onChange(of: sharedFileManager.pendingSharedFiles) { _, pendingFiles in
-        // Handle shared files when they arrive
-        if !pendingFiles.isEmpty {
-          sharedFileManager.processPendingFiles(with: viewModel)
-        }
-      }
-      .onAppear {
-        // Check for any pending shared files when the view appears
-        sharedFileManager.processPendingFiles(with: viewModel)
-      }
-      .onDisappear {
-        // Cancel progress observation when view disappears
-        progressObservationTask?.cancel()
-      }
-      .navigationTitle("app.windowTitle".i18n)
+      mainContentView
+        .navigationTitle("app.windowTitle".i18n)
       #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
       #endif
         .toolbar {
-          ToolbarItem(placement: .confirmationAction) {
-            Button {
-              addFilesButtonDidPress()
-            } label: {
-              Label("Add Files".i18n, systemImage: "folder.badge.plus")
-            }
-            .help("Add Files".i18n)
-          }
-          if !viewModel.entries.isEmpty {
-            ToolbarItem(placement: .cancellationAction) {
-              Button {
-                viewModel.clearEntries()
-              } label: {
-                Label("Clear Table".i18n, systemImage: "trash")
-              }
-              .help("Clear Table".i18n)
-            }
-            ToolbarItem(placement: .confirmationAction) {
-              Button {
-                viewModel.batchProcess(forced: true)
-              } label: {
-                Label("Reprocess All".i18n, systemImage: "gobackward")
-              }
-              .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
-              .help("Reprocess All".i18n)
-            }
-          }
+          toolbarContent
         }
         .safeAreaInset(edge: .bottom) {
           if !viewModel.entries.isEmpty {
@@ -193,11 +143,73 @@ struct MainView: View {
 
   @State private var viewModel = MainViewModel()
   @State private var isFileImporterPresented = false
-  @StateObject private var sharedFileManager = SharedFileManager.shared
+  @State private var sharedFileManager = SharedFileManager.shared
+  @State private var progressObservationTask: Task<Void, Never>?
 
-  @Environment(\.horizontalSizeClass) private var horizontalSizeClass: UserInterfaceSizeClass?
+  @ToolbarContentBuilder private var toolbarContent: some ToolbarContent {
+    ToolbarItem(placement: .confirmationAction) {
+      Button {
+        addFilesButtonDidPress()
+      } label: {
+        Label("Add Files".i18n, systemImage: "folder.badge.plus")
+      }
+      .help("Add Files".i18n)
+    }
+    if !viewModel.entries.isEmpty {
+      ToolbarItem(placement: .cancellationAction) {
+        Button {
+          viewModel.clearEntries()
+        } label: {
+          Label("Clear Table".i18n, systemImage: "trash")
+        }
+        .help("Clear Table".i18n)
+      }
+      ToolbarItem(placement: .confirmationAction) {
+        Button {
+          viewModel.batchProcess(forced: true)
+        } label: {
+          Label("Reprocess All".i18n, systemImage: "gobackward")
+        }
+        .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
+        .help("Reprocess All".i18n)
+      }
+    }
+  }
 
-  private var progressObservationTask: Task<Void, Never>?
+  @ViewBuilder private var mainContentView: some View {
+    Group {
+      if !viewModel.entries.isEmpty {
+        taskListView()
+          .searchable(text: $viewModel.searchText, prompt: "Search files...".i18n)
+      } else {
+        taskListView()
+      }
+    }
+    .onDrop(
+      of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop
+    )
+    .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
+      Task { @MainActor in
+        await viewModel.progressDebouncer.debounceProgress(newProgress) { progress in
+          viewModel.updateProgress(progress)
+        }
+      }
+    }
+    .onChange(of: sharedFileManager.pendingSharedFiles) { _, pendingFiles in
+      if !pendingFiles.isEmpty {
+        sharedFileManager.processPendingFiles(with: viewModel)
+      }
+    }
+    .task {
+      // Use .task instead of .onAppear for better lifecycle management
+      // This automatically cancels when the view disappears and recreates when it reappears
+      progressObservationTask = viewModel.taskTrackingVM.startObserving()
+    }
+    .onAppear {
+      // Only handle shared files on appear, not progress observation
+      sharedFileManager.processPendingFiles(with: viewModel)
+    }
+  }
 
   @ViewBuilder
   private func controlsView() -> some View {
