@@ -156,12 +156,7 @@ public actor ExtAudioProcessor {
     }
 
     // Create URL for audio file
-    guard let fileURL = URL(string: "file://\(audioFilePath)") else {
-      throw NSError(
-        domain: "ExtAudioProcessor", code: -1,
-        userInfo: [NSLocalizedDescriptionKey: "Invalid file path"]
-      )
-    }
+    let fileURL = URL(fileURLWithPath: audioFilePath)
 
     var audioFile: ExtAudioFileRef?
     var status = ExtAudioFileOpenURL(fileURL as CFURL, &audioFile)
