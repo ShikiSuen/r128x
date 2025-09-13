@@ -45,8 +45,9 @@ public final class MainViewModel {
   public var entries: [IntelEntry] = []
   public var dragOver = false
   public var highlighted: IntelEntry.ID?
-  public var currentTask: Task<Void, Never>?
   public var searchText: String = ""
+  @ObservationIgnored public let progressDebouncer: ProgressDebouncer = .init(delay: 0.1)
+  @ObservationIgnored public var currentTask: Task<Void, Never>?
 
   public let taskTrackingVM = TaskTrackingVM.shared
 
@@ -245,7 +246,7 @@ public final class MainViewModel {
 
   // MARK: Private
 
-  private let writerQueue = DispatchQueue(label: "r128x.writer")
+  @ObservationIgnored private let writerQueue = DispatchQueue(label: "r128x.writer")
 }
 
 extension Bool {
