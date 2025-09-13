@@ -27,8 +27,28 @@ public final class SharedFileManager {
       print("  - \(url.path)")
     }
 
+    // Process shared files with security-scoped resource access
+    var validURLs: [URL] = []
+
+    for url in urls {
+      // Start accessing security-scoped resource for shared files
+      let accessing = url.startAccessingSecurityScopedResource()
+      defer {
+        if accessing {
+          url.stopAccessingSecurityScopedResource()
+        }
+      }
+
+      // Verify file exists and is accessible
+      if FileManager.default.fileExists(atPath: url.path) {
+        validURLs.append(url)
+      } else {
+        print("SharedFileManager: File not accessible: \(url.path)")
+      }
+    }
+
     // Add to pending files, avoiding duplicates
-    let newURLs = urls.filter { newURL in
+    let newURLs = validURLs.filter { newURL in
       !pendingSharedFiles.contains { $0.path == newURL.path }
     }
 
