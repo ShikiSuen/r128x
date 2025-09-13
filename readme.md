@@ -85,6 +85,20 @@ Channel mapping is static, using the default libebur128 channel mapping :
 L / R / C / LFE / Ls / Rs.
 You will have incorrect results if your file's channels mapping is different.
 As r128x uses CoreAudio to read audio files, only file formats/codecs supported by CoreAudio are supported by r128x.
+
+### RF64 Format Support ###
+RF64 is an extension of the WAV format that supports files larger than 4GB by using 64-bit size fields. This format is useful for long-duration, multi-channel recordings.
+
+**Current Status:**
+- r128x can detect RF64 files and will provide informative error messages
+- If CoreAudio supports RF64 on your macOS version, r128x will process the files normally
+- If CoreAudio doesn't support RF64, r128x will display detailed information about the file and suggest alternatives
+
+**Workarounds for unsupported RF64 files:**
+1. Convert RF64 to multiple smaller WAV files using tools like FFmpeg or SoX
+2. Use audio conversion software that can split large files
+3. Convert RF64 to a CoreAudio-supported format while preserving audio quality
+
 ** CoreAudio may support new formats per certain macOS releases. Please file issues if new formats are implementable in r128x.**
 
 ## Notice regarding the end of the French translation support in this Repository ##

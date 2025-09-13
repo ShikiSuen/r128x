@@ -71,6 +71,16 @@ public class CliController {
     } catch {
       status = -1
       resetNumericValues()
+      
+      // Print detailed error information for better user experience
+      if let nsError = error as NSError? {
+        print("Error processing \((filePath as NSString).lastPathComponent): \(nsError.localizedDescription)")
+        if let recoverySuggestion = nsError.localizedRecoverySuggestion {
+          print("  \(recoverySuggestion)")
+        }
+      } else {
+        print("Error processing \((filePath as NSString).lastPathComponent): \(error.localizedDescription)")
+      }
     }
   }
 
