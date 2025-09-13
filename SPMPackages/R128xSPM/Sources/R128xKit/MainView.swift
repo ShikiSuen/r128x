@@ -26,8 +26,56 @@ public struct R128xScene: Scene {
         exit(0)
       }
       .presentedWindowToolbarStyle(.unifiedCompact)
-    }.commands {
+      .onOpenURL { url in
+        handleSharedURL(url)
+      }
+    }
+    .commands {
       CommandGroup(replacing: CommandGroupPlacement.newItem) {}
+    }
+    .handlesExternalEvents(matching: Set(arrayLiteral: "*"))
+  }
+
+  // MARK: Private
+
+  private func handleSharedURL(_ url: URL) {
+    // Handle shared files from the share extension and other sources
+    Task { @MainActor in
+      var urlsToProcess: [URL] = []
+
+      if url.scheme == "file" {
+        // Direct file URL
+        urlsToProcess.append(url)
+      } else if url.isFileURL {
+        // Another type of file URL
+        urlsToProcess.append(url)
+      } else {
+        // Handle other URL schemes if needed
+        print("Received unsupported URL scheme: \(url.scheme ?? "nil") for URL: \(url)")
+        return
+      }
+
+      // Filter URLs to only include supported audio files and folders
+      let filteredURLs = urlsToProcess.filter { url in
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+
+        if !exists {
+          return false
+        }
+
+        if isDirectory.boolValue {
+          return true // Accept folders
+        }
+
+        // Check if file has supported extension
+        let pathExtension = url.pathExtension.lowercased()
+        return MainViewModel.allowedSuffixes.contains(pathExtension)
+      }
+
+      if !filteredURLs.isEmpty {
+        SharedFileManager.shared.handleSharedFiles(filteredURLs)
+      }
     }
   }
 }
@@ -65,6 +113,16 @@ struct MainView: View {
             viewModel.updateProgress(progress)
           }
         }
+      }
+      .onChange(of: sharedFileManager.pendingSharedFiles) { _, pendingFiles in
+        // Handle shared files when they arrive
+        if !pendingFiles.isEmpty {
+          sharedFileManager.processPendingFiles(with: viewModel)
+        }
+      }
+      .onAppear {
+        // Check for any pending shared files when the view appears
+        sharedFileManager.processPendingFiles(with: viewModel)
       }
       .onDisappear {
         // Cancel progress observation when view disappears
@@ -133,6 +191,7 @@ struct MainView: View {
 
   @State private var viewModel = MainViewModel()
   @State private var isFileImporterPresented = false
+  @StateObject private var sharedFileManager = SharedFileManager.shared
 
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass: UserInterfaceSizeClass?
 
