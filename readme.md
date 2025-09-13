@@ -27,7 +27,7 @@ The charged fee is not mandatory since you can always compile the binaries for y
 
 ### How to Compile ###
 
-Xcode 15 is recommended for the compilation. Apple always eager to push its latest toolchain as a hard requirement for compiling Xcode projects.
+Xcode 26 or Swift 6.1 is recommended for the compilation. Apple always eager to push its latest toolchain as a hard requirement for compiling modern Xcode projects.
 
 #### 1. GUI app ####
 
