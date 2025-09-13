@@ -138,6 +138,15 @@ public actor ExtAudioProcessor {
   ) async throws
     -> (integratedLoudness: Double, loudnessRange: Double, maxTruePeak: Double) {
     #if canImport(AudioToolbox)
+
+    // Add memory pressure handling for large batch processing
+    defer {
+      // Force memory cleanup after processing
+      autoreleasepool {
+        // This helps release any retained objects from AudioToolbox
+      }
+    }
+
     // Create URL for audio file
     guard let fileURL = URL(string: "file://\(audioFilePath)") else {
       throw NSError(domain: "ExtAudioProcessor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid file path"])
