@@ -210,72 +210,98 @@
         }
       }
     },
-    "emptyState.dragHint.iOS" : {
+    "emptyState.dragHint" : {
+      "comment" : "Differs between iOS and macOS.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please add audio files to proceed. You may use the following methods:\n- Use the \"Add Files\" button;\n- Share files to this app from other apps using iOS's built-in share feature."
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Please add audio files to proceed. You may use the following methods:\n- Use the \"Add Files\" button;\n- Drag audio files or folders from Finder to this window;\n- Share files to this app from other apps using macOS's built-in share feature."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Please add audio files to proceed. You may use the following methods:\n- Use the \"Add Files\" button;\n- Share files to this app from other apps using iOS's built-in share feature."
+                }
+              }
+            }
           }
         },
         "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veuillez ajouter des fichiers audio pour continuer. Vous pouvez utiliser les méthodes suivantes :\n- Utilisant le bouton \"Ajouter des Fichiers\" ;\n- Partageant des fichiers vers cette app depuis d'autres apps en utilisant la fonction de partage intégrée d'iOS."
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Veuillez ajouter des fichiers audio pour continuer. Vous pouvez utiliser les méthodes suivantes :\n- Utilisant le bouton \"Ajouter des Fichiers\" ;\n- Faisant glisser des fichiers audio ou des dossiers du Finder vers cette fenêtre ;\n- Partageant des fichiers vers cette app depuis d'autres apps en utilisant la fonction de partage intégrée de macOS."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Veuillez ajouter des fichiers audio pour continuer. Vous pouvez utiliser les méthodes suivantes :\n- Utilisant le bouton \"Ajouter des Fichiers\" ;\n- Partageant des fichiers vers cette app depuis d'autres apps en utilisant la fonction de partage intégrée d'iOS."
+                }
+              }
+            }
           }
         },
         "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- iOS標準の共有機能を使って他のアプリから弊アプリにファイルを共有。"
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- Finder から音声ファイルやフォルダを弊ウィンドウにドラッグ；\n- macOS標準のファイル共有機能を使って他のアプリから弊アプリにファイルを送信。"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- iOS標準の共有機能を使って他のアプリから弊アプリにファイルを共有。"
+                }
+              }
+            }
           }
         },
         "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请添加音频文件以继续。您可以使用以下方法：\n- 点击「添入文件」按钮\n- 通过 iOS 分享功能从其他 App 发送文件过来"
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "请添加音频文件以继续。您可以使用以下方法：\n- 点击「添入文件」按钮；\n- 从 Finder 拖拽文件或文件夹到这里；\n- 通过 macOS 分享功能从其他 App 发送文件过来。"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "请添加音频文件以继续。您可以使用以下方法：\n- 点击「添入文件」按钮；\n- 通过 iOS 分享功能从其他 App 发送文件过来。"
+                }
+              }
+            }
           }
         },
         "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請添加音訊檔案以繼續。您可以使用以下方法：\n- 點擊「添入檔案」按鈕\n- 透過 iOS 分享功能從其他 App 傳送檔案過來"
-          }
-        }
-      }
-    },
-    "emptyState.dragHint.macOS" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please add audio files to proceed. You may use the following methods:\n- Use the \"Add Files\" button;\n- Drag audio files or folders from Finder to this window;\n- Share files to this app from other apps using macOS's built-in share feature."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veuillez ajouter des fichiers audio pour continuer. Vous pouvez utiliser les méthodes suivantes :\n- Utilisant le bouton \"Ajouter des Fichiers\" ;\n- Faisant glisser des fichiers audio ou des dossiers du Finder vers cette fenêtre ;\n- Partageant des fichiers vers cette app depuis d'autres apps en utilisant la fonction de partage intégrée de macOS."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- Finder から音声ファイルやフォルダを弊ウィンドウにドラッグ；\n- macOS標準のファイル共有機能を使って他のアプリから弊アプリにファイルを送信。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请添加音频文件以继续。您可以使用以下方法：\n- 点击「添入文件」按钮\n- 从 Finder 拖拽文件或文件夹到这里\n- 通过 macOS 分享功能从其他 App 发送文件过来"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請添加音訊檔案以繼續。您可以使用以下方法：\n- 點擊「添入檔案」按鈕\n- 從 Finder 拖拽檔案或資料夾到這裡\n- 透過 macOS 分享功能從其他 App 傳送檔案過來"
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "請添加音訊檔案以繼續。您可以使用以下方法：\n- 點擊「添入檔案」按鈕；\n- 從 Finder 拖拽檔案或資料夾到這裡；\n- 透過 macOS 分享功能從其他 App 傳送檔案過來。"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "請添加音訊檔案以繼續。您可以使用以下方法：\n- 點擊「添入檔案」按鈕；\n- 透過 iOS 分享功能從其他 App 傳送檔案過來。"
+                }
+              }
+            }
           }
         }
       }
