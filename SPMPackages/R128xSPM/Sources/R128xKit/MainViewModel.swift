@@ -115,18 +115,33 @@ public final class MainViewModel {
   // MARK: - Methods
 
   public func batchProcess(forced: Bool = false) {
-    // Cancel any existing task
-    currentTask?.cancel()
-
-    // When forced = true, reset processing state
+    // When forced = true, reset processing state for ALL entries
     if forced {
+      // Cancel any existing task only for forced processing
+      currentTask?.cancel()
+
       for i in 0 ..< entries.count {
         entries[i].status = .processing
+        // Reset progress data only when forced
+        entries[i].progressPercentage = nil
+        entries[i].estimatedTimeRemaining = nil
+        entries[i].currentLoudness = nil
       }
     } else {
-      // For non-forced processing, check if there are any files that need processing
+      // For non-forced processing, DON'T cancel existing tasks to avoid interrupting ongoing processes
+      // Only set status for entries that need processing
+      for i in 0 ..< entries.count {
+        let entry = entries[i]
+        // Only set to processing if it's a new entry that hasn't been processed yet
+        if entry.status != .processing, entry.status != .succeeded {
+          entries[i].status = .processing
+          // Don't reset progress data for existing entries
+        }
+      }
+
+      // Check if there are any files that need processing
       let hasFilesToProcess = entries.contains { entry in
-        entry.status == .processing || (entry.status != .succeeded && entry.status != .failed)
+        (entry.status == .processing && entry.progressPercentage == nil) || entry.status == .failed
       }
 
       guard hasFilesToProcess else {
@@ -136,7 +151,7 @@ public final class MainViewModel {
     }
 
     // Create a new task that properly handles main actor isolation
-    currentTask = Task { @MainActor [weak self] in
+    let newTask = Task { @MainActor [weak self] in
       // Add debounce delay
       try? await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
 
@@ -145,9 +160,26 @@ public final class MainViewModel {
       // Create a copy of entry data for concurrent processing, only for entries that need processing
       let entrySnapshots = self.entries.enumerated().compactMap {
         index, entry -> (index: Int, entry: IntelEntry)? in
-        // Only process entries that are not already completed successfully
-        guard entry.status != .succeeded else { return nil }
-        return (index: index, entry: entry)
+
+        if forced {
+          // For forced processing, process all entries
+          return (index: index, entry: entry)
+        } else {
+          // For regular processing, only process entries that actually need processing
+          // Skip entries that are already completed successfully
+          guard entry.status != .succeeded else { return nil }
+
+          // Only skip entries that are actively being processed by a different task
+          // If we don't have a current task or it's cancelled, we should process this entry
+          if entry.status == .processing,
+             entry.progressPercentage != nil,
+             let currentTask = self.currentTask,
+             !currentTask.isCancelled {
+            return nil
+          }
+
+          return (index: index, entry: entry)
+        }
       }
 
       guard !entrySnapshots.isEmpty else { return }
@@ -174,6 +206,11 @@ public final class MainViewModel {
           self.entries[index] = updatedEntry
         }
       }
+    }
+
+    // Only update currentTask if we're not already processing or if forced
+    if forced || currentTask == nil || currentTask?.isCancelled == true {
+      currentTask = newTask
     }
   }
 
@@ -292,7 +329,11 @@ public final class MainViewModel {
         // Only update if the entry is still in processing state to avoid unnecessary updates
         guard entries[entryIndex].status == .processing else { continue }
 
-        entries[entryIndex].progressPercentage = progressUpdate.percentage
+        // Ensure progress is monotonically increasing to avoid jumping backwards
+        let currentProgress = entries[entryIndex].progressPercentage ?? 0.0
+        let newProgressValue = max(currentProgress, progressUpdate.percentage)
+
+        entries[entryIndex].progressPercentage = newProgressValue
         entries[entryIndex].estimatedTimeRemaining = progressUpdate.estimatedTimeRemaining
         entries[entryIndex].currentLoudness = progressUpdate.currentLoudness
       }

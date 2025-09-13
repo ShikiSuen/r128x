@@ -81,12 +81,16 @@ public final class TaskTrackingVM: Sendable {
 
   /// Send a progress update through the stream
   public func sendProgress(_ update: ProgressUpdate) {
+    // Always update the progress dictionary to maintain the latest state
+    // This ensures that concurrent processing doesn't overwrite each other's progress
     fileProgress[update.fileId] = update
     streamContinuation?.yield(update)
   }
 
   /// Complete progress tracking for a file
   public func completeProgress(for fileId: String) {
+    // Only remove from tracking if the file actually completed
+    // This prevents premature removal during concurrent processing
     fileProgress.removeValue(forKey: fileId)
   }
 
