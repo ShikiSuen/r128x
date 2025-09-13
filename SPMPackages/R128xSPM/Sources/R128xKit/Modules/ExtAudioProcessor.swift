@@ -3,6 +3,9 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
 
+import EBUR128
+import Foundation
+
 #if canImport(Accelerate)
 import Accelerate
 #endif
@@ -12,14 +15,14 @@ import AudioToolbox
 #if canImport(CoreFoundation)
 import CoreFoundation
 #endif
-import EBUR128
-import Foundation
 
 // MARK: - Cross-platform fallbacks
 
 #if !canImport(Accelerate)
 // Fallback implementations for platforms without Accelerate
-private func vDSP_maxmgvD(_ input: UnsafePointer<Double>, _ stride: Int, _ result: inout Double, _ count: Int) {
+private func vDSP_maxmgvD(
+  _ input: UnsafePointer<Double>, _ stride: Int, _ result: inout Double, _ count: Int
+) {
   result = 0.0
   for i in 0 ..< count {
     let value = abs(input[i * stride])
@@ -60,19 +63,24 @@ private typealias AudioStreamBasicDescription = (
   mReserved: UInt32
 )
 private typealias AudioBufferList = (mNumberBuffers: UInt32, mBuffers: AudioBuffer)
-private typealias AudioBuffer = (mNumberChannels: UInt32, mDataByteSize: UInt32, mData: UnsafeMutableRawPointer?)
+private typealias AudioBuffer = (
+  mNumberChannels: UInt32, mDataByteSize: UInt32, mData: UnsafeMutableRawPointer?
+)
 private typealias AudioConverterRef = OpaquePointer
 private typealias OSStatus = Int32
 private let noErr: OSStatus = 0
-private let kAudioFormatLinearPCM: UInt32 = 1819304813
+private let kAudioFormatLinearPCM: UInt32 = 1_819_304_813
 private let kAudioFormatFlagIsFloat: UInt32 = 1
 private let kAudioFormatFlagIsPacked: UInt32 = 8
-private let kExtAudioFileProperty_FileDataFormat: UInt32 = 1717988724
-private let kExtAudioFileProperty_ClientDataFormat: UInt32 = 1668971364
-private let kExtAudioFileProperty_FileLengthFrames: UInt32 = 1717986662
+private let kExtAudioFileProperty_FileDataFormat: UInt32 = 1_717_988_724
+private let kExtAudioFileProperty_ClientDataFormat: UInt32 = 1_668_971_364
+private let kExtAudioFileProperty_FileLengthFrames: UInt32 = 1_717_986_662
 
 // Placeholder functions for platforms without AudioToolbox - all return error status
-private func ExtAudioFileOpenURL(_ url: CFURL, _ audioFile: inout ExtAudioFileRef?) -> OSStatus { -1 }
+private func ExtAudioFileOpenURL(_ url: CFURL, _ audioFile: inout ExtAudioFileRef?) -> OSStatus {
+  -1
+}
+
 private func ExtAudioFileDispose(_ audioFile: ExtAudioFileRef) {}
 private func ExtAudioFileGetProperty(
   _ audioFile: ExtAudioFileRef,
@@ -149,7 +157,10 @@ public actor ExtAudioProcessor {
 
     // Create URL for audio file
     guard let fileURL = URL(string: "file://\(audioFilePath)") else {
-      throw NSError(domain: "ExtAudioProcessor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid file path"])
+      throw NSError(
+        domain: "ExtAudioProcessor", code: -1,
+        userInfo: [NSLocalizedDescriptionKey: "Invalid file path"]
+      )
     }
 
     var audioFile: ExtAudioFileRef?
@@ -169,7 +180,9 @@ public actor ExtAudioProcessor {
     // Get input file format
     var inFileASBD = AudioStreamBasicDescription()
     var propSize = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
-    status = ExtAudioFileGetProperty(audioFile, kExtAudioFileProperty_FileDataFormat, &propSize, &inFileASBD)
+    status = ExtAudioFileGetProperty(
+      audioFile, kExtAudioFileProperty_FileDataFormat, &propSize, &inFileASBD
+    )
     guard status == noErr else {
       throw NSError(
         domain: "ExtAudioProcessor",
@@ -190,7 +203,9 @@ public actor ExtAudioProcessor {
     clientASBD.mBytesPerPacket = clientASBD.mBytesPerFrame
 
     propSize = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
-    status = ExtAudioFileSetProperty(audioFile, kExtAudioFileProperty_ClientDataFormat, propSize, &clientASBD)
+    status = ExtAudioFileSetProperty(
+      audioFile, kExtAudioFileProperty_ClientDataFormat, propSize, &clientASBD
+    )
     guard status == noErr else {
       throw NSError(
         domain: "ExtAudioProcessor",
@@ -212,12 +227,16 @@ public actor ExtAudioProcessor {
     // Setup EBUR128 state
     let channels = Int(clientASBD.mChannelsPerFrame)
     let sampleRate = UInt(clientASBD.mSampleRate)
-    let ebur128State = try EBUR128State(channels: channels, sampleRate: sampleRate, mode: [.I, .LRA, .truePeak])
+    let ebur128State = try EBUR128State(
+      channels: channels, sampleRate: sampleRate, mode: [.I, .LRA, .truePeak]
+    )
 
     // Get file length
     var fileLengthInFrames: Int64 = 0
     propSize = UInt32(MemoryLayout<Int64>.size)
-    status = ExtAudioFileGetProperty(audioFile, kExtAudioFileProperty_FileLengthFrames, &propSize, &fileLengthInFrames)
+    status = ExtAudioFileGetProperty(
+      audioFile, kExtAudioFileProperty_FileLengthFrames, &propSize, &fileLengthInFrames
+    )
     guard status == noErr else {
       throw NSError(
         domain: "ExtAudioProcessor",
@@ -230,7 +249,9 @@ public actor ExtAudioProcessor {
     let reportIntervalFrames = UInt32(clientASBD.mSampleRate / 10) // 100ms blocks
     var neededFrames = reportIntervalFrames
     var fileFramesRead: UInt32 = 0
-    var fileOutBuffer = [Float](repeating: 0, count: Int(DEFAULT_BUFFER_SIZE * clientASBD.mChannelsPerFrame))
+    var fileOutBuffer = [Float](
+      repeating: 0, count: Int(DEFAULT_BUFFER_SIZE * clientASBD.mChannelsPerFrame)
+    )
 
     // Prepare for true peak analysis - use Double consistently
     var maxTruePeak = 0.0

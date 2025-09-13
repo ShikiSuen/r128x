@@ -37,13 +37,16 @@ if CommandLine.arguments.count == 3 {
   }
 
   strXcodeProjContent.regReplace(
-    pattern: #"CURRENT_PROJECT_VERSION = .*$"#, replaceWith: "CURRENT_PROJECT_VERSION = " + verBuild + ";"
+    pattern: #"CURRENT_PROJECT_VERSION = .*$"#,
+    replaceWith: "CURRENT_PROJECT_VERSION = " + verBuild + ";"
   )
   strXcodeProjContent.regReplace(
     pattern: #"MARKETING_VERSION = .*$"#, replaceWith: "MARKETING_VERSION = " + verMarket + ";"
   )
   do {
-    try strXcodeProjContent.write(to: URL(fileURLWithPath: dirXcodeProjectFile), atomically: false, encoding: .utf8)
+    try strXcodeProjContent.write(
+      to: URL(fileURLWithPath: dirXcodeProjectFile), atomically: false, encoding: .utf8
+    )
   } catch {
     NSLog(" -: Error on writing strings to file: \(error)")
   }

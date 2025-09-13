@@ -1,7 +1,8 @@
-@testable import EBUR128
 import Foundation
-@testable import R128xKit
 import Testing
+
+@testable import EBUR128
+@testable import R128xKit
 
 // MARK: - EBUR128Tests
 
@@ -178,7 +179,9 @@ struct EBUR128Tests {
     // Test the same parameters as C benchmark: 30 seconds of stereo audio
     let duration = 30.0
     let sampleRate = 48000
-    let state = try EBUR128State(channels: 2, sampleRate: UInt(sampleRate), mode: [.I, .LRA, .truePeak])
+    let state = try EBUR128State(
+      channels: 2, sampleRate: UInt(sampleRate), mode: [.I, .LRA, .truePeak]
+    )
 
     // Generate complex test signal similar to C benchmark
     let frames = Int(Double(sampleRate) * duration)
@@ -283,7 +286,9 @@ struct EBUR128Tests {
     let framesPerSegment = Int(sampleRate * segmentDuration)
 
     print("=== LRA Debug Test ===")
-    print("Total duration: \(totalDuration)s, Segments: \(segments), Frames per segment: \(framesPerSegment)")
+    print(
+      "Total duration: \(totalDuration)s, Segments: \(segments), Frames per segment: \(framesPerSegment)"
+    )
 
     for segment in 0 ..< segments {
       // Create different amplitude levels to ensure LRA variation
@@ -329,7 +334,8 @@ struct EBUR128Tests {
   @Test
   func testSwiftRewriteCompleteness() async throws {
     // Test that demonstrates the complete Swift rewrite works end-to-end
-    let state = try (EBUR128State(channels: 2, sampleRate: 44100, mode: [.I, .LRA, .samplePeak, .truePeak]))
+    let state = try
+      (EBUR128State(channels: 2, sampleRate: 44100, mode: [.I, .LRA, .samplePeak, .truePeak]))
 
     // Verify basic functionality
     #expect(state.channels == 2)
@@ -446,7 +452,8 @@ struct EBUR128Tests {
 
     // Test with very high sample rate to trigger decimation
     let highSampleRate: UInt = 192000
-    let state = try (EBUR128State(channels: 2, sampleRate: highSampleRate, mode: [.I, .LRA, .truePeak]))
+    let state = try
+      (EBUR128State(channels: 2, sampleRate: highSampleRate, mode: [.I, .LRA, .truePeak]))
 
     // Generate test data: 10 seconds at 192kHz
     let sampleRateDouble = Double(highSampleRate)
@@ -501,7 +508,9 @@ struct EBUR128Tests {
 
     // Compare with standard 48kHz processing
     print("\n--- Comparison with 48kHz processing ---")
-    let standardState = try EBUR128State(channels: 2, sampleRate: 48000, mode: [.I, .LRA, .truePeak])
+    let standardState = try EBUR128State(
+      channels: 2, sampleRate: 48000, mode: [.I, .LRA, .truePeak]
+    )
 
     // Generate equivalent 48kHz data
     let standardFrames = Int(48000.0 * totalDuration)
@@ -555,7 +564,8 @@ struct EBUR128Tests {
 
     for (name, sampleRate, duration) in scenarios {
       print("\n--- \(name) Test ---")
-      let state = try (EBUR128State(channels: 2, sampleRate: UInt(sampleRate), mode: [.I, .LRA, .truePeak]))
+      let state = try
+        (EBUR128State(channels: 2, sampleRate: UInt(sampleRate), mode: [.I, .LRA, .truePeak]))
 
       // Generate test audio with some complexity
       let frames = Int(Double(sampleRate) * duration)
@@ -671,7 +681,8 @@ struct EBUR128Tests {
     // Test the revolutionary ultra-fast processing path
     let sampleRate: UInt = 192000
     let duration = 10.0
-    let state = try (EBUR128State(channels: 2, sampleRate: sampleRate, mode: [.I, .LRA, .truePeak]))
+    let state = try
+      (EBUR128State(channels: 2, sampleRate: sampleRate, mode: [.I, .LRA, .truePeak]))
 
     // Generate complex test signal
     let frames = Int(Double(sampleRate) * duration)
@@ -730,13 +741,16 @@ struct EBUR128Tests {
 
     #if canImport(AudioToolbox)
     // Download the test audio file from Wikipedia Commons
-    let audioURL = URL(string: "https://upload.wikimedia.org/wikipedia/commons/6/69/Internationale-ru.ogg")!
+    let audioURL = URL(
+      string: "https://upload.wikimedia.org/wikipedia/commons/6/69/Internationale-ru.ogg"
+    )!
     print("Downloading test audio file from: \(audioURL)")
 
     let (data, response) = try await URLSession.shared.data(from: audioURL)
 
     guard let httpResponse = response as? HTTPURLResponse,
-          httpResponse.statusCode == 200 else {
+          httpResponse.statusCode == 200
+    else {
       throw NSError(
         domain: "TestError",
         code: 1,
@@ -771,7 +785,8 @@ struct EBUR128Tests {
           progressReports.append(progress)
 
           // Track non-zero loudness values
-          if let loudness = progress.currentLoudness, loudness.isFinite && loudness != -Double.infinity {
+          if let loudness = progress.currentLoudness,
+             loudness.isFinite && loudness != -Double.infinity {
             lastNonZeroLoudness = loudness
           }
 
@@ -800,7 +815,9 @@ struct EBUR128Tests {
         print(
           "Progress range: \(String(format: "%.2f", firstProgress.percentage))% to \(String(format: "%.2f", lastProgress.percentage))%"
         )
-        print("Final progress details: \(lastProgress.framesProcessed) / \(lastProgress.totalFrames) frames processed")
+        print(
+          "Final progress details: \(lastProgress.framesProcessed) / \(lastProgress.totalFrames) frames processed"
+        )
       }
 
       // Verify basic processing succeeded
@@ -812,7 +829,9 @@ struct EBUR128Tests {
 
       // If processing was valid but final result is -inf, this indicates an issue with the final calculation
       if hasValidProcessing {
-        print("Processing appears to have worked (received valid loudness values during processing)")
+        print(
+          "Processing appears to have worked (received valid loudness values during processing)"
+        )
 
         // For files that processed correctly but returned -inf for integrated loudness,
         // this likely indicates insufficient content for reliable integrated loudness measurement
@@ -833,8 +852,14 @@ struct EBUR128Tests {
           #expect(result.maxTruePeak >= -60.0, "Maximum true peak should be reasonable")
         } else {
           // Normal validation for files with measurable integrated loudness
-          #expect(result.integratedLoudness.isFinite, "Integrated loudness should be finite for real audio")
-          #expect(result.integratedLoudness < 0.0, "Integrated loudness should be negative (below 0 LUFS)")
+          #expect(
+            result.integratedLoudness.isFinite,
+            "Integrated loudness should be finite for real audio"
+          )
+          #expect(
+            result.integratedLoudness < 0.0,
+            "Integrated loudness should be negative (below 0 LUFS)"
+          )
           #expect(
             result.integratedLoudness > -60.0,
             "Integrated loudness should be reasonable (above -60 LUFS) for real audio files"
@@ -842,8 +867,12 @@ struct EBUR128Tests {
         }
       } else {
         // If no valid processing was detected, this indicates a more serious issue
-        print("❌ No valid loudness measurements detected during processing - this indicates a processing failure")
-        #expect(Bool(false), "Processing should produce valid loudness measurements during execution")
+        print(
+          "❌ No valid loudness measurements detected during processing - this indicates a processing failure"
+        )
+        #expect(
+          Bool(false), "Processing should produce valid loudness measurements during execution"
+        )
       }
 
       #expect(result.loudnessRange >= 0.0, "Loudness range should be non-negative")
@@ -853,12 +882,17 @@ struct EBUR128Tests {
 
       // More lenient progress expectation - some audio formats/processors may not reach exactly 100%
       if let lastProgress = progressReports.last {
-        #expect(lastProgress.percentage >= 95.0, "Final progress should be close to 100% (at least 95%)")
-        print("Progress test passed with final progress: \(String(format: "%.2f", lastProgress.percentage))%")
+        #expect(
+          lastProgress.percentage >= 95.0, "Final progress should be close to 100% (at least 95%)"
+        )
+        print(
+          "Progress test passed with final progress: \(String(format: "%.2f", lastProgress.percentage))%"
+        )
       }
 
       // Performance benchmark for real audio
-      let fileSize = try FileManager.default.attributesOfItem(atPath: tempAudioFile.path)[.size] as? Int64 ?? 0
+      let fileSize =
+        try FileManager.default.attributesOfItem(atPath: tempAudioFile.path)[.size] as? Int64 ?? 0
       print("File size: \(fileSize) bytes")
 
       if processingTime > 0 {
@@ -882,8 +916,12 @@ struct EBUR128Tests {
 
       // If the processing fails entirely, we should still not crash the test suite
       // but we should note that this format may not be supported
-      print("⚠️  Test will pass but indicates potential compatibility issue with OGG format in AudioToolbox")
-      print("💡 Consider testing with other audio formats (WAV, MP3, etc.) for broader compatibility")
+      print(
+        "⚠️  Test will pass but indicates potential compatibility issue with OGG format in AudioToolbox"
+      )
+      print(
+        "💡 Consider testing with other audio formats (WAV, MP3, etc.) for broader compatibility"
+      )
     }
 
     #else
