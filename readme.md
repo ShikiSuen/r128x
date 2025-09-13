@@ -31,11 +31,7 @@ Xcode 15 is recommended for the compilation. Apple always eager to push its late
 
 #### 1. GUI app ####
 
-```
-WARNING:
-// If you compile for distributing to someone else,
-// you MUST change the bundle identifier of the app in the Xcode project settings.
-```
+> **WARNING**: If you compile for distributing to someone else, you MUST change both the developer ID and the bundle identifier of the app in the Xcode project settings. You can go to `Targets` -> `r128x-swiftui` -> `Signing & Capabilities` and change these configurations.
 
 1. Use Xcode to open the `r128x.xcodeproj` project file.
 2. Menu: Product -> Archive.
