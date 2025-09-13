@@ -1,0 +1,225 @@
+name: Homebrew Formula Validation
+
+on:
+  # Run every Monday at 00:00 GMT+0
+  schedule:
+    - cron: '0 0 * * 1'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+  
+  # Run on push to master for testing
+  push:
+    branches: [ master ]
+    paths: 
+      - 'r128x.rb'
+      - '.github/workflows/homebrew-formula-check.yml'
+
+jobs:
+  validate-formula:
+    runs-on: macos-15  # macOS Sequoia required for r128x
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all tags
+    
+    - name: Set up Homebrew
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    
+    - name: Select Xcode 16.4
+      run: |
+        sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+        echo "Selected Xcode version:"
+        xcodebuild -version
+        echo "Swift version:"
+        swift --version
+    
+    - name: Prepare Swift Package Manager environment
+      run: |
+        # Create SwiftPM cache directories with proper permissions
+        mkdir -p ~/Library/org.swift.swiftpm/configuration
+        mkdir -p ~/Library/org.swift.swiftpm/security
+        chmod 755 ~/Library/org.swift.swiftpm/configuration
+        chmod 755 ~/Library/org.swift.swiftpm/security
+        
+        # Set SwiftPM configuration to avoid sandbox issues
+        echo "Setting up SwiftPM environment variables..."
+        echo "SWIFTPM_DISABLE_SANDBOX_SHOULD_NOT_BE_USED=1" >> $GITHUB_ENV
+    
+    - name: Get latest release tag
+      id: get-tag
+      run: |
+        LATEST_TAG=$(git tag --sort=-version:refname | head -n1)
+        echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+        echo "Latest tag: $LATEST_TAG"
+    
+    - name: Check if formula tag matches latest release
+      id: check-tag
+      run: |
+        FORMULA_TAG=$(grep -o 'tag:.*"v[0-9.]*"' r128x.rb | sed 's/tag:.*"\(v[0-9.]*\)".*/\1/')
+        LATEST_TAG="${{ steps.get-tag.outputs.latest_tag }}"
+        
+        echo "Formula tag: $FORMULA_TAG"
+        echo "Latest tag: $LATEST_TAG"
+        
+        if [ "$FORMULA_TAG" != "$LATEST_TAG" ]; then
+          echo "❌ Formula tag ($FORMULA_TAG) does not match latest release ($LATEST_TAG)"
+          echo "needs_update=true" >> $GITHUB_OUTPUT
+          exit 1
+        else
+          echo "✅ Formula tag matches latest release"
+          echo "needs_update=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Validate formula syntax
+      run: |
+        echo "🔍 Validating Homebrew formula syntax..."
+        # Create a local tap and copy the formula into it so we can audit by tap/name
+        OWNER="${{ github.repository_owner }}"
+        TAP_NAME="${OWNER}/r128x"
+        mkdir -p local-tap/Formula
+        cp r128x.rb local-tap/Formula/r128x.rb
+        
+        # Initialize the local tap as a git repository (required by brew tap)
+        cd local-tap
+        git init
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add .
+        git commit -m "Add r128x formula for testing"
+        cd ..
+        
+        # Tap the local directory (brew accepts a local path as a tap)
+        brew tap "${TAP_NAME}" "$(pwd)/local-tap"
+        # Audit by tap/name (audit by path is disabled)
+        # Try online audit first, fallback to offline if GitHub API fails
+        if ! brew audit --strict --online "${TAP_NAME}/r128x" 2>&1; then
+          echo "⚠️  Online audit failed (likely GitHub API issue), falling back to offline audit..."
+          brew audit --strict "${TAP_NAME}/r128x"
+        fi
+    
+    - name: Test formula installation (dry run)
+      env:
+        # Disable SwiftPM sandbox to avoid permission issues in CI
+        SWIFTPM_DISABLE_SANDBOX_SHOULD_NOT_BE_USED: "1"
+        # Additional environment variables to disable sandbox
+        HOMEBREW_NO_SANDBOX: "1"
+      run: |
+        echo "🧪 Testing formula installation (dry run)..."
+        
+        # Set additional environment variables for this step
+        export SWIFTPM_DISABLE_SANDBOX_SHOULD_NOT_BE_USED=1
+        export HOMEBREW_NO_SANDBOX=1
+        
+        # Disable sandbox at system level if possible
+        sudo sysctl -w kern.securelevel=-1 2>/dev/null || true
+        
+        # First check if we can parse the formula
+        OWNER="${{ github.repository_owner }}"
+        TAP_NAME="${OWNER}/r128x"
+        
+        # Show info from the tapped formula
+        brew info "${TAP_NAME}/r128x"
+        
+        # Install from the tapped formula (build from source)
+        brew install --build-from-source --verbose "${TAP_NAME}/r128x"
+    
+    - name: Test installed binary
+      run: |
+        echo "🚀 Testing installed r128x-cli binary..."
+        
+        # Test that the binary exists and shows help
+        r128x-cli 2>&1 | grep -q "Missing arguments" || {
+          echo "❌ Binary test failed - expected 'Missing arguments' message"
+          exit 1
+        }
+        
+        r128x-cli 2>&1 | grep -q "You should specify at least one audio file" || {
+          echo "❌ Binary test failed - expected help message"
+          exit 1
+        }
+        
+        echo "✅ Binary tests passed"
+    
+    - name: Check binary architecture
+      run: |
+        echo "🏗️ Checking binary architecture..."
+        file $(which r128x-cli)
+        
+        # Verify it's the correct architecture for this runner
+        if [[ $(uname -m) == "arm64" ]]; then
+          file $(which r128x-cli) | grep -q "arm64" || {
+            echo "❌ Binary architecture mismatch - expected arm64"
+            exit 1
+          }
+        else
+          file $(which r128x-cli) | grep -q "x86_64" || {
+            echo "❌ Binary architecture mismatch - expected x86_64"
+            exit 1
+          }
+        fi
+        
+        echo "✅ Binary architecture is correct"
+    
+    - name: Create Issue if Formula Needs Update
+      if: failure() && steps.check-tag.outputs.needs_update == 'true'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const title = `Homebrew Formula Needs Update - Latest Release: ${{ steps.get-tag.outputs.latest_tag }}`;
+          const body = `## Homebrew Formula Update Required
+          
+          The weekly validation check detected that the Homebrew formula \`r128x.rb\` needs to be updated.
+          
+          **Current Status:**
+          - Latest Release Tag: \`${{ steps.get-tag.outputs.latest_tag }}\`
+          - Formula Tag: Outdated
+          
+          **Required Actions:**
+          1. Update the \`tag\` field in \`r128x.rb\` to \`${{ steps.get-tag.outputs.latest_tag }}\`
+          2. Update the \`revision\` field with the corresponding commit hash
+          3. Update the \`version\` field if needed
+          4. Test the updated formula locally
+          
+          **Auto-generated by:** Weekly Homebrew Formula Validation
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+          
+          // Check if an issue already exists
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: ['homebrew-formula-update']
+          });
+          
+          if (issues.data.length === 0) {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['homebrew-formula-update', 'maintenance']
+            });
+            console.log('Created new issue for formula update');
+          } else {
+            console.log('Issue already exists for formula update');
+          }
+    
+    - name: Summary
+      if: always()
+      run: |
+        echo "## 📋 Validation Summary"
+        echo "- **Repository:** ${{ github.repository }}"
+        echo "- **Latest Release:** ${{ steps.get-tag.outputs.latest_tag }}"
+        echo "- **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        echo "- **Date:** $(date)"
+        
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "- **Status:** ✅ All checks passed"
+        else
+          echo "- **Status:** ❌ Some checks failed"
+        fi

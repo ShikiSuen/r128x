@@ -25,6 +25,12 @@ You are expected to either compile the binary by yourself or buy at Mac App Stor
 
 The charged fee is not mandatory since you can always compile the binaries for your own purposes.
 
+For `r128x-cli` users, here are the installation commands for Homebrew:
+```
+brew tap shikisuen/r128x
+brew install shikisuen/r128x/r128x
+```
+
 ### How to Compile ###
 
 Xcode 26 or Swift 6.1 is recommended for the compilation. Apple always eager to push its latest toolchain as a hard requirement for compiling modern Xcode projects.
