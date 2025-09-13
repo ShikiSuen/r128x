@@ -8,7 +8,7 @@ Both the GUI version and the CLI version require macOS 14 since v0.7.0 release.
 > 
 > P.S.: Apple Silicon mac is a strong recommendation to run my fork since the libEBUR128 is completely written in Swift and the rewritten version is not hardware-accelerated as the previous C-language version. The C-language version has compilation issues on Apple Silicon while being archived for Mac App Store, hence the rewrite in Swift.
 
-![r128x-swiftui](./screenshot.png)
+![r128x-swiftui](./Screenshots/macOS.png)
 
 r128x is released under GPLv3 license.
 
