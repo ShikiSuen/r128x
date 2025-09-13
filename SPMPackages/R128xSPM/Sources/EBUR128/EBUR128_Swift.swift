@@ -3,11 +3,12 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `MIT`.
 
+import Foundation
+
 #if canImport(Accelerate)
 import Accelerate
 import simd
 #endif
-import Foundation
 
 // MARK: - Array extension for concurrent processing
 
@@ -26,7 +27,9 @@ extension Array where Element: Sendable {
 
 #if !canImport(Accelerate)
 // Fallback implementations for platforms without Accelerate
-private func vDSP_maxmgvD(_ input: UnsafePointer<Double>, _ stride: Int, _ result: inout Double, _ count: Int) {
+private func vDSP_maxmgvD(
+  _ input: UnsafePointer<Double>, _ stride: Int, _ result: inout Double, _ count: Int
+) {
   result = 0.0
   for i in 0 ..< count {
     let value = abs(input[i * stride])
@@ -221,10 +224,12 @@ public actor EBUR128State {
   public init(channels: Int, sampleRate: UInt, mode: EBUR128Mode) throws {
     // 先初始化臨時緩衝區變量，避免後續使用前未初始化
     self.tempBuffer = Array(repeating: 0.0, count: Int(sampleRate))
-    self.tempBufferArray = Array(repeating: Array(repeating: 0.0, count: Int(sampleRate)), count: channels)
+    self.tempBufferArray = Array(
+      repeating: Array(repeating: 0.0, count: Int(sampleRate)), count: channels
+    )
 
     guard channels > 0, channels <= 64 else { throw EBUR128Error.noMem }
-    guard sampleRate >= 16, sampleRate <= 2822400 else { throw EBUR128Error.noMem }
+    guard sampleRate >= 16, sampleRate <= 2_822_400 else { throw EBUR128Error.noMem }
 
     self.channels = channels
     self.sampleRate = sampleRate
@@ -259,11 +264,14 @@ public actor EBUR128State {
     self.audioDataFrames = Int(min(audioDataFramesInt64, Int64(Int.max)))
     if audioDataFrames % Int(samplesIn100ms) != 0 {
       // Use Int64 to prevent overflow in addition operation
-      let adjustedFramesInt64 = Int64(audioDataFrames) + Int64(samplesIn100ms) -
-        Int64(audioDataFrames % Int(samplesIn100ms))
+      let adjustedFramesInt64 =
+        Int64(audioDataFrames) + Int64(samplesIn100ms)
+          - Int64(audioDataFrames % Int(samplesIn100ms))
       self.audioDataFrames = Int(min(adjustedFramesInt64, Int64(Int.max)))
     }
-    self.audioData = Array(repeating: Array(repeating: 0.0, count: audioDataFrames), count: channels)
+    self.audioData = Array(
+      repeating: Array(repeating: 0.0, count: audioDataFrames), count: channels
+    )
     self.audioDataIndex = 0
 
     // 初始化峰值相關屬性
@@ -376,7 +384,8 @@ public actor EBUR128State {
   }
 
   // 添加一個高效方法，可以直接處理原始指標
-  public func addFramesPointers(_ srcWrapped: [UniquePointer<Double>], framesToProcess: Int) async throws {
+  public func addFramesPointers(_ srcWrapped: [UniquePointer<Double>], framesToProcess: Int)
+    async throws {
     guard srcWrapped.count == channels else { throw EBUR128Error.invalidChannelIndex }
     let src = srcWrapped.map(\.pointer)
 
@@ -457,9 +466,9 @@ public actor EBUR128State {
     var count = 0
 
     if useHistogram {
-      let startIndex = relativeThreshold < histogramEnergyBoundaries[0] ?
-        0 :
-        EBUR128State.findHistogramIndex(relativeThreshold)
+      let startIndex =
+        relativeThreshold < histogramEnergyBoundaries[0]
+          ? 0 : EBUR128State.findHistogramIndex(relativeThreshold)
 
       for i in startIndex ..< 1000 {
         sum += Double(blockEnergyHistogram[i]) * histogramEnergies[i]
@@ -597,8 +606,8 @@ public actor EBUR128State {
       let lowPercentile = Int(Double(energies.count - 1) * 0.1 + 0.5)
       let highPercentile = Int(Double(energies.count - 1) * 0.95 + 0.5)
 
-      return EBUR128State.energyToLoudness(energies[highPercentile]) -
-        EBUR128State.energyToLoudness(energies[lowPercentile])
+      return EBUR128State.energyToLoudness(energies[highPercentile])
+        - EBUR128State.energyToLoudness(energies[lowPercentile])
     }
   }
 
@@ -707,7 +716,9 @@ public actor EBUR128State {
   }
 
   // 初始化 BS.1770 濾波器係數
-  private static func initFilter(sampleRate givenSampleRate: UInt) -> (filterCoefA: [Double], filterCoefB: [Double]) {
+  private static func initFilter(sampleRate givenSampleRate: UInt) -> (
+    filterCoefA: [Double], filterCoefB: [Double]
+  ) {
     let f0 = 1681.974450955533
     let G = 3.999843853973347
     let Q = 0.7071752369554196
@@ -736,7 +747,9 @@ public actor EBUR128State {
     ra[1] = 2.0 * (Kb * Kb - 1.0) / (1.0 + Kb / Qb + Kb * Kb)
     ra[2] = (1.0 - Kb / Qb + Kb * Kb) / (1.0 + Kb / Qb + Kb * Kb)
 
-    var (filterCoefA, filterCoefB) = (Array(repeating: 0.0, count: 5), Array(repeating: 0.0, count: 5))
+    var (filterCoefA, filterCoefB) = (
+      Array(repeating: 0.0, count: 5), Array(repeating: 0.0, count: 5)
+    )
 
     // 組合濾波器係數
     filterCoefB[0] = pb[0] * rb[0]
@@ -765,10 +778,17 @@ public actor EBUR128State {
     guard !activeChannels.isEmpty else { return }
 
     // Precompute filter coefficients once
-    let a1 = filterCoefA[1], a2 = filterCoefA[2], a3 = filterCoefA[3], a4 = filterCoefA[4]
-    let b0 = filterCoefB[0], b1 = filterCoefB[1], b2 = filterCoefB[2], b3 = filterCoefB[3], b4 = filterCoefB[4]
+    let a1 = filterCoefA[1]
+    let a2 = filterCoefA[2]
+    let a3 = filterCoefA[3]
+    let a4 = filterCoefA[4]
+    let b0 = filterCoefB[0]
+    let b1 = filterCoefB[1]
+    let b2 = filterCoefB[2]
+    let b3 = filterCoefB[3]
+    let b4 = filterCoefB[4]
 
-    // Load filter states for active channels
+    // 為活躍通道加載濾波器狀態
     var filterStates = activeChannels.map { c in
       (s1: filterState[c][1], s2: filterState[c][2], s3: filterState[c][3], s4: filterState[c][4])
     }
@@ -841,7 +861,8 @@ public actor EBUR128State {
   }
 
   // 同步單通道能量計算
-  private func calculateChannelSumSync(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int) -> Double {
+  private func calculateChannelSumSync(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int)
+    -> Double {
     var channelSum = 0.0
 
     if currentFrameIndex < framesPerBlock {
@@ -965,12 +986,16 @@ public actor EBUR128State {
 
     // 順序處理所有通道
     for c in activeChannels {
-      await processSingleChannelOptimized(channel: c, channelData: src[c], framesToProcess: framesToProcess)
+      await processSingleChannelOptimized(
+        channel: c, channelData: src[c], framesToProcess: framesToProcess
+      )
     }
   }
 
   // 單通道優化處理，針對並行執行優化
-  private func processSingleChannelOptimized(channel c: Int, channelData: [Double], framesToProcess: Int) async {
+  private func processSingleChannelOptimized(
+    channel c: Int, channelData: [Double], framesToProcess: Int
+  ) async {
     if framesToProcess <= 0 { return }
 
     // 預計算濾波器係數，減少陣列查找
@@ -1152,7 +1177,8 @@ public actor EBUR128State {
   }
 
   // 優化版本的濾波器 - 移除並行處理以避免 Swift 6.1 的 UnsafePointer 並發問題
-  private func filterSamplesPointersOptimized(_ src: [UnsafePointer<Double>], framesToProcess: Int) async {
+  private func filterSamplesPointersOptimized(_ src: [UnsafePointer<Double>], framesToProcess: Int)
+    async {
     // 確保臨時緩衝區足夠大
     if tempBuffer.count < framesToProcess {
       tempBuffer = Array(repeating: 0.0, count: max(framesToProcess, 8192))
@@ -1168,7 +1194,9 @@ public actor EBUR128State {
   }
 
   // 單通道濾波處理，針對並行執行優化
-  private func processSingleChannelFilter(channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int) async {
+  private func processSingleChannelFilter(
+    channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int
+  ) async {
     // 預計算濾波器係數，減少陣列查找
     let a1 = filterCoefA[1]
     let a2 = filterCoefA[2]
@@ -1288,7 +1316,9 @@ public actor EBUR128State {
   }
 
   #if canImport(Accelerate)
-  private func filterSamplesPointersUltraFast(_ src: [UnsafePointer<Double>], framesToProcess: Int) async {
+  private func filterSamplesPointersUltraFast(
+    _ src: [UnsafePointer<Double>], framesToProcess: Int
+  ) async {
     guard framesToProcess > 0 else { return }
 
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
@@ -1300,7 +1330,9 @@ public actor EBUR128State {
   }
 
   // Ultra-fast single channel processing with maximum vectorization
-  private func processChannelUltraFast(channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int) async {
+  private func processChannelUltraFast(
+    channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int
+  ) async {
     // Pre-cache all filter coefficients for maximum performance
     let filterA = (filterCoefA[1], filterCoefA[2], filterCoefA[3], filterCoefA[4])
     let filterB = (filterCoefB[0], filterCoefB[1], filterCoefB[2], filterCoefB[3], filterCoefB[4])
@@ -1405,7 +1437,8 @@ public actor EBUR128State {
   }
 
   // 單通道能量計算，針對並行執行優化
-  private func calculateChannelSum(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int) async -> Double {
+  private func calculateChannelSum(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int)
+    async -> Double {
     var channelSum = 0.0
 
     // 優化：使用向量化操作計算平方和
