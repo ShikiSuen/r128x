@@ -26,6 +26,7 @@ public struct R128xScene: Scene {
       MainView().onDisappear {
         exit(0)
       }
+      .presentedWindowToolbarStyle(.unifiedCompact)
     }.commands {
       CommandGroup(replacing: CommandGroupPlacement.newItem) {}
     }
@@ -53,7 +54,11 @@ struct MainView: View {
           of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop
         )
         .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
-          viewModel.updateProgress(newProgress)
+          Task { @MainActor in
+            await viewModel.progressDebouncer.debounceProgress(newProgress) { progress in
+              viewModel.updateProgress(progress)
+            }
+          }
         }
         .onDisappear {
           // Cancel progress observation when view disappears
