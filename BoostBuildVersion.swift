@@ -35,22 +35,21 @@ func gitCommitCount(branch: String = "master") throws -> Int {
     throw NSError(
       domain: "GitError", code: Int(process.terminationStatus),
       userInfo: [
-        NSLocalizedDescriptionKey: "Failed to get commit count for branch \(branch)"
+        NSLocalizedDescriptionKey: "Failed to get commit count for branch \(branch)",
       ]
     )
   }
 
   let data = pipe.fileHandleForReading.readDataToEndOfFile()
-  guard
-    let output = String(data: data, encoding: .utf8)?.trimmingCharacters(
-      in: .whitespacesAndNewlines
-    ),
+  guard let output = String(data: data, encoding: .utf8)?.trimmingCharacters(
+    in: .whitespacesAndNewlines
+  ),
     let count = Int(output)
   else {
     throw NSError(
       domain: "ParseError", code: 1,
       userInfo: [
-        NSLocalizedDescriptionKey: "Failed to parse commit count output"
+        NSLocalizedDescriptionKey: "Failed to parse commit count output",
       ]
     )
   }
