@@ -158,7 +158,7 @@ public actor ExtAudioProcessor {
     // Check for RF64 format and provide helpful error messages
     if RF64Support.isRF64File(at: audioFilePath) {
       let supportStatus = RF64Support.getRF64SupportStatus(for: audioFilePath)
-      
+
       // Test if CoreAudio supports this RF64 file
       if !RF64Support.testCoreAudioRF64Support(at: audioFilePath) {
         throw NSError(
@@ -166,7 +166,7 @@ public actor ExtAudioProcessor {
           code: -1,
           userInfo: [
             NSLocalizedDescriptionKey: "RF64 format not supported by CoreAudio",
-            NSLocalizedRecoverySuggestionErrorKey: supportStatus
+            NSLocalizedRecoverySuggestionErrorKey: supportStatus,
           ]
         )
       }
@@ -186,11 +186,11 @@ public actor ExtAudioProcessor {
           code: Int(status),
           userInfo: [
             NSLocalizedDescriptionKey: "Failed to open RF64 audio file",
-            NSLocalizedRecoverySuggestionErrorKey: supportStatus
+            NSLocalizedRecoverySuggestionErrorKey: supportStatus,
           ]
         )
       }
-      
+
       throw NSError(
         domain: "ExtAudioProcessor",
         code: Int(status),
