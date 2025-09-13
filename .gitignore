@@ -450,9 +450,6 @@ lint/intermediates/
 lint/outputs/
 lint/tmp/
 local.properties
-Makefile
-Makefile.in
-Makefile*
 MigrationBackup/
 Mkfile.old
 moc_*.cpp
