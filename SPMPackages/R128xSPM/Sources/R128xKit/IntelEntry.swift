@@ -109,10 +109,20 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
       return
     }
 
+    // Always set status to processing when we start
     status = .processing
-    progressPercentage = 0.0
-    estimatedTimeRemaining = nil
-    currentLoudness = nil
+
+    // Only preserve existing progress if not forced and we have valid progress data
+    // This handles cases where processing was interrupted but should resume
+    if !forced, progressPercentage != nil, progressPercentage! > 0 {
+      // Keep existing progress, don't reset
+      print("Resuming processing for \(fileName) from \(progressPercentage!)%")
+    } else {
+      // Fresh start or forced processing
+      progressPercentage = 0.0
+      estimatedTimeRemaining = nil
+      currentLoudness = nil
+    }
 
     // Start accessing security-scoped resource for file processing
     let accessing = url.startAccessingSecurityScopedResource()
