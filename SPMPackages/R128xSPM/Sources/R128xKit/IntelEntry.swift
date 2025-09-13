@@ -80,7 +80,7 @@ public struct IntelEntry: Identifiable, Equatable, Sendable {
 
   public var progressDisplayed: String {
     guard status == .processing, let progressPercentage = progressPercentage else {
-      return status == .succeeded ? "100%" : (status == .failed ? "Failed" : "Pending")
+      return status == .succeeded ? "100%" : (status == .failed ? "⚠︎" : "…")
     }
     return String(format: "%.1f%%", progressPercentage)
   }
