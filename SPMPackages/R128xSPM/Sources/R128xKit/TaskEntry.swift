@@ -20,9 +20,9 @@ public enum StatusForProcessing: String, Sendable {
   case failed = "✖︎"
 }
 
-// MARK: - IntelEntry
+// MARK: - TaskEntry
 
-public struct IntelEntry: Identifiable, Equatable, Sendable {
+public struct TaskEntry: Identifiable, Equatable, Sendable {
   // MARK: Lifecycle
 
   public init(url: URL) {

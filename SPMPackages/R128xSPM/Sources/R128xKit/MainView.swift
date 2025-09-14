@@ -267,7 +267,7 @@ struct MainView: View {
   }
 
   @ViewBuilder
-  private func drawEntry(_ entry: IntelEntry) -> some View {
+  private func drawEntry(_ entry: TaskEntry) -> some View {
     HStack {
       VStack(alignment: .leading) {
         let mainLabel = HStack {
