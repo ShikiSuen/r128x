@@ -2,18 +2,21 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
 
-import XCTest
+import Testing
 
 @testable import R128xKit
 
-final class R128xKitTests: XCTestCase {
+struct R128xKitTests {
+  @Test
   func testBasicFunctionality() {
     // Basic test to ensure the module loads correctly
-    XCTAssertTrue(true, "Module should load without issues")
+    #expect(Bool(true), "Module should load without issues")
   }
 
+  @Test
   func testExtAudioProcessorInitialization() {
-    let processor = ExtAudioProcessor()
-    XCTAssertNotNil(processor, "ExtAudioProcessor should initialize successfully")
+    _ = ExtAudioProcessor()
+    // Just verify the processor was created successfully (no throw)
+    #expect(Bool(true), "ExtAudioProcessor should initialize successfully")
   }
 }
