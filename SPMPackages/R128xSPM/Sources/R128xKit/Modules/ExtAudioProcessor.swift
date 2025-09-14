@@ -308,6 +308,7 @@ public actor ExtAudioProcessor {
 
     // Prepare for true peak analysis - use Double consistently
     var maxTruePeak = 0.0
+    var maxTruePeakPosition: Int64 = 0 // Frame position where max true peak occurs
 
     // Optimization: use a contiguous memory region instead of separate pointer arrays
     let totalFloatBufferSize = Int(DEFAULT_BUFFER_SIZE) * channels
@@ -387,12 +388,23 @@ public actor ExtAudioProcessor {
       // Sample-position-first true peak calculation for better cache locality
       if needsTruePeak {
         var localMax = 0.0
+        var localMaxPosition = 0
 
         // First pass: get basic peaks for all channels using vDSP
         var channelMaxes = [Double](repeating: 0.0, count: channels)
+        var channelMaxPositions = [Int](repeating: 0, count: channels)
+
         for ch in 0 ..< channels {
           let channelBuffer = channelPointers[ch]!
           vDSP_maxmgvD(channelBuffer, 1, &channelMaxes[ch], vDSP_Length(framesToRead))
+
+          // Find the position of the maximum value in this channel
+          for i in 0 ..< Int(framesToRead) {
+            if abs(channelBuffer[i]) == channelMaxes[ch] {
+              channelMaxPositions[ch] = i
+              break
+            }
+          }
         }
 
         // If oversampling is needed, process sample-by-sample across all channels
@@ -413,7 +425,11 @@ public actor ExtAudioProcessor {
               for k in 1 ..< overSamplingFactor {
                 let t = Double(k) / Double(overSamplingFactor)
                 let value = prevSamples[ch] * (1.0 - t) + nextSample * t
-                channelMaxes[ch] = max(channelMaxes[ch], abs(value))
+                let absValue = abs(value)
+                if absValue > channelMaxes[ch] {
+                  channelMaxes[ch] = absValue
+                  channelMaxPositions[ch] = i
+                }
               }
 
               prevSamples[ch] = nextSample
@@ -421,8 +437,18 @@ public actor ExtAudioProcessor {
           }
         }
 
+        // Find which channel has the overall maximum and its position
         localMax = channelMaxes.max() ?? 0.0
-        maxTruePeak = max(maxTruePeak, localMax)
+        if let maxChannelIndex = channelMaxes.firstIndex(of: localMax) {
+          localMaxPosition = channelMaxPositions[maxChannelIndex]
+        }
+
+        // Update global maximum and its position
+        if localMax > maxTruePeak {
+          maxTruePeak = localMax
+          // Calculate absolute frame position: frames already read + position in current buffer
+          maxTruePeakPosition = Int64(fileFramesRead - framesToRead) + Int64(localMaxPosition)
+        }
       }
 
       // Optimization: reduce memory allocation, directly process already de-interleaved data
@@ -547,10 +573,42 @@ public actor ExtAudioProcessor {
     let loudnessRange = await ebur128State.loudnessRange()
     let maxTruePeakDB = 20 * log10(maxTruePeak)
 
+    // Calculate preview time range around dBTP peak position
+    let peakTimeInSeconds = Double(maxTruePeakPosition) / Double(sampleRate)
+    let totalDurationInSeconds = Double(fileLengthInFrames) / Double(sampleRate)
+
+    // Calculate 3-second preview range centered around the peak
+    let previewDuration: Double = 3.0
+    let halfPreviewDuration: Double = previewDuration / 2.0
+
+    var previewStartTime: Double = peakTimeInSeconds - halfPreviewDuration
+    var previewLength: Double = previewDuration
+
+    // Apply boundary checks
+    if previewStartTime < 0 {
+      previewStartTime = 0
+    }
+
+    if previewStartTime + previewLength > totalDurationInSeconds {
+      previewLength = totalDurationInSeconds - previewStartTime
+    }
+
+    // Handle edge case: if preview range is longer than total audio duration
+    if previewLength > totalDurationInSeconds {
+      previewStartTime = 0
+      previewLength = totalDurationInSeconds
+    }
+
+    // Ensure non-negative values
+    previewStartTime = max(0, previewStartTime)
+    previewLength = max(0, previewLength)
+
     return .init(
       integratedLoudness: round(integratedLoudness * 10) / 10,
       loudnessRange: round(loudnessRange * 100) / 100,
-      maxTruePeak: round(maxTruePeakDB * 10) / 10
+      maxTruePeak: round(maxTruePeakDB * 10) / 10,
+      previewStartAtTime: previewStartTime,
+      previewLength: previewLength
     )
     #else
     // On platforms without AudioToolbox, return placeholder values

@@ -37,6 +37,8 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
   public var programLoudness: Double?
   public var loudnessRange: Double?
   public var dBTP: Double?
+  public var previewStartAtTime: Double?
+  public var previewLength: Double?
   public var status: StatusForProcessing = .processing
   public var progressPercentage: Double?
   public var estimatedTimeRemaining: TimeInterval?
@@ -57,7 +59,8 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
   }
 
   public var isResultInvalid: Bool {
-    [programLoudness, loudnessRange, dBTP].allSatisfy { $0 == nil } && status != .processing
+    [programLoudness, loudnessRange, dBTP, previewStartAtTime, previewLength]
+      .allSatisfy { $0 == nil } && status != .processing
   }
 
   public var statusDisplayed: String { status.rawValue }
@@ -146,6 +149,8 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
       programLoudness = measured.integratedLoudness
       loudnessRange = measured.loudnessRange
       dBTP = Double(measured.maxTruePeak)
+      previewStartAtTime = measured.previewStartAtTime
+      previewLength = measured.previewLength
       status = .succeeded
       progressPercentage = nil
       estimatedTimeRemaining = nil
