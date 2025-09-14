@@ -15,7 +15,7 @@ import Observation
 // MARK: - ProgressUpdate
 
 /// Progress update structure for AsyncStream
-public struct ProgressUpdate: Sendable, Equatable {
+public struct ProgressUpdate: Sendable, Equatable, Hashable {
   // MARK: Lifecycle
 
   public init(
