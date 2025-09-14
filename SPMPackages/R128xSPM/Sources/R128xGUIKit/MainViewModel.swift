@@ -4,6 +4,10 @@
 
 import Foundation
 
+import struct ExtAudioProcessor.ProgressUpdate
+import struct ExtAudioProcessor.TaskEntry
+import class ExtAudioProcessor.TaskTrackingVM
+
 #if canImport(SwiftUI)
 import SwiftUI
 #endif
@@ -13,6 +17,7 @@ import UniformTypeIdentifiers
 
 // MARK: - MainViewModel
 
+@available(macOS 14.0, *)
 @MainActor
 @Observable
 public final class MainViewModel {

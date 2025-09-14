@@ -12,50 +12,18 @@ import SwiftUI
 import Observation
 #endif
 
-// MARK: - ProgressUpdate
+// MARK: - TaskTrackingVMProtocol
 
-/// Progress update structure for AsyncStream
-public struct ProgressUpdate: Sendable, Equatable, Hashable {
-  // MARK: Lifecycle
-
-  public init(
-    fileId: String,
-    percentage: Double,
-    framesProcessed: Int64,
-    totalFrames: Int64,
-    currentLoudness: Double? = nil,
-    estimatedTimeRemaining: TimeInterval? = nil
-  ) {
-    self.fileId = fileId
-    self.percentage = percentage
-    self.framesProcessed = framesProcessed
-    self.totalFrames = totalFrames
-    self.currentLoudness = currentLoudness
-    self.estimatedTimeRemaining = estimatedTimeRemaining
-  }
-
-  // MARK: Public
-
-  public let fileId: String
-  public let percentage: Double
-  public let framesProcessed: Int64
-  public let totalFrames: Int64
-  public let currentLoudness: Double?
-  public let estimatedTimeRemaining: TimeInterval?
+@MainActor
+public protocol TaskTrackingVMProtocol: AnyObject, Sendable {
+  func sendProgress(_ update: ProgressUpdate)
 }
 
 // MARK: - TaskTrackingVM
 
-/// Observable progress view model using AsyncStream
-#if canImport(Observation) && !os(Linux)
+@available(macOS 14.0, *)
 @Observable @MainActor
-#else
-@MainActor
-#endif
-
-// MARK: - TaskTrackingVM
-
-public final class TaskTrackingVM: Sendable {
+public final class TaskTrackingVM: TaskTrackingVMProtocol {
   // MARK: Lifecycle
 
   // MARK: - Initialization
@@ -76,6 +44,14 @@ public final class TaskTrackingVM: Sendable {
   }
 
   // MARK: Public
+
+  // MARK: - Public Properties
+
+  /// Dictionary to track progress for multiple files
+  public private(set) var fileProgress: [String: ProgressUpdate] = [:]
+
+  /// The main progress stream
+  public private(set) var progressStream: AsyncStream<ProgressUpdate>
 
   // MARK: - Public Methods
 
@@ -114,16 +90,6 @@ public final class TaskTrackingVM: Sendable {
     fileProgress.removeAll()
   }
 
-  // MARK: Internal
-
-  // MARK: - Public Properties
-
-  /// Dictionary to track progress for multiple files
-  private(set) var fileProgress: [String: ProgressUpdate] = [:]
-
-  /// The main progress stream
-  private(set) var progressStream: AsyncStream<ProgressUpdate>
-
   // MARK: Private
 
   /// Stream continuation for sending progress updates
@@ -132,6 +98,7 @@ public final class TaskTrackingVM: Sendable {
 
 // MARK: - Singleton Access
 
+@available(macOS 14.0, *)
 extension TaskTrackingVM {
   /// Shared instance for global access
   public static let shared = TaskTrackingVM()

@@ -6,13 +6,18 @@ import PackageDescription
 let package = Package(
   name: "R128xSPM",
   platforms: [
-    .macOS(.v14), .iOS(.v17),
+    // macOS actually requires 14+ for GUI app. But we keep 10.15 for library and CLI support.
+    .macOS(.v10_15), .iOS(.v17),
   ],
   products: [
     // Products define the executables and libraries a package produces, making them visible to other packages.
     .library(
-      name: "R128xKit",
-      targets: ["R128xKit"]
+      name: "R128xGUIKit",
+      targets: ["R128xGUIKit"]
+    ),
+    .library(
+      name: "R128xCLIKit",
+      targets: ["R128xCLIKit"]
     ),
     .executable(
       name: "r128x-cli",
@@ -26,9 +31,21 @@ let package = Package(
       name: "EBUR128"
     ),
     .target(
-      name: "R128xKit",
+      name: "ExtAudioProcessor",
       dependencies: [
         "EBUR128",
+      ]
+    ),
+    .target(
+      name: "R128xCLIKit",
+      dependencies: [
+        "ExtAudioProcessor",
+      ]
+    ),
+    .target(
+      name: "R128xGUIKit",
+      dependencies: [
+        "ExtAudioProcessor",
       ],
       resources: [
         .process("Resources"),
@@ -37,16 +54,12 @@ let package = Package(
     .executableTarget(
       name: "r128x-cli",
       dependencies: [
-        "R128xKit",
+        "R128xCLIKit",
       ]
     ),
     .testTarget(
-      name: "EBUR128Tests",
-      dependencies: ["EBUR128", "R128xKit"]
-    ),
-    .testTarget(
-      name: "R128xKitTests",
-      dependencies: ["R128xKit"]
+      name: "EBUR128JoinedTests",
+      dependencies: ["ExtAudioProcessor", "R128xCLIKit"]
     ),
   ]
 )

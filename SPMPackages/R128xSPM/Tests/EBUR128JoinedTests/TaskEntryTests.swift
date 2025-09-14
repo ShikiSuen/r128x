@@ -1,44 +1,11 @@
-// (c) 2024 and onwards Shiki Suen (AGPL v3.0 License or later).
-// ====================
-// This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
-
 import Foundation
 import Testing
 
-@testable import R128xKit
+@testable import EBUR128
+@testable import ExtAudioProcessor
 
-struct R128xKitTests {
-  @Test
-  func testBasicFunctionality() {
-    // Basic test to ensure the module loads correctly
-    #expect(Bool(true), "Module should load without issues")
-  }
-
-  @Test
-  func testExtAudioProcessorInitialization() {
-    _ = ExtAudioProcessor()
-    // Just verify the processor was created successfully (no throw)
-    #expect(Bool(true), "ExtAudioProcessor should initialize successfully")
-  }
-
-  @Test
-  func testMeasuredResultWithPreviewTimes() {
-    // Test MeasuredResult initialization with preview times
-    let result = MeasuredResult(
-      integratedLoudness: -23.0,
-      loudnessRange: 10.5,
-      maxTruePeak: -1.2,
-      previewStartAtTime: 15.5,
-      previewLength: 3.0
-    )
-
-    #expect(abs(result.integratedLoudness - -23.0) < 0.01)
-    #expect(abs(result.loudnessRange - 10.5) < 0.01)
-    #expect(abs(result.maxTruePeak - -1.2) < 0.01)
-    #expect(abs(result.previewStartAtTime - 15.5) < 0.01)
-    #expect(abs(result.previewLength - 3.0) < 0.01)
-  }
-
+@Suite
+struct TaskEntryTests {
   @Test
   func testPreviewTimeCalculationLogic() {
     // Test edge cases for preview time calculation logic

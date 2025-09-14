@@ -104,34 +104,6 @@ private func ExtAudioFileRead(
   -> OSStatus { -1 }
 #endif
 
-// MARK: - MeasuredResult
-
-public struct MeasuredResult: Codable, Hashable, Sendable {
-  // MARK: Lifecycle
-
-  public init(
-    integratedLoudness: Double,
-    loudnessRange: Double,
-    maxTruePeak: Double,
-    previewStartAtTime: Double = 0,
-    previewLength: Double = 0
-  ) {
-    self.integratedLoudness = integratedLoudness
-    self.loudnessRange = loudnessRange
-    self.maxTruePeak = maxTruePeak
-    self.previewStartAtTime = previewStartAtTime
-    self.previewLength = previewLength
-  }
-
-  // MARK: Public
-
-  public let integratedLoudness: Double
-  public let loudnessRange: Double
-  public let maxTruePeak: Double
-  public var previewStartAtTime: Double = 0
-  public var previewLength: Double = 0
-}
-
 // MARK: - ExtAudioProcessor
 
 /// Swift implementation of the ExtAudioProcessor functionality using Actor pattern for thread safety
@@ -170,7 +142,7 @@ public actor ExtAudioProcessor {
     at audioFilePath: String,
     fileId: String? = nil,
     progressCallback: ((ProcessingProgress) -> Void)? = nil,
-    taskTrackingVM: TaskTrackingVM? = nil
+    taskTrackingVM: TaskTrackingVMProtocol? = nil
   ) async throws
     -> MeasuredResult {
     #if canImport(AudioToolbox)

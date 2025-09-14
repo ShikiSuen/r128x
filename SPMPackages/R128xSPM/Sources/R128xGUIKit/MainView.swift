@@ -13,6 +13,7 @@ import UniformTypeIdentifiers
 
 // MARK: - R128xScene
 
+@available(macOS 14.0, *)
 public struct R128xScene: Scene {
   // MARK: Lifecycle
 
@@ -103,6 +104,7 @@ public struct R128xScene: Scene {
 
 // MARK: - MainView
 
+@available(macOS 14.0, *)
 struct MainView: View {
   // MARK: Lifecycle
 
@@ -235,6 +237,7 @@ extension Bool {
   fileprivate var negative: Bool { !self }
 }
 
+@available(macOS 14.0, *)
 #Preview {
   MainView()
     .environment(\.locale, .init(identifier: "en"))

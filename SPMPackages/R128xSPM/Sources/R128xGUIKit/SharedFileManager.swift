@@ -10,6 +10,7 @@ import SwiftUI
 
 // MARK: - SharedFileManager
 
+@available(macOS 14.0, *)
 @Observable
 @MainActor
 public final class SharedFileManager {

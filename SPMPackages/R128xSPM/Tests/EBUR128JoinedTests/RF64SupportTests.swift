@@ -5,10 +5,12 @@
 import Foundation
 import Testing
 
-@testable import R128xKit
+@testable import ExtAudioProcessor
+@testable import R128xCLIKit
 
 // MARK: - RF64SupportTests
 
+@Suite
 struct RF64SupportTests {
   // MARK: Internal
 
@@ -221,6 +223,7 @@ struct RF64SupportTests {
 
 // MARK: - RF64IntegrationTests
 
+@Suite
 struct RF64IntegrationTests {
   @Test
   func testExtAudioProcessorRF64ErrorHandling() async throws {
@@ -255,6 +258,30 @@ struct RF64IntegrationTests {
     }
   }
 
-  // Note: Removed CLI test since CliController is not accessible from this test target
-  // CLI functionality should be tested separately in integration tests
+  @Test
+  func testCLIRF64ErrorOutput() async throws {
+    // This test would require actually running the CLI, which we can't do easily in unit tests
+    // But we can test the CliController error handling path
+
+    let tempDir = FileManager.default.temporaryDirectory
+    let rf64URL = tempDir.appendingPathComponent("test_rf64_cli.wav")
+
+    var data = Data()
+    // Minimal RF64 header
+    data.append(contentsOf: [0x52, 0x46, 0x36, 0x34]) // "RF64"
+    data.append(contentsOf: [0xFF, 0xFF, 0xFF, 0xFF]) // Chunk size
+    data.append(contentsOf: [0x57, 0x41, 0x56, 0x45]) // "WAVE"
+
+    try data.write(to: rf64URL)
+    defer { try? FileManager.default.removeItem(at: rf64URL) }
+
+    let controller = CliController(path: rf64URL.path(percentEncoded: false))
+    await controller.doMeasure()
+
+    // Should have failed
+    #expect(controller.status != 0, "Should have failed processing RF64 file")
+    #expect(controller.il.isNaN, "Integrated loudness should be NaN on failure")
+    #expect(controller.lra.isNaN, "Loudness range should be NaN on failure")
+    #expect(controller.maxTP.isNaN, "Max true peak should be NaN on failure")
+  }
 }
