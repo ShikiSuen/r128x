@@ -337,6 +337,24 @@
             }
           }
         },
+        "ja" : {
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- Finder から音声ファイルやフォルダをこのウィンドウにドラッグ；\n- macOS標準のファイル共有機能を使って他のアプリから弊アプリにファイルを送信。"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- iOS標準の共有機能を使って他のアプリから弊アプリにファイルを共有。"
+                }
+              }
+            }
+          }
+        },
         "pt-BR" : {
           "variations" : {
             "device" : {
@@ -386,24 +404,6 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "Devam etmek için lütfen ses dosyaları ekleyin. Aşağıdaki yöntemleri kullanabilirsiniz:\n- \"Dosya Ekle\" düğmesini kullanın;\n- iOS'un yerleşik paylaşım özelliğini kullanarak diğer uygulamalardan bu uygulamaya dosya paylaşın."
-                }
-              }
-            }
-          }
-        },
-        "ja" : {
-          "variations" : {
-            "device" : {
-              "mac" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- Finder から音声ファイルやフォルダを弊ウィンドウにドラッグ；\n- macOS標準のファイル共有機能を使って他のアプリから弊アプリにファイルを送信。"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "音声ファイルを追加して続行してください。以下の方法をご利用いただけます：\n- 「ファイル添付」ボタンを使用；\n- iOS標準の共有機能を使って他のアプリから弊アプリにファイルを共有。"
                 }
               }
             }
@@ -867,7 +867,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Finder からファイルを弊ウィンドウにお引きずりください。"
+            "value" : "Finder からファイルをこのウィンドウにお引きずりください。"
           }
         },
         "pt-BR" : {
