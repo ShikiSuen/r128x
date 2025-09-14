@@ -40,16 +40,16 @@ public final class MainViewModel {
     .init(filenameExtension: $0)
   }
 
-  public var entries: [IntelEntry] = []
+  public var entries: [TaskEntry] = []
   public var dragOver = false
-  public var highlighted: IntelEntry.ID?
+  public var highlighted: TaskEntry.ID?
   public var searchText: String = ""
   @ObservationIgnored public let progressDebouncer: ProgressDebouncer = .init(delay: 0.1)
   @ObservationIgnored public var currentTask: Task<Void, Never>?
 
   public let taskTrackingVM = TaskTrackingVM.shared
 
-  public var filteredEntries: [IntelEntry] {
+  public var filteredEntries: [TaskEntry] {
     if searchText.isEmpty {
       return entries
     }
@@ -159,7 +159,7 @@ public final class MainViewModel {
 
       // Create a copy of entry data for concurrent processing, only for entries that need processing
       let entrySnapshots = self.entries.enumerated().compactMap {
-        index, entry -> (index: Int, entry: IntelEntry)? in
+        index, entry -> (index: Int, entry: TaskEntry)? in
 
         if forced {
           // For forced processing, process all entries
@@ -185,7 +185,7 @@ public final class MainViewModel {
       guard !entrySnapshots.isEmpty else { return }
 
       // Process entries concurrently with proper isolation
-      await withTaskGroup(of: (Int, IntelEntry)?.self) { group in
+      await withTaskGroup(of: (Int, TaskEntry)?.self) { group in
         for snapshot in entrySnapshots {
           group.addTask {
             guard !Task.isCancelled else { return nil }
@@ -276,7 +276,7 @@ public final class MainViewModel {
 
   public func addFiles(urls: [URL]) {
     let entriesAsPaths: [String] = entries.map(\.fileNamePath)
-    var newEntries: [IntelEntry] = []
+    var newEntries: [TaskEntry] = []
     var allEntriesPaths = Set(entriesAsPaths) // Use a Set for faster lookups
 
     for url in urls {
@@ -301,12 +301,12 @@ public final class MainViewModel {
         )
         for audioFile in audioFiles {
           guard !allEntriesPaths.contains(audioFile.path) else { continue }
-          newEntries.append(IntelEntry(url: audioFile))
+          newEntries.append(TaskEntry(url: audioFile))
           allEntriesPaths.insert(audioFile.path) // Track newly added paths
         }
       } else {
         // Handle individual file
-        newEntries.append(IntelEntry(url: url))
+        newEntries.append(TaskEntry(url: url))
         allEntriesPaths.insert(url.path) // Track newly added paths
       }
     }
