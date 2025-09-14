@@ -29,30 +29,75 @@ struct TaskEntryListView: View {
   // MARK: Private
 
   @Environment(MainViewModel.self) private var viewModel
+  @State private var currentSelection: UUID?
 
   @ViewBuilder private var subBody: some View {
-    Table(viewModel.filteredEntries) {
+    Table(viewModel.filteredEntries, selection: $currentSelection) {
       TableColumn("".description) { entry in
-        TaskEntryView(entry)
+        TaskEntryView(entry, isChosen: entry.id == currentSelection)
+          .environment(viewModel)
           .foregroundStyle(.primary)
-          .contextMenu {
-            #if os(macOS)
-            Button {
-              NSWorkspace.shared.activateFileViewerSelecting([entry.url])
-            } label: {
-              Label("contextMenu.showInFinder".i18n, systemImage: "folder")
-            }
-            Divider()
-            #endif
-            Button {
-              viewModel.removeEntry(id: entry.id)
-            } label: {
-              Label("contextMenu.removeThisEntry".i18n, systemImage: "trash")
+          .onTapGesture(count: 1) {
+            // Tap to toggle preview
+            if entry.isDBTPPlaybackable {
+              if viewModel.isPreviewingTask(id: entry.id) {
+                viewModel.stopPreview()
+              } else {
+                viewModel.startPreview(for: entry)
+              }
             }
           }
       }
     }
     .tableColumnHeaders(.hidden)
+    .contextMenu(forSelectionType: UUID.self) { uuids in
+      if let entry = viewModel.getEntry(uuid: uuids.randomElement()) {
+        // Preview functionality
+        if entry.isDBTPPlaybackable {
+          if viewModel.isPreviewingTask(id: entry.id) {
+            Button {
+              viewModel.stopPreview()
+            } label: {
+              Label("contextMenu.stopPreview".i18n, systemImage: "stop.fill")
+            }
+          } else {
+            Button {
+              viewModel.startPreview(for: entry)
+            } label: {
+              Label("contextMenu.playPreview".i18n, systemImage: "play.fill")
+            }
+          }
+          Divider()
+        }
+
+        #if os(macOS)
+        Button {
+          NSWorkspace.shared.activateFileViewerSelecting([entry.url])
+        } label: {
+          Label("contextMenu.showInFinder".i18n, systemImage: "folder")
+        }
+        Divider()
+        #endif
+        Button {
+          viewModel.removeEntry(id: entry.id)
+        } label: {
+          Label("contextMenu.removeThisEntry".i18n, systemImage: "trash")
+        }
+      }
+    }
+    .onKeyPress(.space) {
+      if let entry = viewModel.getEntry(uuid: currentSelection) {
+        // Tap to toggle preview
+        if entry.isDBTPPlaybackable {
+          if viewModel.isPreviewingTask(id: entry.id) {
+            viewModel.stopPreview()
+          } else {
+            viewModel.startPreview(for: entry)
+          }
+        }
+      }
+      return .handled
+    }
     .overlay {
       if viewModel.entries.isEmpty {
         Color.clear.background(.regularMaterial)

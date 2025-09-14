@@ -79,16 +79,30 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
 
   public var previewStartAtTimeDisplayed: String {
     guard let previewStartAtTime = previewStartAtTime else { return "N/A" }
-    let minutes = Int(previewStartAtTime) / 60
+    let totalSeconds = Int(previewStartAtTime)
+    let hours = totalSeconds / 3600
+    let minutes = (totalSeconds % 3600) / 60
     let seconds = previewStartAtTime.truncatingRemainder(dividingBy: 60)
-    return String(format: "%d:%06.3f", minutes, seconds)
+
+    if hours > 0 {
+      return String(format: "%d:%02d:%06.3f", hours, minutes, seconds)
+    } else {
+      return String(format: "%d:%06.3f", minutes, seconds)
+    }
   }
 
   public var previewStartAtTimeDisplayedShort: String {
     guard let previewStartAtTime = previewStartAtTime else { return "N/A" }
-    let minutes = Int(previewStartAtTime) / 60
-    let seconds = previewStartAtTime.truncatingRemainder(dividingBy: 60).rounded(.down)
-    return String(format: "%d:%d", minutes, Int(seconds))
+    let totalSeconds = Int(previewStartAtTime)
+    let hours = totalSeconds / 3600
+    let minutes = (totalSeconds % 3600) / 60
+    let seconds = totalSeconds % 60
+
+    if hours > 0 {
+      return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+      return String(format: "%d:%02d", minutes, seconds)
+    }
   }
 
   public var previewLengthDisplayed: String {
@@ -135,6 +149,10 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
       let seconds = Int(estimatedTimeRemaining) % 60
       return String(format: "%d:%02ds", minutes, seconds)
     }
+  }
+
+  public var isDBTPPlaybackable: Bool {
+    previewStartAtTime != nil && (previewLength ?? 0) > 0
   }
 
   @MainActor
