@@ -236,7 +236,9 @@ public final class MainViewModel {
           }
 
           var isDirectory: ObjCBool = false
-          let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+          let exists = FileManager.default.fileExists(
+            atPath: url.path(percentEncoded: false), isDirectory: &isDirectory
+          )
           guard exists else { continue }
 
           if isDirectory.boolValue {
@@ -245,7 +247,7 @@ public final class MainViewModel {
               in: url, allowedSuffixes: allowedSuffixes
             )
             for audioFile in audioFiles {
-              let path = audioFile.path
+              let path = audioFile.path(percentEncoded: false)
               guard !allEntriesPaths.contains(path) else { continue }
               counter += 1
               entries.append(.init(url: audioFile))
@@ -253,7 +255,7 @@ public final class MainViewModel {
             }
           } else {
             // Handle individual file drop
-            let path = url.path
+            let path = url.path(percentEncoded: false)
             guard !allEntriesPaths.contains(path) else { continue }
 
             for fileExtension in allowedSuffixes {
@@ -280,7 +282,7 @@ public final class MainViewModel {
     var allEntriesPaths = Set(entriesAsPaths) // Use a Set for faster lookups
 
     for url in urls {
-      guard !allEntriesPaths.contains(url.path) else { continue }
+      guard !allEntriesPaths.contains(url.path(percentEncoded: false)) else { continue }
 
       // Start accessing security-scoped resource for file importer and shared files
       let accessing = url.startAccessingSecurityScopedResource()
@@ -291,7 +293,9 @@ public final class MainViewModel {
       }
 
       var isDirectory: ObjCBool = false
-      let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+      let exists = FileManager.default.fileExists(
+        atPath: url.path(percentEncoded: false), isDirectory: &isDirectory
+      )
       guard exists else { continue }
 
       if isDirectory.boolValue {
@@ -300,14 +304,14 @@ public final class MainViewModel {
           in: url, allowedSuffixes: Self.allowedSuffixes
         )
         for audioFile in audioFiles {
-          guard !allEntriesPaths.contains(audioFile.path) else { continue }
+          guard !allEntriesPaths.contains(audioFile.path(percentEncoded: false)) else { continue }
           newEntries.append(TaskEntry(url: audioFile))
-          allEntriesPaths.insert(audioFile.path) // Track newly added paths
+          allEntriesPaths.insert(audioFile.path(percentEncoded: false)) // Track newly added paths
         }
       } else {
         // Handle individual file
         newEntries.append(TaskEntry(url: url))
-        allEntriesPaths.insert(url.path) // Track newly added paths
+        allEntriesPaths.insert(url.path(percentEncoded: false)) // Track newly added paths
       }
     }
 
@@ -361,7 +365,7 @@ public final class MainViewModel {
       do {
         let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
         if let isRegularFile = resourceValues.isRegularFile, isRegularFile {
-          let path = fileURL.path
+          let path = fileURL.path(percentEncoded: false)
           for fileExtension in allowedSuffixes {
             if path.hasSuffix(".\(fileExtension)") {
               audioFiles.append(fileURL)

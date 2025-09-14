@@ -27,7 +27,7 @@ public final class SharedFileManager {
     // Log incoming shared files for debugging
     print("SharedFileManager: Received \(urls.count) shared file(s)")
     for url in urls {
-      print("  - \(url.path)")
+      print("  - \(url.path(percentEncoded: false))")
     }
 
     // Process shared files with security-scoped resource access
@@ -43,16 +43,18 @@ public final class SharedFileManager {
       }
 
       // Verify file exists and is accessible
-      if FileManager.default.fileExists(atPath: url.path) {
+      if FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
         validURLs.append(url)
       } else {
-        print("SharedFileManager: File not accessible: \(url.path)")
+        print("SharedFileManager: File not accessible: \(url.path(percentEncoded: false))")
       }
     }
 
     // Add to pending files, avoiding duplicates
     let newURLs = validURLs.filter { newURL in
-      !pendingSharedFiles.contains { $0.path == newURL.path }
+      !pendingSharedFiles.contains {
+        $0.path(percentEncoded: false) == newURL.path(percentEncoded: false)
+      }
     }
 
     pendingSharedFiles.append(contentsOf: newURLs)

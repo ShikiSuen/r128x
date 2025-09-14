@@ -42,14 +42,14 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
   public var estimatedTimeRemaining: TimeInterval?
   public var currentLoudness: Double?
 
-  public var fileNamePath: String { url.path }
+  public var fileNamePath: String { url.path(percentEncoded: false) }
 
   public var fileName: String {
     url.lastPathComponent
   }
 
   public var folderPath: String {
-    url.deletingLastPathComponent().path
+    url.deletingLastPathComponent().path(percentEncoded: false)
   }
 
   public var done: Bool {

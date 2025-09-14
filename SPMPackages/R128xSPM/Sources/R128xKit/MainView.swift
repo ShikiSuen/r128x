@@ -77,7 +77,9 @@ public struct R128xScene: Scene {
         }
 
         var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+        let exists = FileManager.default.fileExists(
+          atPath: url.path(percentEncoded: false), isDirectory: &isDirectory
+        )
 
         if !exists {
           return false
