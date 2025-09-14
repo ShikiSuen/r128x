@@ -327,6 +327,12 @@ public final class MainViewModel {
     entries.removeAll()
   }
 
+  public func removeEntry(id: UUID) {
+    entries.removeAll {
+      $0.id == id
+    }
+  }
+
   public func updateProgress(_ newProgress: [String: ProgressUpdate]) {
     for (fileId, progressUpdate) in newProgress {
       if let entryIndex = entries.firstIndex(where: { $0.id.uuidString == fileId }) {
