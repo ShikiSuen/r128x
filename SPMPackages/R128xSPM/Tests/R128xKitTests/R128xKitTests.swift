@@ -132,4 +132,43 @@ struct R128xKitTests {
     #expect(abs(shortPreviewStartTime - 0.0) < 0.01, "Short file should start preview at 0")
     #expect(abs(shortPreviewLength - 2.0) < 0.01, "Short file preview should be full file length")
   }
+
+  @Test
+  func testTaskEntryPreviewTimeDisplayProperties() {
+    // Test TaskEntry with preview time values
+    let url = URL(fileURLWithPath: "/test/audio.wav")
+    var taskEntry = TaskEntry(url: url)
+
+    // Set some sample values
+    taskEntry.previewStartAtTime = 125.5 // 2 minutes, 5.5 seconds
+    taskEntry.previewLength = 3.0
+
+    #expect(
+      taskEntry.previewStartAtTimeDisplayed == "2:05.500",
+      "Preview start time should be formatted as MM:SS.sss"
+    )
+    #expect(
+      taskEntry.previewLengthDisplayed == "3.000s",
+      "Preview length should be formatted with 3 decimal places"
+    )
+    #expect(
+      taskEntry.previewRangeDisplayed == "2:05.500 - 2:08.500",
+      "Preview range should show start to end time"
+    )
+
+    // Test with nil values
+    taskEntry.previewStartAtTime = nil
+    taskEntry.previewLength = nil
+
+    #expect(
+      taskEntry.previewStartAtTimeDisplayed == "N/A",
+      "Should display N/A when preview start time is nil"
+    )
+    #expect(
+      taskEntry.previewLengthDisplayed == "N/A", "Should display N/A when preview length is nil"
+    )
+    #expect(
+      taskEntry.previewRangeDisplayed == "N/A", "Should display N/A when preview values are nil"
+    )
+  }
 }

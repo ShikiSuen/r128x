@@ -77,6 +77,37 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
     return String(format: format, dBTP)
   }
 
+  public var previewStartAtTimeDisplayed: String {
+    guard let previewStartAtTime = previewStartAtTime else { return "N/A" }
+    let minutes = Int(previewStartAtTime) / 60
+    let seconds = previewStartAtTime.truncatingRemainder(dividingBy: 60)
+    return String(format: "%d:%06.3f", minutes, seconds)
+  }
+
+  public var previewStartAtTimeDisplayedShort: String {
+    guard let previewStartAtTime = previewStartAtTime else { return "N/A" }
+    let minutes = Int(previewStartAtTime) / 60
+    let seconds = previewStartAtTime.truncatingRemainder(dividingBy: 60).rounded(.down)
+    return String(format: "%d:%d", minutes, Int(seconds))
+  }
+
+  public var previewLengthDisplayed: String {
+    guard let previewLength = previewLength else { return "N/A" }
+    return String(format: "%.3fs", previewLength)
+  }
+
+  public var previewRangeDisplayed: String {
+    guard let start = previewStartAtTime, let length = previewLength else { return "N/A" }
+    let end = start + length
+    let startMinutes = Int(start) / 60
+    let startSeconds = start.truncatingRemainder(dividingBy: 60)
+    let endMinutes = Int(end) / 60
+    let endSeconds = end.truncatingRemainder(dividingBy: 60)
+    return String(
+      format: "%d:%06.3f - %d:%06.3f", startMinutes, startSeconds, endMinutes, endSeconds
+    )
+  }
+
   public var guardedProgressValue: Double? {
     guard status == .processing, let progressPercentage = progressPercentage else {
       return status == .succeeded ? 1 : (status == .failed ? 0 : nil)
