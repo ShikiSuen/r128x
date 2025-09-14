@@ -48,6 +48,7 @@ public final class MainViewModel {
   @ObservationIgnored public var currentTask: Task<Void, Never>?
 
   public let taskTrackingVM = TaskTrackingVM.shared
+  public let audioPreviewManager = AudioPreviewManager.shared
 
   public var filteredEntries: [TaskEntry] {
     if searchText.isEmpty {
@@ -113,6 +114,11 @@ public final class MainViewModel {
   }
 
   // MARK: - Methods
+
+  public func getEntry(uuid: UUID?) -> TaskEntry? {
+    guard let uuid else { return nil }
+    return entries.first { $0.id == uuid }
+  }
 
   public func batchProcess(forced: Bool = false) {
     // When forced = true, reset processing state for ALL entries
@@ -328,9 +334,40 @@ public final class MainViewModel {
   }
 
   public func removeEntry(id: UUID) {
+    // Stop preview if this entry is currently being previewed
+    if audioPreviewManager.isPreviewingTask(id: id) {
+      audioPreviewManager.stopPreview()
+    }
+
     entries.removeAll {
       $0.id == id
     }
+  }
+
+  // MARK: - Audio Preview Methods
+
+  /// Start audio preview for a given entry
+  public func startPreview(for entry: TaskEntry) {
+    // Only start preview if the entry has valid preview data
+    guard entry.previewStartAtTime != nil,
+          entry.previewLength != nil,
+          entry.previewLength! > 0
+    else {
+      print("Cannot preview entry \(entry.fileName): No preview data available")
+      return
+    }
+
+    audioPreviewManager.startPreview(for: entry)
+  }
+
+  /// Stop the current audio preview
+  public func stopPreview() {
+    audioPreviewManager.stopPreview()
+  }
+
+  /// Check if a specific task is currently being previewed
+  public func isPreviewingTask(id: UUID) -> Bool {
+    audioPreviewManager.isPreviewingTask(id: id)
   }
 
   public func updateProgress(_ newProgress: [String: ProgressUpdate]) {
