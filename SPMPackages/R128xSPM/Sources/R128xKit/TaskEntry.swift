@@ -149,6 +149,8 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
       programLoudness = measured.integratedLoudness
       loudnessRange = measured.loudnessRange
       dBTP = Double(measured.maxTruePeak)
+      previewStartAtTime = measured.previewStartAtTime
+      previewLength = measured.previewLength
       status = .succeeded
       progressPercentage = nil
       estimatedTimeRemaining = nil
