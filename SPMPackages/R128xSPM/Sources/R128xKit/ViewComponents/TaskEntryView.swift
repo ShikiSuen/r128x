@@ -110,6 +110,7 @@ struct TaskEntryView: View {
       }
     }
     .font(.system(.body).monospacedDigit())
+    .contentShape(.rect)
   }
 
   // MARK: Private
