@@ -27,7 +27,7 @@ The charged fee is not mandatory since you can always compile the binaries for y
 
 For `r128x-cli` users, here are the installation commands for Homebrew:
 ```
-brew tap shikisuen/r128x
+brew tap shikisuen/r128x https://github.com/shikisuen/r128x.git
 brew install shikisuen/r128x/r128x
 ```
 
