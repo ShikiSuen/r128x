@@ -133,7 +133,7 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
     }
 
     do {
-      let (il, lra, max_tp) = try await ExtAudioProcessor()
+      let measured = try await ExtAudioProcessor()
         .processAudioFile(
           at: fileNamePath,
           fileId: id.uuidString,
@@ -143,9 +143,9 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
           },
           taskTrackingVM: taskTrackingVM ?? TaskTrackingVM.shared
         )
-      programLoudness = il
-      loudnessRange = lra
-      dBTP = Double(max_tp)
+      programLoudness = measured.integratedLoudness
+      loudnessRange = measured.loudnessRange
+      dBTP = Double(measured.maxTruePeak)
       status = .succeeded
       progressPercentage = nil
       estimatedTimeRemaining = nil

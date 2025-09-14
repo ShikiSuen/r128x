@@ -104,6 +104,34 @@ private func ExtAudioFileRead(
   -> OSStatus { -1 }
 #endif
 
+// MARK: - MeasuredResult
+
+public struct MeasuredResult: Codable, Hashable, Sendable {
+  // MARK: Lifecycle
+
+  public init(
+    integratedLoudness: Double,
+    loudnessRange: Double,
+    maxTruePeak: Double,
+    previewStartAtTime: Double = 0,
+    previewLength: Double = 0
+  ) {
+    self.integratedLoudness = integratedLoudness
+    self.loudnessRange = loudnessRange
+    self.maxTruePeak = maxTruePeak
+    self.previewStartAtTime = previewStartAtTime
+    self.previewLength = previewLength
+  }
+
+  // MARK: Public
+
+  public let integratedLoudness: Double
+  public let loudnessRange: Double
+  public let maxTruePeak: Double
+  public var previewStartAtTime: Double = 0
+  public var previewLength: Double = 0
+}
+
 // MARK: - ExtAudioProcessor
 
 /// Swift implementation of the ExtAudioProcessor functionality using Actor pattern for thread safety
@@ -137,14 +165,14 @@ public actor ExtAudioProcessor {
   /// - Parameter fileId: Unique identifier for tracking progress (optional)
   /// - Parameter progressCallback: Optional callback for progress updates
   /// - Parameter taskTrackingVM: Progress view model for stream-based updates
-  /// - Returns: Tuple containing (integrated loudness, loudness range, maximum true peak)
+  /// - Returns: MeasuredResult containing (integrated loudness, loudness range, maximum true peak), etc.
   public func processAudioFile(
     at audioFilePath: String,
     fileId: String? = nil,
     progressCallback: ((ProcessingProgress) -> Void)? = nil,
     taskTrackingVM: TaskTrackingVM? = nil
   ) async throws
-    -> (integratedLoudness: Double, loudnessRange: Double, maxTruePeak: Double) {
+    -> MeasuredResult {
     #if canImport(AudioToolbox)
 
     // Add memory pressure handling for large batch processing
@@ -519,7 +547,7 @@ public actor ExtAudioProcessor {
     let loudnessRange = await ebur128State.loudnessRange()
     let maxTruePeakDB = 20 * log10(maxTruePeak)
 
-    return (
+    return .init(
       integratedLoudness: round(integratedLoudness * 10) / 10,
       loudnessRange: round(loudnessRange * 100) / 100,
       maxTruePeak: round(maxTruePeakDB * 10) / 10
