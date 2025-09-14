@@ -55,7 +55,7 @@ public class CliController {
   public func doMeasure() async {
     do {
       let processor = ExtAudioProcessor()
-      let (integratedLoudness, loudnessRange, maxTruePeak) = try await processor.processAudioFile(
+      let result = try await processor.processAudioFile(
         at: filePath,
         fileId: String?.none
       ) { progress in
@@ -80,9 +80,9 @@ public class CliController {
       // Clear the progress line after completion and add newline
       print("\r" + String(repeating: " ", count: 40) + "\r", terminator: "")
 
-      il = integratedLoudness
-      lra = loudnessRange
-      maxTP = maxTruePeak
+      il = result.integratedLoudness
+      lra = result.loudnessRange
+      maxTP = result.maxTruePeak
       status = 0
     } catch {
       status = -1
