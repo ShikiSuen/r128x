@@ -22,6 +22,11 @@
 		565EC47317127B49008B09A2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		5B5180642C13084000F0FA00 /* R128xSPM */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = R128xSPM; sourceTree = "<group>"; };
+		5B555A202E769F4B00C8480A /* de */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = de; path = de.lproj/Credits.rtf; sourceTree = "<group>"; };
+		5B555A212E769F4C00C8480A /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "pt-BR"; path = "pt-BR.lproj/Credits.rtf"; sourceTree = "<group>"; };
+		5B555A222E769F4D00C8480A /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = ru; path = ru.lproj/Credits.rtf; sourceTree = "<group>"; };
+		5B555A232E769F4D00C8480A /* es */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = es; path = es.lproj/Credits.rtf; sourceTree = "<group>"; };
+		5B555A242E769F4E00C8480A /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = tr; path = tr.lproj/Credits.rtf; sourceTree = "<group>"; };
 		5B7044072E756AB100EB0114 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		5B84B8052A8915FE0049E107 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "zh-Hant"; path = "zh-Hant.lproj/Credits.rtf"; sourceTree = "<group>"; };
 		5B84B8062A8916040049E107 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "zh-Hans"; path = "zh-Hans.lproj/Credits.rtf"; sourceTree = "<group>"; };
@@ -174,6 +179,11 @@
 				"zh-Hant",
 				"zh-Hans",
 				ja,
+				de,
+				es,
+				ru,
+				tr,
+				"pt-BR",
 			);
 			mainGroup = 564C37031605ABFC00C3F184;
 			packageReferences = (
@@ -223,6 +233,11 @@
 				5B84B8052A8915FE0049E107 /* zh-Hant */,
 				5B84B8062A8916040049E107 /* zh-Hans */,
 				5B84B8072A8916090049E107 /* ja */,
+				5B555A202E769F4B00C8480A /* de */,
+				5B555A212E769F4C00C8480A /* pt-BR */,
+				5B555A222E769F4D00C8480A /* ru */,
+				5B555A232E769F4D00C8480A /* es */,
+				5B555A242E769F4E00C8480A /* tr */,
 			);
 			name = Credits.rtf;
 			sourceTree = "<group>";
