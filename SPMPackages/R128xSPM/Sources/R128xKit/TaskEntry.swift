@@ -22,7 +22,7 @@ public enum StatusForProcessing: String, Sendable {
 
 // MARK: - TaskEntry
 
-public struct TaskEntry: Identifiable, Equatable, Sendable {
+public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
   // MARK: Lifecycle
 
   public init(url: URL) {
