@@ -4,7 +4,19 @@
     "app.windowTitle" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "r128x"
+          }
+        },
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "r128x"
+          }
+        },
+        "es" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "r128x"
@@ -20,6 +32,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "百二十八禁"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "r128x"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "r128x"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "r128x"
           }
         },
         "zh-Hans" : {
@@ -39,10 +69,22 @@
     "btn.addFiles" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dateien hinzufügen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Files"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar Archivos"
           }
         },
         "fr" : {
@@ -55,6 +97,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ファイル添付"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Arquivos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить файлы"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosya Ekle"
           }
         },
         "zh-Hans" : {
@@ -74,10 +134,22 @@
     "btn.clearTaskList" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabelle löschen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clear Table"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpiar Tabla"
           }
         },
         "fr" : {
@@ -90,6 +162,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "テーブルをクリア"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar Tabela"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить таблицу"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabloyu Temizle"
           }
         },
         "zh-Hans" : {
@@ -109,10 +199,22 @@
     "btn.RedoAllTasks" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle neu verarbeiten"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reprocess All"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reprocesar Todo"
           }
         },
         "fr" : {
@@ -125,6 +227,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全部再測量"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reprocessar Tudo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переобработать всё"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tümünü Yeniden İşle"
           }
         },
         "zh-Hans" : {
@@ -145,6 +265,24 @@
       "comment" : "Differs between iOS and macOS.",
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Bitte fügen Sie Audiodateien hinzu, um fortzufahren. Sie können die folgenden Methoden verwenden:\n- Verwenden Sie die Schaltfläche \"Dateien hinzufügen\";\n- Ziehen Sie Audiodateien oder Ordner vom Finder in dieses Fenster;\n- Teilen Sie Dateien aus anderen Apps über die integrierte Freigabefunktion von macOS in diese App."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Bitte fügen Sie Audiodateien hinzu, um fortzufahren. Sie können die folgenden Methoden verwenden:\n- Verwenden Sie die Schaltfläche \"Dateien hinzufügen\";\n- Teilen Sie Dateien aus anderen Apps über die integrierte Freigabefunktion von iOS in diese App."
+                }
+              }
+            }
+          }
+        },
         "en" : {
           "variations" : {
             "device" : {
@@ -163,6 +301,24 @@
             }
           }
         },
+        "es" : {
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Por favor agregue archivos de audio para continuar. Puede usar los siguientes métodos:\n- Use el botón \"Agregar Archivos\";\n- Arrastre archivos de audio o carpetas desde Finder a esta ventana;\n- Comparta archivos a esta aplicación desde otras aplicaciones usando la función de compartir integrada de macOS."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Por favor agregue archivos de audio para continuar. Puede usar los siguientes métodos:\n- Use el botón \"Agregar Archivos\";\n- Comparta archivos a esta aplicación desde otras aplicaciones usando la función de compartir integrada de iOS."
+                }
+              }
+            }
+          }
+        },
         "fr" : {
           "variations" : {
             "device" : {
@@ -176,6 +332,60 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "Veuillez ajouter des fichiers audio pour continuer. Vous pouvez utiliser les méthodes suivantes :\n- Utilisant le bouton \"Ajouter des Fichiers\" ;\n- Partageant des fichiers vers cette app depuis d'autres apps en utilisant la fonction de partage intégrée d'iOS."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR" : {
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Por favor, adicione arquivos de áudio para continuar. Você pode usar os seguintes métodos:\n- Use o botão \"Adicionar Arquivos\";\n- Arraste arquivos de áudio ou pastas do Finder para esta janela;\n- Compartilhe arquivos para este aplicativo de outros aplicativos usando o recurso de compartilhamento integrado do macOS."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Por favor, adicione arquivos de áudio para continuar. Você pode usar os seguintes métodos:\n- Use o botão \"Adicionar Arquivos\";\n- Compartilhe arquivos para este aplicativo de outros aplicativos usando o recurso de compartilhamento integrado do iOS."
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Пожалуйста, добавьте аудиофайлы для продолжения. Вы можете использовать следующие методы:\n- Используйте кнопку \"Добавить файлы\";\n- Перетащите аудиофайлы или папки из Finder в это окно;\n- Поделитесь файлами в это приложение из других приложений, используя встроенную функцию обмена macOS."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Пожалуйста, добавьте аудиофайлы для продолжения. Вы можете использовать следующие методы:\n- Используйте кнопку \"Добавить файлы\";\n- Поделитесь файлами в это приложение из других приложений, используя встроенную функцию обмена iOS."
+                }
+              }
+            }
+          }
+        },
+        "tr" : {
+          "variations" : {
+            "device" : {
+              "mac" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Devam etmek için lütfen ses dosyaları ekleyin. Aşağıdaki yöntemleri kullanabilirsiniz:\n- \"Dosya Ekle\" düğmesini kullanın;\n- Finder'dan bu pencereye ses dosyalarını veya klasörleri sürükleyin;\n- macOS'un yerleşik paylaşım özelliğini kullanarak diğer uygulamalardan bu uygulamaya dosya paylaşın."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Devam etmek için lütfen ses dosyaları ekleyin. Aşağıdaki yöntemleri kullanabilirsiniz:\n- \"Dosya Ekle\" düğmesini kullanın;\n- iOS'un yerleşik paylaşım özelliğini kullanarak diğer uygulamalardan bu uygulamaya dosya paylaşın."
                 }
               }
             }
@@ -240,10 +450,22 @@
     "emptyState.title" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Audiodateien"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Audio Files Yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay archivos de audio"
           }
         },
         "fr" : {
@@ -256,6 +478,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "音声ファイルがありません"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ainda não há arquivos de áudio"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока нет аудиофайлов"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Henüz ses dosyası yok"
           }
         },
         "zh-Hans" : {
@@ -275,7 +515,19 @@
     "fieldTitle.dBTP" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dBTP"
+          }
+        },
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dBTP"
+          }
+        },
+        "es" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "dBTP"
@@ -288,6 +540,24 @@
           }
         },
         "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dBTP"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dBTP"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "дБ TP"
+          }
+        },
+        "tr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "dBTP"
@@ -310,10 +580,22 @@
     "fieldTitle.loudnessRange" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lautstärkebereich"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loudness Range"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rango de Volumen"
           }
         },
         "fr" : {
@@ -326,6 +608,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ラウドネスの範囲"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faixa de Volume"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Диапазон громкости"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ses Seviyesi Aralığı"
           }
         },
         "zh-Hans" : {
@@ -345,10 +645,22 @@
     "Program Loudness" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programmlautstärke"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Program Loudness"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volumen del Programa"
           }
         },
         "fr" : {
@@ -361,6 +673,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "プログラムラウドネス"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume do Programa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Громкость программы"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Program Ses Seviyesi"
           }
         },
         "zh-Hans" : {
@@ -380,10 +710,22 @@
     "queueMsg.allDone" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Dateien wurden erfolgreich verarbeitet."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "All files are processed successfully."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los archivos se procesaron exitosamente."
           }
         },
         "fr" : {
@@ -396,6 +738,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全ファイル無事測量完了。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos os arquivos foram processados com sucesso."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все файлы успешно обработаны."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tüm dosyalar başarıyla işlendi."
           }
         },
         "zh-Hans" : {
@@ -415,10 +775,22 @@
     "queueMsg.allDoneExcept:%d" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Dateien wurden verarbeitet, außer %d fehlgeschlagenen Dateien."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "All files are processed, excepting %d failed files."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los archivos se procesaron, excepto %d archivos fallidos."
           }
         },
         "fr" : {
@@ -431,6 +803,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "測量できなかったファイルは %d 点であり、他のファイルは全て測量完了。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos os arquivos foram processados, exceto %d arquivos que falharam."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все файлы обработаны, за исключением %d неудачных файлов."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tüm dosyalar işlendi, %d başarısız dosya hariç."
           }
         },
         "zh-Hans" : {
@@ -450,10 +840,22 @@
     "queueMsg.blankQueueStandBy" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziehen Sie Audiodateien vom Finder in die Tabelle dieses Fensters."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drag audio files from Finder to the table in this window."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrastre archivos de audio desde Finder a la tabla en esta ventana."
           }
         },
         "fr" : {
@@ -466,6 +868,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Finder からファイルを弊ウィンドウにお引きずりください。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arraste arquivos de áudio do Finder para a tabela nesta janela."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перетащите аудиофайлы из Finder в таблицу этого окна."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder'dan bu penceredeki tabloya ses dosyalarını sürükleyin."
           }
         },
         "zh-Hans" : {
@@ -485,10 +905,22 @@
     "queueMsg.workingRemaining:%d" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verarbeitung der Dateien in der Warteschlange: %d verbleibend."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Processing files in the queue: %d remaining."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procesando archivos en la cola: %d restantes."
           }
         },
         "fr" : {
@@ -501,6 +933,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ファイル順番測量処理中。残り：%d 点。"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processando arquivos na fila: %d restantes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обработка файлов в очереди: %d осталось."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuyruktaki dosyalar işleniyor: %d kaldı."
           }
         },
         "zh-Hans" : {
@@ -520,10 +970,22 @@
     "queueMsg.workingRemaining:%d%@" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verarbeitung der Dateien in der Warteschlange: %d verbleibend (~%@ verbleibend)..."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Processing files in the queue: %d remaining (~%@ remaining)..."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procesando archivos en la cola: %d restantes (~%@ restantes)..."
           }
         },
         "fr" : {
@@ -536,6 +998,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ファイル順番測量処理中。残り：%d 点（約 %@ 残り）..."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processando arquivos na fila: %d restantes (~%@ restantes)..."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обработка файлов в очереди: %d осталось (~%@ осталось)..."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuyruktaki dosyalar işleniyor: %d kaldı (~%@ kaldı)..."
           }
         },
         "zh-Hans" : {
@@ -555,10 +1035,22 @@
     "searchBar.promptText" : {
       "extractionState" : "manual",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dateien suchen..."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search files..."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar archivos..."
           }
         },
         "fr" : {
@@ -571,6 +1063,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ファイルを検索..."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar arquivos..."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск файлов..."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dosya ara..."
           }
         },
         "zh-Hans" : {
