@@ -4,22 +4,6 @@
 
 import Foundation
 
-extension TimeInterval {
-  func formatted() -> String {
-    let minutes = Int(self) / 60
-    let seconds = Int(self) % 60
-    return String(format: "%d:%02d", minutes, seconds)
-  }
-}
-
-// MARK: - StatusForProcessing
-
-public enum StatusForProcessing: String, Sendable {
-  case processing = "…"
-  case succeeded = "✔︎"
-  case failed = "✖︎"
-}
-
 // MARK: - TaskEntry
 
 public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
@@ -31,6 +15,12 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
   }
 
   // MARK: Public
+
+  public enum StatusForProcessing: String, Sendable {
+    case processing = "…"
+    case succeeded = "✔︎"
+    case failed = "✖︎"
+  }
 
   public let id = UUID()
   public let url: URL
@@ -44,14 +34,24 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
   public var estimatedTimeRemaining: TimeInterval?
   public var currentLoudness: Double?
 
-  public var fileNamePath: String { url.path(percentEncoded: false) }
+  public var fileNamePath: String {
+    if #available(macOS 13.0, *) {
+      url.path(percentEncoded: false)
+    } else {
+      url.path
+    }
+  }
 
   public var fileName: String {
     url.lastPathComponent
   }
 
   public var folderPath: String {
-    url.deletingLastPathComponent().path(percentEncoded: false)
+    if #available(macOS 13.0, *) {
+      url.deletingLastPathComponent().path(percentEncoded: false)
+    } else {
+      url.deletingLastPathComponent().path
+    }
   }
 
   public var done: Bool {
@@ -153,70 +153,5 @@ public struct TaskEntry: Identifiable, Equatable, Sendable, Hashable {
 
   public var isDBTPPlaybackable: Bool {
     previewStartAtTime != nil && (previewLength ?? 0) > 0
-  }
-
-  @MainActor
-  public mutating func process(forced: Bool = false, taskTrackingVM: TaskTrackingVM? = nil) async {
-    if status == .succeeded, !forced {
-      return
-    }
-
-    // Always set status to processing when we start
-    status = .processing
-
-    // Only preserve existing progress if not forced and we have valid progress data
-    // This handles cases where processing was interrupted but should resume
-    if !forced, progressPercentage != nil, progressPercentage! > 0 {
-      // Keep existing progress, don't reset
-      print("Resuming processing for \(fileName) from \(progressPercentage!)%")
-    } else {
-      // Fresh start or forced processing
-      progressPercentage = 0.0
-      estimatedTimeRemaining = nil
-      currentLoudness = nil
-    }
-
-    // Start accessing security-scoped resource for file processing
-    let accessing = url.startAccessingSecurityScopedResource()
-    defer {
-      if accessing {
-        url.stopAccessingSecurityScopedResource()
-      }
-    }
-
-    do {
-      let measured = try await ExtAudioProcessor()
-        .processAudioFile(
-          at: fileNamePath,
-          fileId: id.uuidString,
-          progressCallback: { @Sendable _ in
-            // Could potentially update UI here with progress, but for now just process
-            // The AsyncStream system will handle UI updates
-          },
-          taskTrackingVM: taskTrackingVM ?? TaskTrackingVM.shared
-        )
-      programLoudness = measured.integratedLoudness
-      loudnessRange = measured.loudnessRange
-      dBTP = Double(measured.maxTruePeak)
-      previewStartAtTime = measured.previewStartAtTime
-      previewLength = measured.previewLength
-      status = .succeeded
-      progressPercentage = nil
-      estimatedTimeRemaining = nil
-      currentLoudness = nil
-
-      // Complete progress tracking
-      taskTrackingVM?.completeProgress(for: id.uuidString)
-    } catch {
-      print("Error processing file \(fileName): \(error)")
-      status = .failed
-      progressPercentage = nil
-      estimatedTimeRemaining = nil
-      currentLoudness = nil
-
-      // Complete progress tracking even on failure
-      taskTrackingVM?.completeProgress(for: id.uuidString)
-      return
-    }
   }
 }

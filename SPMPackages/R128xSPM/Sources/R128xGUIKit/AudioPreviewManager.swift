@@ -4,6 +4,8 @@
 
 import Foundation
 
+import struct ExtAudioProcessor.TaskEntry
+
 #if canImport(AVFoundation)
 import AVFoundation
 #endif
@@ -15,6 +17,7 @@ import SwiftUI
 // MARK: - AudioPreviewManager
 
 /// Manages audio preview playback functionality with security-scoped resource management
+@available(macOS 14.0, *)
 @MainActor
 @Observable
 public final class AudioPreviewManager {
@@ -266,6 +269,7 @@ public final class AudioPreviewManager {
 
 // MARK: - Singleton Access
 
+@available(macOS 14.0, *)
 extension AudioPreviewManager {
   /// Shared instance for global access
   public static let shared = AudioPreviewManager()

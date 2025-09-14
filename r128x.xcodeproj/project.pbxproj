@@ -8,13 +8,25 @@
 
 /* Begin PBXBuildFile section */
 		5B517EF62C12F0D500F0FA00 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */; };
-		5B5181742C13085000F0FA00 /* R128xKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5B5181732C13085000F0FA00 /* R128xKit */; };
 		5B7044082E756AB100EB0114 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5B7044072E756AB100EB0114 /* AppIcon.icon */; };
 		5BDCA1B62A6D51D400F7202E /* MainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1B52A6D51D400F7202E /* MainApp.swift */; };
 		5BDCA1BD2A6D51D500F7202E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1BC2A6D51D500F7202E /* Preview Assets.xcassets */; };
 		5BDCA1C22A6D51E900F7202E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BDCA1A52A6D4C6B00F7202E /* Assets.xcassets */; };
 		5BDCA1CC2A6D892F00F7202E /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = F5CDA3491713162E001649E7 /* Credits.rtf */; };
+		5BE60CA92E774BAB00BAAC08 /* R128xGUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5BE60CA82E774BAB00BAAC08 /* R128xGUIKit */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5BE0F33A2E77512D00D0F065 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		564C37121605ABFC00C3F184 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -50,7 +62,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5B5181742C13085000F0FA00 /* R128xKit in Frameworks */,
+				5BE60CA92E774BAB00BAAC08 /* R128xGUIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -135,6 +147,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5BDCA1C12A6D51D500F7202E /* Build configuration list for PBXNativeTarget "r128x-swiftui" */;
 			buildPhases = (
+				5BE0F33A2E77512D00D0F065 /* CopyFiles */,
 				5BDCA1AF2A6D51D400F7202E /* Sources */,
 				5BDCA1B02A6D51D400F7202E /* Frameworks */,
 				5BDCA1B12A6D51D400F7202E /* Resources */,
@@ -145,7 +158,7 @@
 			);
 			name = "r128x-swiftui";
 			packageProductDependencies = (
-				5B5181732C13085000F0FA00 /* R128xKit */,
+				5BE60CA82E774BAB00BAAC08 /* R128xGUIKit */,
 			);
 			productName = "r128x-swiftui";
 			productReference = 5BDCA1B32A6D51D400F7202E /* r128x-swiftui.app */;
@@ -158,7 +171,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastSwiftUpdateCheck = 1430;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				ORGANIZATIONNAME = "Manuel Naudin";
 				TargetAttributes = {
@@ -506,9 +519,9 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		5B5181732C13085000F0FA00 /* R128xKit */ = {
+		5BE60CA82E774BAB00BAAC08 /* R128xGUIKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = R128xKit;
+			productName = R128xGUIKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

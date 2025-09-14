@@ -7,6 +7,7 @@ import SwiftUI
 #endif
 
 #if canImport(SwiftUI)
+@available(macOS 14.0, *)
 struct TaskEntryListView: View {
   // MARK: Lifecycle
 
