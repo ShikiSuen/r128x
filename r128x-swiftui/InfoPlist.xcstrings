@@ -7,13 +7,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "r128x-SwiftUI"
+            "value" : "r128x"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "r128x-SwiftUI"
+            "value" : "r128x"
           }
         },
         "ja" : {
@@ -42,13 +42,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "r128x-SwiftUI"
+            "value" : "r128x"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "r128x-SwiftUI"
+            "value" : "r128x"
           }
         },
         "ja" : {
@@ -81,7 +81,8 @@
             "value" : "Copyright © 2023 Manuel Naudin & Shiki Suen. All rights reserved."
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     }
   },
   "version" : "1.0"
