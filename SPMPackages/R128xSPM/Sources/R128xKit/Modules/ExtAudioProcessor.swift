@@ -143,7 +143,7 @@ public actor ExtAudioProcessor {
   // MARK: Public
 
   // Progress tracking
-  public struct ProcessingProgress {
+  public struct ProcessingProgress: Codable, Hashable, Sendable {
     public let percentage: Double
     public let framesProcessed: Int64
     public let totalFrames: Int64

@@ -219,10 +219,10 @@ public enum RF64Support {
       // Initialize all properties directly from the byte data
       self.chunkID = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 0, as: UInt32.self) }
       self.chunkSize = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 4, as: UInt32.self) }
-      self.riffSizeHigh = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 8, as: UInt32.self) }
-      self.riffSizeLow = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 12, as: UInt32.self) }
-      self.dataSizeHigh = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 16, as: UInt32.self) }
-      self.dataSizeLow = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 20, as: UInt32.self) }
+      self.riffSizeLow = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 8, as: UInt32.self) }
+      self.riffSizeHigh = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 12, as: UInt32.self) }
+      self.dataSizeLow = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 16, as: UInt32.self) }
+      self.dataSizeHigh = chunkData.withUnsafeBytes { $0.load(fromByteOffset: 20, as: UInt32.self) }
       self.sampleCountHigh = chunkData.withUnsafeBytes {
         $0.load(fromByteOffset: 24, as: UInt32.self)
       }
