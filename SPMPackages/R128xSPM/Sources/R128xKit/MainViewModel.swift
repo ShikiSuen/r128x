@@ -73,7 +73,7 @@ public final class MainViewModel {
 
   public var queueMessage: String {
     if entries.isEmpty {
-      return "Drag audio files from Finder to the table in this window.".i18n
+      return "queueMsg.blankQueueStandBy".i18n
     }
     let filesPendingProcessing: Int = entries.filter(\.done.negative).count
     let invalidResults: Int = entries.reduce(0) { $0 + ($1.status == .failed ? 1 : 0) }
@@ -93,23 +93,23 @@ public final class MainViewModel {
          let estimatedTime = longestEntry.estimatedTimeRemaining {
         let remaining = estimatedTime.formatted()
         return String(
-          format: "Processing files in the queue: %d remaining (~%@ remaining)...".i18n,
+          format: "queueMsg.workingRemaining:%d%@".i18n,
           filesPendingProcessing,
           remaining
         )
       } else {
         return String(
-          format: "Processing files in the queue: %d remaining.".i18n, filesPendingProcessing
+          format: "queueMsg.workingRemaining:%d".i18n, filesPendingProcessing
         )
       }
     }
 
     guard invalidResults == 0 else {
       return String(
-        format: "All files are processed, excepting %d failed files.".i18n, invalidResults
+        format: "queueMsg.allDoneExcept:%d".i18n, invalidResults
       )
     }
-    return "All files are processed successfully.".i18n
+    return "queueMsg.allDone".i18n
   }
 
   // MARK: - Methods

@@ -1,95 +1,8 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Add Files" : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter des Fichiers"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ファイル添付"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添入文件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "添入檔案"
-          }
-        }
-      }
-    },
-    "All files are processed successfully." : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tous les fichiers ont été traités avec succès."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全ファイル無事測量完了。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部文件测量完毕。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部檔案測量完畢。"
-          }
-        }
-      }
-    },
-    "All files are processed, excepting %d failed files." : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tous les fichiers sont traités, à l'exception des fichiers ayant échoué %d."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "測量できなかったファイルは %d 点であり、他のファイルは全て測量完了。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "有 %d 个文件测量失败；其余文件全部测量完毕。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "有 %d 個檔案測量失敗；其餘檔案全部測量完畢。"
-          }
-        }
-      }
-    },
     "app.windowTitle" : {
-      "extractionState" : "migrated",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -123,9 +36,50 @@
         }
       }
     },
-    "Clear Table" : {
-      "extractionState" : "migrated",
+    "btn.addFiles" : {
+      "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Files"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter des Fichiers"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイル添付"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添入文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添入檔案"
+          }
+        }
+      }
+    },
+    "btn.clearTaskList" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Table"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -152,60 +106,37 @@
         }
       }
     },
-    "dBTP" : {
-      "extractionState" : "migrated",
+    "btn.RedoAllTasks" : {
+      "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reprocess All"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "dBTP"
+            "value" : "Répéter le Processus"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "dBTP"
+            "value" : "全部再測量"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "dBTP"
+            "value" : "全部重新测量"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "dBTP"
-          }
-        }
-      }
-    },
-    "Drag audio files from Finder to the table in this window." : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faites glisser les fichiers audio du Finder vers le tableau de cette fenêtre."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finder からファイルを弊ウィンドウにお引きずりください。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请直接从 Finder 将文件拽入至本视窗内。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請直接從 Finder 將檔案拽入至本視窗內。"
+            "value" : "全部重新測量"
           }
         }
       }
@@ -341,67 +272,50 @@
         }
       }
     },
-    "File Name" : {
-      "extractionState" : "migrated",
+    "fieldTitle.dBTP" : {
+      "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dBTP"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nom de Fichier"
+            "value" : "dBTP"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ファイル名"
+            "value" : "dBTP"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文件名称"
+            "value" : "dBTP"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檔案名稱"
+            "value" : "dBTP"
           }
         }
       }
     },
-    "Location" : {
-      "extractionState" : "migrated",
+    "fieldTitle.loudnessRange" : {
+      "extractionState" : "manual",
       "localizations" : {
-        "fr" : {
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Emplacement"
+            "value" : "Loudness Range"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "場所"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "位置"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "位置"
-          }
-        }
-      }
-    },
-    "Loudness Range" : {
-      "extractionState" : "migrated",
-      "localizations" : {
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -428,67 +342,15 @@
         }
       }
     },
-    "Processing files in the queue: %d remaining (~%@ remaining)..." : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traitement des fichiers dans la file d'attente : %d restant (~%@ restant)..."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ファイル順番測量処理中。残り：%d 点（約 %@ 残り）..."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在测量文件。还剩 %d 个文件待测量（约剩余 %@）..."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在測量檔案。還剩 %d 個檔案待測量（約剩餘 %@）..."
-          }
-        }
-      }
-    },
-    "Processing files in the queue: %d remaining." : {
-      "extractionState" : "migrated",
-      "localizations" : {
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traitement des fichiers dans la file d'attente : %d restant."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ファイル順番測量処理中。残り：%d 点。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在测量文件。还剩 %d 个文件待测量。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在測量檔案。還剩 %d 個檔案待測量。"
-          }
-        }
-      }
-    },
     "Program Loudness" : {
-      "extractionState" : "migrated",
+      "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Program Loudness"
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
@@ -515,66 +377,190 @@
         }
       }
     },
-    "Reprocess All" : {
-      "extractionState" : "migrated",
+    "queueMsg.allDone" : {
+      "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All files are processed successfully."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Répéter le Processus"
+            "value" : "Tous les fichiers ont été traités avec succès."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全部再測量"
+            "value" : "全ファイル無事測量完了。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全部重新测量"
+            "value" : "全部文件测量完毕。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全部重新測量"
+            "value" : "全部檔案測量完畢。"
           }
         }
       }
     },
-    "Results" : {
+    "queueMsg.allDoneExcept:%d" : {
+      "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All files are processed, excepting %d failed files."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Résultats"
+            "value" : "Tous les fichiers sont traités, à l'exception des fichiers ayant échoué %d."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "結果"
+            "value" : "測量できなかったファイルは %d 点であり、他のファイルは全て測量完了。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "结果"
+            "value" : "有 %d 个文件测量失败；其余文件全部测量完毕。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "結果"
+            "value" : "有 %d 個檔案測量失敗；其餘檔案全部測量完畢。"
           }
         }
       }
     },
-    "Search files..." : {
-      "extractionState" : "migrated",
+    "queueMsg.blankQueueStandBy" : {
+      "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag audio files from Finder to the table in this window."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites glisser les fichiers audio du Finder vers le tableau de cette fenêtre."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finder からファイルを弊ウィンドウにお引きずりください。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请直接从 Finder 将文件拽入至本视窗内。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請直接從 Finder 將檔案拽入至本視窗內。"
+          }
+        }
+      }
+    },
+    "queueMsg.workingRemaining:%d" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processing files in the queue: %d remaining."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traitement des fichiers dans la file d'attente : %d restant."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイル順番測量処理中。残り：%d 点。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在测量文件。还剩 %d 个文件待测量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在測量檔案。還剩 %d 個檔案待測量。"
+          }
+        }
+      }
+    },
+    "queueMsg.workingRemaining:%d%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processing files in the queue: %d remaining (~%@ remaining)..."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traitement des fichiers dans la file d'attente : %d restant (~%@ restant)..."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイル順番測量処理中。残り：%d 点（約 %@ 残り）..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在测量文件。还剩 %d 个文件待测量（约剩余 %@）..."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在測量檔案。還剩 %d 個檔案待測量（約剩餘 %@）..."
+          }
+        }
+      }
+    },
+    "searchBar.promptText" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search files..."
+          }
+        },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",

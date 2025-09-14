@@ -158,27 +158,27 @@ struct MainView: View {
       Button {
         addFilesButtonDidPress()
       } label: {
-        Label("Add Files".i18n, systemImage: "folder.badge.plus")
+        Label("btn.addFiles".i18n, systemImage: "folder.badge.plus")
       }
-      .help("Add Files".i18n)
+      .help("btn.addFiles".i18n)
     }
     if !viewModel.entries.isEmpty {
       ToolbarItem(placement: .cancellationAction) {
         Button {
           viewModel.clearEntries()
         } label: {
-          Label("Clear Table".i18n, systemImage: "trash")
+          Label("btn.clearTaskList".i18n, systemImage: "trash")
         }
-        .help("Clear Table".i18n)
+        .help("btn.clearTaskList".i18n)
       }
       ToolbarItem(placement: .confirmationAction) {
         Button {
           viewModel.batchProcess(forced: true)
         } label: {
-          Label("Reprocess All".i18n, systemImage: "gobackward")
+          Label("btn.RedoAllTasks".i18n, systemImage: "gobackward")
         }
         .disabled(viewModel.entries.isEmpty || viewModel.entries.count(where: \.done) == 0)
-        .help("Reprocess All".i18n)
+        .help("btn.RedoAllTasks".i18n)
       }
     }
   }
@@ -187,7 +187,7 @@ struct MainView: View {
     Group {
       if !viewModel.entries.isEmpty {
         taskListView()
-          .searchable(text: $viewModel.searchText, prompt: "Search files...".i18n)
+          .searchable(text: $viewModel.searchText, prompt: "searchBar.promptText".i18n)
       } else {
         taskListView()
       }
@@ -291,7 +291,7 @@ struct MainView: View {
                 .fontWeight(entry.dBTP == 0 ? .bold : .regular)
             }
             .font(.caption2)
-            .help(Text("dBTP".i18n))
+            .help(Text("fieldTitle.dBTP".i18n))
           }
         }
         if entry.done {
@@ -325,14 +325,14 @@ struct MainView: View {
             .font(.caption)
             .help(Text("Program Loudness".i18n))
             HStack {
-              Text("Loudness Range".i18n)
+              Text("fieldTitle.loudnessRange".i18n)
               Spacer()
               Text(entry.loudnessRangeDisplayed)
                 .frame(width: 35)
             }
             .font(.caption2)
             .foregroundStyle(.secondary)
-            .help(Text("Loudness Range".i18n))
+            .help(Text("fieldTitle.loudnessRange".i18n))
           }
           .fixedSize()
           VStack {
@@ -353,7 +353,7 @@ struct MainView: View {
             }
             .font(.caption2)
             .foregroundStyle(.secondary)
-            .help(Text("Loudness Range".i18n))
+            .help(Text("fieldTitle.loudnessRange".i18n))
           }
           .fixedSize()
         }
