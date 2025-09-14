@@ -763,7 +763,7 @@ struct EBUR128Tests {
     let tempAudioFile = tempDirectory.appendingPathComponent("internationale-test.ogg")
 
     try data.write(to: tempAudioFile)
-    print("Downloaded and saved test file to: \(tempAudioFile.path)")
+    print("Downloaded and saved test file to: \(tempAudioFile.path(percentEncoded: false))")
     print("Downloaded file size: \(data.count) bytes")
 
     // Ensure cleanup after the test
@@ -779,7 +779,7 @@ struct EBUR128Tests {
 
     do {
       let result = try await processor.processAudioFile(
-        at: tempAudioFile.path,
+        at: tempAudioFile.path(percentEncoded: false),
         fileId: "lInternationale-test",
         progressCallback: { progress in
           progressReports.append(progress)
@@ -892,7 +892,9 @@ struct EBUR128Tests {
 
       // Performance benchmark for real audio
       let fileSize =
-        try FileManager.default.attributesOfItem(atPath: tempAudioFile.path)[.size] as? Int64 ?? 0
+        try FileManager.default.attributesOfItem(
+          atPath: tempAudioFile.path(percentEncoded: false)
+        )[.size] as? Int64 ?? 0
       print("File size: \(fileSize) bytes")
 
       if processingTime > 0 {

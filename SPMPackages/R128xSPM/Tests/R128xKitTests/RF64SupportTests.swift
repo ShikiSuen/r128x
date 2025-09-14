@@ -24,7 +24,9 @@ final class RF64SupportTests: XCTestCase {
     defer { try? FileManager.default.removeItem(at: rf64URL) }
 
     // Test RF64 detection
-    XCTAssertTrue(RF64Support.isRF64File(at: rf64URL.path), "Should detect RF64 format")
+    XCTAssertTrue(
+      RF64Support.isRF64File(at: rf64URL.path(percentEncoded: false)), "Should detect RF64 format"
+    )
 
     // Create temporary WAV test file
     let wavURL = tempDir.appendingPathComponent("test_wav.wav")
@@ -34,7 +36,10 @@ final class RF64SupportTests: XCTestCase {
     defer { try? FileManager.default.removeItem(at: wavURL) }
 
     // Test WAV detection (should not be RF64)
-    XCTAssertFalse(RF64Support.isRF64File(at: wavURL.path), "Should not detect regular WAV as RF64")
+    XCTAssertFalse(
+      RF64Support.isRF64File(at: wavURL.path(percentEncoded: false)),
+      "Should not detect regular WAV as RF64"
+    )
   }
 
   func testRF64FileDetectionWithInvalidFile() {
@@ -54,7 +59,8 @@ final class RF64SupportTests: XCTestCase {
       defer { try? FileManager.default.removeItem(at: emptyURL) }
 
       XCTAssertFalse(
-        RF64Support.isRF64File(at: emptyURL.path), "Should handle empty files gracefully"
+        RF64Support.isRF64File(at: emptyURL.path(percentEncoded: false)),
+        "Should handle empty files gracefully"
       )
     } catch {
       XCTFail("Failed to create empty test file: \(error)")
@@ -72,7 +78,7 @@ final class RF64SupportTests: XCTestCase {
     defer { try? FileManager.default.removeItem(at: rf64URL) }
 
     // Test RF64 info parsing
-    let info = try RF64Support.parseRF64Info(at: rf64URL.path)
+    let info = try RF64Support.parseRF64Info(at: rf64URL.path(percentEncoded: false))
 
     XCTAssertTrue(info.isValidRF64, "Should parse as valid RF64")
     XCTAssertEqual(info.dataSize, 0x0000_0001_0000_0000, "Should parse correct data size")
@@ -88,7 +94,8 @@ final class RF64SupportTests: XCTestCase {
     defer { try? FileManager.default.removeItem(at: wavURL) }
 
     // Test RF64 info parsing with WAV file (should fail)
-    XCTAssertThrowsError(try RF64Support.parseRF64Info(at: wavURL.path)) { error in
+    XCTAssertThrowsError(try RF64Support.parseRF64Info(at: wavURL.path(percentEncoded: false))) {
+      error in
       XCTAssertTrue(error is RF64Support.RF64Error, "Should throw RF64Error for non-RF64 files")
       if let rf64Error = error as? RF64Support.RF64Error {
         XCTAssertEqual(
@@ -109,7 +116,7 @@ final class RF64SupportTests: XCTestCase {
     try rf64Data.write(to: rf64URL)
     defer { try? FileManager.default.removeItem(at: rf64URL) }
 
-    let rf64Status = RF64Support.getRF64SupportStatus(for: rf64URL.path)
+    let rf64Status = RF64Support.getRF64SupportStatus(for: rf64URL.path(percentEncoded: false))
     XCTAssertFalse(rf64Status.isEmpty, "Should provide non-empty status message for RF64 files")
     XCTAssertTrue(rf64Status.contains("RF64"), "Status message should mention RF64 format")
 
@@ -120,7 +127,7 @@ final class RF64SupportTests: XCTestCase {
     try wavData.write(to: wavURL)
     defer { try? FileManager.default.removeItem(at: wavURL) }
 
-    let wavStatus = RF64Support.getRF64SupportStatus(for: wavURL.path)
+    let wavStatus = RF64Support.getRF64SupportStatus(for: wavURL.path(percentEncoded: false))
     XCTAssertTrue(wavStatus.contains("not in RF64 format"), "Should indicate when file is not RF64")
   }
 
@@ -136,7 +143,9 @@ final class RF64SupportTests: XCTestCase {
 
     // Test CoreAudio RF64 support (expected to fail with test data)
     #if canImport(AudioToolbox)
-    let isSupported = RF64Support.testCoreAudioRF64Support(at: rf64URL.path)
+    let isSupported = RF64Support.testCoreAudioRF64Support(
+      at: rf64URL.path(percentEncoded: false)
+    )
     // We expect this to be false since our test data is not a valid audio file
     XCTAssertFalse(isSupported, "Test RF64 data should not be supported by CoreAudio")
     #endif
@@ -148,7 +157,7 @@ final class RF64SupportTests: XCTestCase {
     try wavData.write(to: wavURL)
     defer { try? FileManager.default.removeItem(at: wavURL) }
 
-    let wavSupported = RF64Support.testCoreAudioRF64Support(at: wavURL.path)
+    let wavSupported = RF64Support.testCoreAudioRF64Support(at: wavURL.path(percentEncoded: false))
     XCTAssertFalse(wavSupported, "WAV file should not be tested for RF64 support")
   }
 
@@ -230,7 +239,7 @@ final class RF64IntegrationTests: XCTestCase {
     let processor = ExtAudioProcessor()
 
     do {
-      _ = try await processor.processAudioFile(at: rf64URL.path)
+      _ = try await processor.processAudioFile(at: rf64URL.path(percentEncoded: false))
       XCTFail("Should have thrown an error for unsupported RF64 file")
     } catch let error as NSError {
       // Verify we get an RF64-specific error message
@@ -260,7 +269,7 @@ final class RF64IntegrationTests: XCTestCase {
     try data.write(to: rf64URL)
     defer { try? FileManager.default.removeItem(at: rf64URL) }
 
-    let controller = CliController(path: rf64URL.path)
+    let controller = CliController(path: rf64URL.path(percentEncoded: false))
     await controller.doMeasure()
 
     // Should have failed
