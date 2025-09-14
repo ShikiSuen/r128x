@@ -380,7 +380,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "用 Finder 开启所在位置…"
+            "value" : "用访达 (Finder) 开启所在位置…"
           }
         },
         "zh-Hant" : {
@@ -545,7 +545,7 @@
               "mac" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "请添加音频文件以继续。您可以使用以下方法：\n- 点击「添入文件」按钮；\n- 从 Finder 拖拽文件或文件夹到这里；\n- 通过 macOS 分享功能从其他 App 发送文件过来。"
+                  "value" : "请添加音频文件以继续。您可以使用以下方法：\n- 点击「添入文件」按钮；\n- 从访达 (Finder) 拖拽文件或文件夹到这里；\n- 通过 macOS 分享功能从其他 App 发送文件过来。"
                 }
               },
               "other" : {
@@ -1021,7 +1021,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "请直接从 Finder 将文件拽入至本视窗内。"
+            "value" : "请直接从访达 (Finder) 将文件拽入至本视窗内。"
           }
         },
         "zh-Hant" : {
