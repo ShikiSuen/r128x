@@ -153,8 +153,10 @@ Consider converting to multiple smaller WAV files or using a different tool.
 
 The current maintainer Shiki Suen can only use the following languages:
 
-- English, Japanese, Simplified Chinese, Traditional Chinese
+- English, Japanese, Simplified Chinese, Traditional Chinese.
 
-Therefore, the French localization has to be discontinued.
+These languages are secondary-supported languages which are not having the quality guaranteed:
 
-The App still offers the French UI (translated using DeepL). Pull Requests for improving French Translations are still welcomed.
+- French, Deutsch, Spanish, Brazilish (pt-BR), Russian, Turkish.
+
+The App still offers localized UI for 2ndary languages (translated using AI services). Pull Requests for improving the translations of these 2ndary languages are still welcomed.
