@@ -184,38 +184,32 @@ struct MainView: View {
   }
 
   @ViewBuilder private var mainContentView: some View {
-    Group {
-      if !viewModel.entries.isEmpty {
-        taskListView()
-          .searchable(text: $viewModel.searchText, prompt: "searchBar.promptText".i18n)
-      } else {
-        taskListView()
-      }
-    }
-    .onDrop(
-      of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop
-    )
-    .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
-      Task { @MainActor in
-        await viewModel.progressDebouncer.debounceProgress(newProgress) { progress in
-          viewModel.updateProgress(progress)
+    TaskEntryListView()
+      .environment(viewModel)
+      .onDrop(
+        of: [UTType.fileURL], isTargeted: $viewModel.dragOver, perform: viewModel.handleDrop
+      )
+      .onChange(of: viewModel.taskTrackingVM.fileProgress) { _, newProgress in
+        Task { @MainActor in
+          await viewModel.progressDebouncer.debounceProgress(newProgress) { progress in
+            viewModel.updateProgress(progress)
+          }
         }
       }
-    }
-    .onChange(of: sharedFileManager.pendingSharedFiles) { _, pendingFiles in
-      if !pendingFiles.isEmpty {
+      .onChange(of: sharedFileManager.pendingSharedFiles) { _, pendingFiles in
+        if !pendingFiles.isEmpty {
+          sharedFileManager.processPendingFiles(with: viewModel)
+        }
+      }
+      .task {
+        // Use .task instead of .onAppear for better lifecycle management
+        // This automatically cancels when the view disappears and recreates when it reappears
+        progressObservationTask = viewModel.taskTrackingVM.startObserving()
+      }
+      .onAppear {
+        // Only handle shared files on appear, not progress observation
         sharedFileManager.processPendingFiles(with: viewModel)
       }
-    }
-    .task {
-      // Use .task instead of .onAppear for better lifecycle management
-      // This automatically cancels when the view disappears and recreates when it reappears
-      progressObservationTask = viewModel.taskTrackingVM.startObserving()
-    }
-    .onAppear {
-      // Only handle shared files on appear, not progress observation
-      sharedFileManager.processPendingFiles(with: viewModel)
-    }
   }
 
   @ViewBuilder
@@ -228,139 +222,6 @@ struct MainView: View {
       .controlSize(.small)
       Spacer()
     }
-  }
-
-  @ViewBuilder
-  private func taskListView() -> some View {
-    Table(viewModel.filteredEntries) {
-      TableColumn("".description) { entry in
-        drawEntry(entry)
-          .foregroundStyle(.primary)
-      }
-    }
-    .tableColumnHeaders(.hidden)
-    .overlay {
-      if viewModel.entries.isEmpty {
-        Color.clear.background(.regularMaterial)
-          .overlay {
-            VStack(spacing: 16) {
-              Image(systemName: "waveform.path")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-
-              VStack(spacing: 8) {
-                Text("emptyState.title".i18n)
-                  .font(.title3)
-                  .fontWeight(.medium)
-                // The following i18n key automatically differs between iOS and macOS.
-                Text("emptyState.dragHint".i18n)
-                  .font(.body)
-                  .foregroundStyle(.secondary)
-                  .multilineTextAlignment(.leading)
-              }
-            }
-            .frame(maxWidth: 300)
-            .padding()
-          }
-      }
-    }
-  }
-
-  @ViewBuilder
-  private func drawEntry(_ entry: TaskEntry) -> some View {
-    HStack {
-      VStack(alignment: .leading) {
-        let mainLabel = HStack {
-          HStack {
-            Text(entry.fileName)
-              .fontWeight(.bold)
-              .font(.caption)
-              .lineLimit(1)
-              .help(entry.folderPath)
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
-          if entry.status == .processing {
-            Text("\(entry.progressDisplayed)")
-              .font(.caption2)
-              .fixedSize()
-          }
-          if entry.done {
-            HStack {
-              Text(verbatim: "dBTP")
-              Text(entry.dBTPDisplayed)
-                .fontWeight(entry.dBTP == 0 ? .bold : .regular)
-            }
-            .font(.caption2)
-            .help(Text("fieldTitle.dBTP".i18n))
-          }
-        }
-        if entry.done {
-          VStack(alignment: .leading) {
-            mainLabel
-            Text(entry.folderPath)
-              .lineLimit(1)
-              .truncationMode(.head)
-              .fontWidth(.condensed)
-              .font(.caption2)
-              .foregroundStyle(.secondary)
-          }
-        } else {
-          ProgressView(value: entry.guardedProgressValue) {
-            mainLabel
-          }
-          .controlSize(.small)
-        }
-      }
-      if entry.done {
-        Divider()
-        ViewThatFits {
-          VStack {
-            HStack {
-              Text("Program Loudness".i18n)
-              Spacer()
-              Text(entry.programLoudnessDisplayed)
-                .fontWeight(.bold)
-                .frame(width: 35)
-            }
-            .font(.caption)
-            .help(Text("Program Loudness".i18n))
-            HStack {
-              Text("fieldTitle.loudnessRange".i18n)
-              Spacer()
-              Text(entry.loudnessRangeDisplayed)
-                .frame(width: 35)
-            }
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .help(Text("fieldTitle.loudnessRange".i18n))
-          }
-          .fixedSize()
-          VStack {
-            HStack {
-              Text(verbatim: "iL")
-              Spacer()
-              Text(entry.programLoudnessDisplayed)
-                .fontWeight(.bold)
-                .frame(width: 35)
-            }
-            .font(.caption)
-            .help(Text("Program Loudness".i18n))
-            HStack {
-              Text(verbatim: "lRa")
-              Spacer()
-              Text(entry.loudnessRangeDisplayed)
-                .frame(width: 35)
-            }
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .help(Text("fieldTitle.loudnessRange".i18n))
-          }
-          .fixedSize()
-        }
-        .colorMultiply(entry.isResultInvalid ? .red : .primary)
-      }
-    }
-    .font(.system(.body).monospacedDigit())
   }
 
   private func addFilesButtonDidPress() {
