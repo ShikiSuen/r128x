@@ -35,6 +35,21 @@ struct TaskEntryListView: View {
       TableColumn("".description) { entry in
         TaskEntryView(entry)
           .foregroundStyle(.primary)
+        #if os(macOS)
+          .contextMenu {
+            Button {
+              NSWorkspace.shared.activateFileViewerSelecting([entry.url])
+            } label: {
+              Label("contextMenu.showInFinder".i18n, systemImage: "folder")
+            }
+            Divider()
+            Button {
+              viewModel.removeEntry(id: entry.id)
+            } label: {
+              Label("contextMenu.removeThisEntry".i18n, systemImage: "trash")
+            }
+          }
+        #endif
       }
     }
     .tableColumnHeaders(.hidden)
