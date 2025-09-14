@@ -31,6 +31,122 @@ r128x v0.9.0 allows users to quick-audition around the first dBTP location. 5 mo
 
 ---
 
+## 简体中文
+
+### 首个 dBTP 位置附近的快速试听
+
+r128x v0.9.0 允许用户快速试听首个 dBTP 位置附近的音频。支持 5 种新增界面语言。
+
+#### 新增语言支持
+- **Deutsch**：全面德语界面本地化
+- **Español**：完整西班牙语支持
+- **Português (Brasil)**：巴西葡萄牙语翻译
+- **Русский**：完整俄语界面
+- **Türkçe**：全面土耳其语本地化
+
+#### 增强音频功能
+- **快速试听**：通过点击/轻触测量音轨，立即试听首个 dBTP 位置附近 3 秒音频片段
+- **键盘导航**：使用上下箭头键在测量音轨间导航，空格键进行试听
+- **RF64 格式支持**：引入 RF64 音频格式响度测量的故障管理程序，增强兼容性
+
+#### 技术改进
+- **增强文件格式支持**：改进 RF64 音频文件兼容性
+- **更好的错误处理**：针对不支持音频格式场景的健壮故障管理
+- **用户界面增强**：优化音频文件管理的交互模式
+
+#### 平台兼容性
+- **macOS 测试**：在 macOS 上验证 RF64 音频文件测量功能
+- **跨平台一致性**：在所有支持平台上保持功能一致性
+
+---
+
+## 繁體中文
+
+### 首個 dBTP 位置附近的快速試聽
+
+r128x v0.9.0 允許使用者快速試聽首個 dBTP 位置附近的音訊。支援 5 種新增介面語言。
+
+#### 新增語言支援
+- **Deutsch**：全面德語介面本地化
+- **Español**：完整西班牙語支援
+- **Português (Brasil)**：巴西葡萄牙語翻譯
+- **Русский**：完整俄語介面
+- **Türkçe**：全面土耳其語本地化
+
+#### 增強音訊功能
+- **快速試聽**：透過點擊/輕觸測量音軌，立即試聽首個 dBTP 位置附近 3 秒音訊片段
+- **鍵盤導航**：使用上下箭頭鍵在測量音軌間導航，空白鍵進行試聽
+- **RF64 格式支援**：引入 RF64 音訊格式響度測量的故障管理程序，增強相容性
+
+#### 技術改進
+- **增強檔案格式支援**：改進 RF64 音訊檔案相容性
+- **更好的錯誤處理**：針對不支援音訊格式場景的健壯故障管理
+- **使用者介面增強**：最佳化音訊檔案管理的互動模式
+
+#### 平台相容性
+- **macOS 測試**：在 macOS 上驗證 RF64 音訊檔案測量功能
+- **跨平台一致性**：在所有支援平台上保持功能一致性
+
+---
+
+## 日本語
+
+### 最初の dBTP 位置周辺のクイック試聴
+
+r128x v0.9.0 では、最初の dBTP 位置周辺のクイック試聴が可能になりました。5つの新しい UI 言語がサポートされています。
+
+#### 新しい言語サポート
+- **Deutsch**：全ての UI 要素に対する完全なドイツ語ローカライゼーション
+- **Español**：完全なスペイン語サポート
+- **Português (Brasil)**：ブラジルポルトガル語翻訳
+- **Русский**：完全なロシア語インターフェース
+- **Türkçe**：完全なトルコ語ローカライゼーション
+
+#### 拡張されたオーディオ機能
+- **クイック試聴**：測定トラックをタップ/クリックすることで、最初の dBTP 位置周辺の3秒間を即座に試聴
+- **キーボードナビゲーション**：上下矢印キーで測定トラック間を移動、スペースキーで試聴
+- **RF64 フォーマットサポート**：互換性を向上させた RF64 オーディオフォーマットに対するラウドネス測定の障害管理手順を導入
+
+#### 技術的改善
+- **拡張されたファイルフォーマットサポート**：RF64 オーディオファイルとの互換性向上
+- **より良いエラーハンドリング**：サポートされていないオーディオフォーマットシナリオに対する堅牢な障害管理
+- **ユーザーインターフェースの強化**：オーディオファイル管理のための最適化されたインタラクションパターン
+
+#### プラットフォーム互換性
+- **macOS テスト**：macOS での RF64 オーディオファイル測定機能を検証
+- **クロスプラットフォーム一貫性**：サポートされている全プラットフォームで機能パリティを維持
+
+---
+
+## Français
+
+### Audition Rapide Autour de la Première Position dBTP
+
+r128x v0.9.0 permet aux utilisateurs d'effectuer une audition rapide autour de la première position dBTP. 5 nouvelles langues d'interface sont prises en charge.
+
+#### Nouveau Support Linguistique
+- **Deutsch** : Localisation allemande complète pour tous les éléments d'interface
+- **Español** : Support complet de la langue espagnole
+- **Português (Brasil)** : Traduction en portugais brésilien
+- **Русский** : Interface complète en langue russe
+- **Türkçe** : Localisation turque complète
+
+#### Fonctionnalités Audio Améliorées
+- **Audition Rapide** : Audition immédiate de la partie de 3 secondes autour de la première position dBTP en tapotant/cliquant sur une piste mesurée
+- **Navigation au Clavier** : Utilisez les touches fléchées haut/bas pour naviguer entre les pistes mesurées et la barre d'espace pour l'audition
+- **Support Format RF64** : Introduction de procédures de gestion des défaillances pour les mesures de sonie contre les formats audio RF64 avec compatibilité améliorée
+
+#### Améliorations Techniques
+- **Support de Format de Fichier Amélioré** : Compatibilité améliorée avec les fichiers audio RF64
+- **Meilleure Gestion des Erreurs** : Gestion robuste des défaillances pour les scénarios de format audio non pris en charge
+- **Améliorations de l'Interface Utilisateur** : Modèles d'interaction optimisés pour la gestion des fichiers audio
+
+#### Compatibilité de Plateforme
+- **Tests macOS** : Capacités de mesure de fichiers audio RF64 validées sur macOS
+- **Cohérence Cross-Plateforme** : Parité des fonctionnalités maintenue sur toutes les plateformes prises en charge
+
+---
+
 ## Deutsch
 
 ### Schnelle Vorhörung um die erste dBTP-Position
@@ -39,10 +155,10 @@ r128x v0.9.0 ermöglicht es Benutzern, schnell um die erste dBTP-Position herum 
 
 #### Neue Sprachunterstützung
 - **Deutsch**: Vollständige deutsche Lokalisierung für alle UI-Elemente
-- **Spanisch**: Vollständige spanische Sprachunterstützung
+- **Español**: Vollständige spanische Sprachunterstützung
 - **Português (Brasil)**: Brasilianische portugiesische Übersetzung
-- **Russisch**: Vollständige russische Sprachoberfläche
-- **Türkisch**: Vollständige türkische Lokalisierung
+- **Русский**: Vollständige russische Sprachoberfläche
+- **Türkçe**: Vollständige türkische Lokalisierung
 
 #### Erweiterte Audio-Funktionen
 - **Schnelle Vorhörung**: Sofortige Vorhörung des 3-Sekunden-Teils um die erste dBTP-Position durch Antippen/Klicken eines gemessenen Tracks
@@ -70,8 +186,8 @@ r128x v0.9.0 permite a los usuarios hacer una audición rápida alrededor de la 
 - **Deutsch**: Localización completa en alemán para todos los elementos de la interfaz
 - **Español**: Soporte completo del idioma español
 - **Português (Brasil)**: Traducción al portugués brasileño
-- **Ruso**: Interfaz completa en idioma ruso
-- **Turco**: Localización completa en turco
+- **Русский**: Interfaz completa en idioma ruso
+- **Türkçe**: Localización completa en turco
 
 #### Características de Audio Mejoradas
 - **Audición Rápida**: Audición inmediata de la parte de 3 segundos alrededor de la primera ubicación dBTP tocando/haciendo clic en una pista medida
@@ -99,8 +215,8 @@ r128x v0.9.0 permite aos usuários fazer audição rápida ao redor da primeira 
 - **Deutsch**: Localização completa em alemão para todos os elementos da interface
 - **Español**: Suporte completo ao idioma espanhol
 - **Português (Brasil)**: Tradução para português brasileiro
-- **Russo**: Interface completa em idioma russo
-- **Turco**: Localização completa em turco
+- **Русский**: Interface completa em idioma russo
+- **Türkçe**: Localização completa em turco
 
 #### Recursos de Áudio Aprimorados
 - **Audição Rápida**: Audição imediata da parte de 3 segundos ao redor da primeira localização dBTP tocando/clicando em uma faixa medida
@@ -129,7 +245,7 @@ r128x v0.9.0 позволяет пользователям быстро прос
 - **Español**: Полная поддержка испанского языка
 - **Português (Brasil)**: Перевод на бразильский португальский
 - **Русский**: Полный русскоязычный интерфейс
-- **Турецкий**: Полная турецкая локализация
+- **Türkçe**: Полная турецкая локализация
 
 #### Улучшенные Аудио Функции
 - **Быстрое Прослушивание**: Немедленное прослушивание 3-секундной части вокруг первого местоположения dBTP нажатием/кликом на измеренный трек
