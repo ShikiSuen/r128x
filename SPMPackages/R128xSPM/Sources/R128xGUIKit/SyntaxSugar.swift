@@ -1,3 +1,4 @@
+#if canImport(Darwin)
 import Foundation
 
 extension String {
@@ -21,3 +22,4 @@ extension TimeInterval {
     return String(format: "%d:%02d", minutes, seconds)
   }
 }
+#endif

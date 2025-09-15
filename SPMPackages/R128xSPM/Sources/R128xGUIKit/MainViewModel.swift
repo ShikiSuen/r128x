@@ -2,6 +2,7 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
 
+#if canImport(Darwin)
 import Foundation
 
 import struct ExtAudioProcessor.ProgressUpdate
@@ -434,3 +435,4 @@ public final class MainViewModel {
 extension Bool {
   fileprivate var negative: Bool { !self }
 }
+#endif

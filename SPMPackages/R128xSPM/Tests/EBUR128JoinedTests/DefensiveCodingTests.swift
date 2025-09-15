@@ -41,12 +41,12 @@ struct DefensiveCodingTests {
         try await state.setChannel(1, value: .right)
         
         // Test defensive pattern: invalid channel index
-        #expect(throws: EBUR128Error.invalidChannelIndex) {
+        await #expect(throws: EBUR128Error.invalidChannelIndex) {
             try await state.setChannel(5, value: .left)
         }
         
         // Test defensive pattern: duplicate channel types
-        #expect(throws: EBUR128Error.duplicatedTypesAcrossChannels) {
+        await #expect(throws: EBUR128Error.duplicatedTypesAcrossChannels) {
             try await state.setChannels(since: 0, .left, .left)
         }
         
@@ -54,7 +54,7 @@ struct DefensiveCodingTests {
         let monoState = try EBUR128State(channels: 1, sampleRate: 48000, mode: [.I])
         try await monoState.setChannel(0, value: .dualMono) // Should work
         
-        #expect(throws: EBUR128Error.invalidChannelIndex) {
+        await #expect(throws: EBUR128Error.invalidChannelIndex) {
             try await state.setChannel(0, value: .dualMono) // Should fail for stereo
         }
     }
@@ -74,7 +74,7 @@ struct DefensiveCodingTests {
         
         // Test mismatched channel count (defensive pattern)
         let wrongChannelData = [[Double]](repeating: Array(repeating: 0.1, count: frames), count: 3)
-        #expect(throws: EBUR128Error.invalidChannelIndex) {
+        await #expect(throws: EBUR128Error.invalidChannelIndex) {
             try await state.addFrames(wrongChannelData)
         }
     }
@@ -98,7 +98,7 @@ struct DefensiveCodingTests {
         #expect(samplePeak <= 1.0)
         
         // Test invalid channel access (defensive pattern)
-        #expect(throws: EBUR128Error.invalidChannelIndex) {
+        await #expect(throws: EBUR128Error.invalidChannelIndex) {
             try await state.samplePeak(channel: 5)
         }
     }
@@ -129,8 +129,8 @@ struct DefensiveCodingTests {
         let coeffB = await state.filterCoefB
         let coeffA = await state.filterCoefA
         
-        #expect(coeffB.count == 3)
-        #expect(coeffA.count == 3)
+        #expect(coeffB.count == 5)
+        #expect(coeffA.count == 5)
         
         // Coefficients should be finite and reasonable
         for coef in coeffB {

@@ -2,6 +2,7 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
 
+#if canImport(Darwin)
 import Foundation
 
 // MARK: - ProgressDebouncer
@@ -60,3 +61,4 @@ public actor ProgressDebouncer {
     latestData = nil
   }
 }
+#endif
