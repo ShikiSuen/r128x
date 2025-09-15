@@ -75,17 +75,92 @@ struct EBUR128BasicTests {
   func testChannelWeighting() async throws {
     let state = try (EBUR128State(channels: 5, sampleRate: 48000, mode: [.I]))
 
-    // Set up 5.1 channel mapping
-    try await state.setChannel(0, value: .left)
-    try await state.setChannel(1, value: .right)
-    try await state.setChannel(2, value: .center)
-    try await state.setChannel(3, value: .leftSurround)
-    try await state.setChannel(4, value: .rightSurround)
+    // Set up 5.1 channel mapping using the new batch API
+    try await state.setChannels(since: 0, .left, .right, .center, .leftSurround, .rightSurround)
 
     // Test that surround channels get proper weighting
     // This is more of a structural test
-    try await state.setChannel(3, value: .leftSurround)
-    try await state.setChannel(4, value: .rightSurround)
+    try await state.setChannels(since: 3, .leftSurround, .rightSurround)
+  }
+
+  @Test
+  func testBatchChannelSetting() async throws {
+    let state = try (EBUR128State(channels: 6, sampleRate: 48000, mode: [.I]))
+
+    // Test the new batch channel setting API
+    try await state.setChannels(
+      since: 0, .left, .right, .center, .unused, .leftSurround, .rightSurround
+    )
+
+    // Test partial batch setting
+    try await state.setChannels(since: 1, .right, .center)
+
+    // Test setting from middle channel
+    try await state.setChannels(since: 3, .unused, .leftSurround)
+
+    // Test error cases
+    do {
+      // Should fail - beyond channel count
+      try await state.setChannels(since: 5, .left, .right)
+      #expect(Bool(false), "Should have thrown an error for out-of-bounds channels")
+    } catch EBUR128Error.invalidChannelIndex {
+      // Expected error
+    }
+
+    do {
+      // Should fail - dualMono on multi-channel system
+      try await state.setChannels(since: 0, .dualMono)
+      #expect(Bool(false), "Should have thrown an error for invalid dualMono configuration")
+    } catch EBUR128Error.invalidChannelIndex {
+      // Expected error
+    }
+
+    // Test parameter-level duplicate detection
+    do {
+      // Should fail - duplicate .left in parameters
+      try await state.setChannels(since: 0, .left, .left)
+      #expect(Bool(false), "Should have thrown an error for duplicate channel types in parameters")
+    } catch EBUR128Error.duplicatedTypesAcrossChannels {
+      // Expected error
+    }
+
+    do {
+      // Should fail - .right appears twice in parameters
+      try await state.setChannels(since: 1, .right, .center, .right)
+      #expect(Bool(false), "Should have thrown an error for duplicate channel types in parameters")
+    } catch EBUR128Error.duplicatedTypesAcrossChannels {
+      // Expected error
+    }
+
+    // Test that .unused can be repeated (should NOT throw)
+    try await state.setChannels(since: 2, .unused, .unused, .unused, .unused)
+  }
+
+  @Test
+  func testCommonChannelConfigurations() async throws {
+    // Test common audio configurations using the concise batch API
+
+    // Stereo setup
+    let stereoState = try EBUR128State(channels: 2, sampleRate: 48000, mode: [.I])
+    try await stereoState.setChannels(since: 0, .left, .right)
+
+    // 5.1 surround setup
+    let surroundState = try EBUR128State(channels: 6, sampleRate: 48000, mode: [.I])
+    try await surroundState.setChannels(
+      since: 0, .left, .right, .center, .unused, .leftSurround, .rightSurround
+    )
+
+    // 7.1 surround setup
+    let sevenOneState = try EBUR128State(channels: 8, sampleRate: 48000, mode: [.I])
+    try await sevenOneState.setChannels(
+      since: 0, .left, .right, .center, .unused, .leftSurround, .rightSurround, .Mp090, .Mm090
+    )
+
+    // Mono with dual mono
+    let monoState = try EBUR128State(channels: 1, sampleRate: 48000, mode: [.I])
+    try await monoState.setChannels(since: 0, .dualMono)
+
+    print("All common channel configurations set successfully using batch API!")
   }
 
   @Test
@@ -342,9 +417,8 @@ struct EBUR128BasicTests {
     // Test all measurement modes work
     #expect(state.mode.isSuperset(of: [.I, .LRA, .samplePeak, .truePeak]))
 
-    // Test channel mapping
-    try await state.setChannel(0, value: .left)
-    try await state.setChannel(1, value: .right)
+    // Test channel mapping using the new batch API
+    try await state.setChannels(since: 0, .left, .right)
 
     // Test with a longer audio signal to allow LRA calculation
     let totalDuration = 10.0 // 10 seconds
