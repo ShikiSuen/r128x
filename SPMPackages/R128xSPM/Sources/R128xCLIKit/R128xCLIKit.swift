@@ -139,8 +139,7 @@ public enum CLIError: Error, LocalizedError {
 
 // MARK: - CliController
 
-@MainActor
-public final class CliController {
+public actor CliController {
   // MARK: Lifecycle
 
   public init() {}
@@ -155,6 +154,12 @@ public final class CliController {
   /// - Parameter mas: If true, only accepts `execName --cli file1 file2...` format (for MAS GUI apps)
   ///                  If false, accepts both `execName --cli file1...` and `execName file1...` formats
   public static func runMainAndExit(mas: Bool = false) async {
+    // For MAS mode, we need to ensure the app is properly initialized
+    if mas {
+      // Give the app a moment to initialize its UI subsystem
+      try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+    }
+
     let controller = CliController()
     let exitCode = await controller.run(masMode: mas)
     exit(exitCode)
@@ -181,26 +186,45 @@ public final class CliController {
 
       // In MAS mode, request file access permission if needed
       if masMode {
-        let granted = await requestFileAccessPermission(for: config.filePaths)
-        if !granted {
-          print("Error: File access permission denied by user", to: &standardError)
+        writeToStandardError("[SDBOX] Requesting file access permission for MAS mode...\n")
+        let filePaths = config.filePaths
+        let grantedURLs = await MainActor.run {
+          requestFileAccessPermission(for: filePaths)
+        }
+        writeDebugInfo("requestFileAccessPermission returned: \(grantedURLs != nil)")
+        guard let urls = grantedURLs else {
+          writeToStandardError("[SDBOX] Error: File access permission denied by user\n")
           return 1
         }
+
+        // Store the granted URLs in the actor for security-scoped access
+        setGrantedDirectoryURLs(urls)
+
+        writeToStandardError(
+          "[SDBOX] File access permission granted, proceeding with file processing...\n"
+        )
+        // Convert file paths to URLs
+        let fileURLs = filePaths.map { URL(fileURLWithPath: $0) }
+        return await processFiles(fileURLs: fileURLs)
+      } else {
+        return await processFiles(fileURLs: config.filePaths.map { URL(fileURLWithPath: $0) })
       }
 
-      return await processFiles(filePaths: config.filePaths)
-
     case let .failure(error):
-      print("Error: \(error.localizedDescription)", to: &standardError)
+      writeToStandardError("Error: \(error.localizedDescription)\n")
       return 1
     }
   }
 
   // MARK: File Processing
 
-  public func processFiles(filePaths: [String]) async -> Int32 {
+  public func processFiles(fileURLs: [URL]) async -> Int32 {
+    let filePaths = fileURLs.map(\.pathGuarded)
+    writeDebugInfo("processFiles called with \(filePaths.count) files: \(filePaths)")
+
     // Initialize task entries from file paths
-    initializeTaskEntries(from: filePaths)
+    initializeTaskEntries(from: fileURLs)
+    writeDebugInfo("Initialized \(taskEntries.count) task entries")
 
     // Print table header
     print("FILE\tIL (LUFS)\tLRA (LU)\tMAXTP (dBTP)")
@@ -209,9 +233,12 @@ public final class CliController {
     var hasFailures = false
 
     for i in taskEntries.indices {
+      writeDebugInfo("About to process task entry \(i)")
       await processTaskEntry(at: i)
 
       let entry = taskEntries[i]
+      writeDebugInfo("Task entry \(i) processed with status: \(entry.status)")
+      // TO Copilot: The App went dark since this line, and the app quits.
       print(formatResult(for: entry))
 
       if entry.status == .failed {
@@ -219,6 +246,7 @@ public final class CliController {
       }
     }
 
+    writeDebugInfo("All files processed, hasFailures: \(hasFailures)")
     // Return appropriate exit code
     return hasFailures ? 1 : 0
   }
@@ -293,13 +321,20 @@ public final class CliController {
 
   /// Request file access permission using system UI dialog
   /// This is needed for sandboxed Mac App Store apps to access files via CLI
-  internal func requestFileAccessPermission(for filePaths: [String]) async -> Bool {
-    #if canImport(Darwin)
+  /// Returns the granted directory URLs if permission granted, nil if denied
+  @MainActor
+  internal func requestFileAccessPermission(for filePaths: [String]) -> [URL]? {
+    #if canImport(AppKit)
     // Check if we're in a sandbox environment
     let environment = ProcessInfo.processInfo.environment
-    guard environment["APP_SANDBOX_CONTAINER_ID"] != nil else {
+    let isInSandbox =
+      environment["APP_SANDBOX_CONTAINER_ID"] != nil
+        || environment["TMPDIR"]?.contains("com.apple.containermanagerd") == true
+
+    guard isInSandbox else {
       // Not sandboxed, no permission needed
-      return true
+      writeToStandardError("[SDBOX] Not in sandbox environment, no permission dialog needed.\n")
+      return [] // Return empty array for non-sandboxed environment
     }
 
     // Group files by their parent directories to minimize dialog prompts
@@ -309,68 +344,87 @@ public final class CliController {
       }
     )
 
-    print("This app needs permission to access the specified files.", to: &standardError)
-    print(
-      "A system dialog will appear to request access to the containing directories.",
-      to: &standardError
+    writeToStandardError("[SDBOX] Sandbox environment detected.\n")
+    writeToStandardError("[SDBOX] This app needs permission to access the specified files.\n")
+    writeToStandardError(
+      "[SDBOX] A system dialog will appear to request access to the containing directories.\n"
     )
 
-    return await withCheckedContinuation { continuation in
-      DispatchQueue.main.async {
-        let alert = NSAlert()
-        alert.messageText = "File Access Permission Required"
-        alert.informativeText = """
-        r128x needs permission to access the audio files you specified via command line.
-
-        Click 'Grant Access' to open a file selection dialog where you can grant permission to the required directories.
-
-        Files to process:
-        \(filePaths.map { "• " + URL(fileURLWithPath: $0).lastPathComponent }.joined(separator: "\n"))
-        """
-        alert.addButton(withTitle: "Grant Access")
-        alert.addButton(withTitle: "Cancel")
-        alert.alertStyle = .informational
-
-        let response = alert.runModal()
-
-        if response == .alertFirstButtonReturn {
-          // User chose to grant access
-          self.showFileAccessDialog(for: Array(uniqueDirectories)) { success in
-            continuation.resume(returning: success)
-          }
-        } else {
-          // User cancelled
-          continuation.resume(returning: false)
-        }
-      }
+    // Show permission request alert
+    let userWantsToGrantAccess = showPermissionAlert(for: filePaths)
+    guard userWantsToGrantAccess else {
+      writeToStandardError("[SDBOX] User cancelled permission request.\n")
+      return nil
     }
+
+    // Show file access dialog
+    writeToStandardError("[SDBOX] User chose to grant access, showing file dialog...\n")
+    let selectedURLs = showFileAccessDialog(for: Array(uniqueDirectories))
+
+    guard let urls = selectedURLs else {
+      writeToStandardError("[SDBOX] File dialog cancelled or failed\n")
+      return nil
+    }
+
+    writeToStandardError(
+      "[SDBOX] File dialog completed successfully with \(urls.count) directories\n"
+    )
+    return urls
     #else
     // Not on macOS, assume permission granted
-    return true
+    return []
     #endif
   }
 
   // MARK: Private
+
+  /// Check if we're running in an interactive terminal (not piped)
+  private static var isInteractiveTerminal: Bool {
+    // Check if stdout is a tty (terminal) and not redirected/piped
+    isatty(STDOUT_FILENO) != 0
+  }
 
   // MARK: Private Properties
 
   /// URLs that have been granted security-scoped access for sandboxed operation
   private var grantedDirectoryURLs: [URL] = []
 
-  // MARK: Private Implementation
-
-  /// Check if we're running in an interactive terminal (not piped)
-  private var isInteractiveTerminal: Bool {
-    // Check if stdout is a tty (terminal) and not redirected/piped
-    isatty(STDOUT_FILENO) != 0
+  // Actor method to safely set granted directory URLs
+  private func setGrantedDirectoryURLs(_ urls: [URL]) {
+    grantedDirectoryURLs = urls
   }
 
+  // MARK: Private Implementation
+
   #if canImport(AppKit)
+  /// Show permission request alert
+  @MainActor
+  private func showPermissionAlert(for filePaths: [String]) -> Bool {
+    let alert = NSAlert()
+    alert.messageText = "File Access Permission Required"
+    alert.informativeText = """
+    r128x needs permission to access the audio files you specified via command line.
+
+    Click 'Grant Access' to open a file selection dialog where you can grant permission to the required directories.
+
+    Files to process:
+    \(filePaths.map { "• " + URL(fileURLWithPath: $0).lastPathComponent }.joined(separator: "\n"))
+    """
+    alert.addButton(withTitle: "Grant Access")
+    alert.addButton(withTitle: "Cancel")
+    alert.alertStyle = .informational
+
+    let response = alert.runModal()
+    return response == .alertFirstButtonReturn
+  }
+
   /// Show file access dialog using NSOpenPanel
-  private func showFileAccessDialog(
-    for directories: [String], completion: @escaping (Bool) -> Void
-  ) {
-    let openPanel = NSOpenPanel()
+  @MainActor
+  private func showFileAccessDialog(for directories: [String]) -> [URL]? {
+    writeToStandardError("[SDBOX] Showing file access dialog for directories: \(directories)\n")
+    writeDebugInfo("About to create NSOpenPanel")
+
+    writeDebugInfo("NSOpenPanel created successfully")
     openPanel.title = "Grant Access to Audio File Directories"
     openPanel.message =
       "Please select the directories containing your audio files to grant r128x access permission."
@@ -379,83 +433,119 @@ public final class CliController {
     openPanel.allowsMultipleSelection = true
     openPanel.canCreateDirectories = false
 
+    writeDebugInfo("NSOpenPanel configured")
+
     // Set the initial directory to the first directory if available
     if let firstDir = directories.first {
       openPanel.directoryURL = URL(fileURLWithPath: firstDir)
+      writeToStandardError("[SDBOX] Setting initial directory to: \(firstDir)\n")
     }
 
-    openPanel.begin { response in
-      if response == .OK {
-        // Store security-scoped bookmarks for the selected directories
-        let selectedURLs = openPanel.urls
-        var hasRequiredAccess = true
+    writeDebugInfo("About to call runModal()")
+    let response = openPanel.runModal()
+    writeDebugInfo("runModal() returned with response: \(response.rawValue)")
 
-        // Check if all required directories are covered by the selected URLs
-        for requiredDir in directories {
-          let requiredURL = URL(fileURLWithPath: requiredDir)
-          let hasAccess = selectedURLs.contains { selectedURL in
-            requiredURL.path.hasPrefix(selectedURL.path)
-          }
-          if !hasAccess {
-            hasRequiredAccess = false
-            break
-          }
-        }
+    if response == .OK {
+      writeToStandardError("[SDBOX] User selected OK, processing selected URLs...\n")
 
-        if hasRequiredAccess {
-          // Store the URLs for later use (they will have security-scoped access)
-          self.grantedDirectoryURLs = selectedURLs
-          completion(true)
-        } else {
-          // Show error that not all required directories were selected
-          DispatchQueue.main.async {
-            let alert = NSAlert()
-            alert.messageText = "Incomplete Access"
-            alert.informativeText =
-              "Not all required directories were selected. Please grant access to all directories containing your audio files."
-            alert.alertStyle = .warning
-            alert.runModal()
-            completion(false)
-          }
+      // Store security-scoped bookmarks for the selected directories
+      let selectedURLs = openPanel.urls
+      writeToStandardError("[SDBOX] Selected URLs: \(selectedURLs)\n")
+
+      var hasRequiredAccess = true
+
+      // Check if all required directories are covered by the selected URLs
+      for requiredDir in directories {
+        let requiredURL = URL(fileURLWithPath: requiredDir)
+        let hasAccess = selectedURLs.contains { selectedURL in
+          requiredURL.pathGuarded.hasPrefix(selectedURL.pathGuarded + "/")
+            || requiredURL.pathGuarded == selectedURL.pathGuarded
         }
-      } else {
-        completion(false)
+        writeToStandardError("[SDBOX] Directory \(requiredDir) has access: \(hasAccess)\n")
+        if !hasAccess {
+          hasRequiredAccess = false
+          break
+        }
       }
+
+      if hasRequiredAccess {
+        // Return the URLs for the caller to store
+        writeToStandardError("[SDBOX] Access granted to \(selectedURLs.count) directories.\n")
+        return selectedURLs
+      } else {
+        writeToStandardError("[SDBOX] Not all required directories were selected.\n")
+        // Show error that not all required directories were selected
+        let alert = NSAlert()
+        alert.messageText = "Incomplete Access"
+        alert.informativeText =
+          "Not all required directories were selected. Please grant access to all directories containing your audio files."
+        alert.alertStyle = .warning
+        alert.runModal()
+        return nil
+      }
+    } else {
+      writeToStandardError("[SDBOX] User cancelled file selection dialog.\n")
+      return nil
     }
   }
   #endif
 
-  private func initializeTaskEntries(from filePaths: [String]) {
-    taskEntries = filePaths.compactMap { path in
-      let url = URL(fileURLWithPath: path)
-      return TaskEntry(url: url)
+  private func initializeTaskEntries(from urls: [URL]) {
+    taskEntries = urls.compactMap { url in
+      TaskEntry(url: url)
     }
   }
 
   private func processTaskEntry(at index: Int) async {
+    writeDebugInfo("Starting to process entry \(index): \(taskEntries[index].fileName)")
+
     // Update status to processing
     taskEntries[index].status = .processing
 
     do {
+      writeDebugInfo("Creating ExtAudioProcessor")
       let processor = ExtAudioProcessor()
       let url = URL(fileURLWithPath: taskEntries[index].fileNamePath)
+      writeDebugInfo("Processing file at path: \(taskEntries[index].fileNamePath)")
 
       // Start accessing security-scoped resource if we have granted access
       var accessing = false
       var grantedURL: URL?
 
+      writeDebugInfo("Checking granted directory URLs: \(grantedDirectoryURLs)")
+
       // Check if we have a granted directory URL that covers this file
       for directoryURL in grantedDirectoryURLs {
-        if url.path.hasPrefix(directoryURL.path) {
+        writeDebugInfo("Checking if \(url.pathGuarded) starts with \(directoryURL.pathGuarded)")
+        // Fix path matching by ensuring both paths are properly normalized
+        let filePath = url.pathGuarded
+        var directoryPath = directoryURL.pathGuarded
+
+        // Ensure directory path ends with a single slash
+        if !directoryPath.hasSuffix("/") {
+          directoryPath += "/"
+        }
+
+        writeDebugInfo("Normalized paths - file: '\(filePath)', directory: '\(directoryPath)'")
+
+        if filePath.hasPrefix(directoryPath) || filePath == directoryPath.dropLast() {
           grantedURL = directoryURL
+          writeDebugInfo(
+            "Path match found! Starting security-scoped resource access for \(directoryURL)"
+          )
           accessing = directoryURL.startAccessingSecurityScopedResource()
+          writeDebugInfo("Security-scoped access result: \(accessing)")
           break
+        } else {
+          writeDebugInfo("No path match: '\(filePath)' does not start with '\(directoryPath)'")
         }
       }
 
       // If no granted directory covers this file, try direct access
       if !accessing {
+        writeDebugInfo("No granted directory covers file, trying direct access")
         accessing = url.startAccessingSecurityScopedResource()
+        writeDebugInfo("Direct access result: \(accessing)")
       }
 
       defer {
@@ -468,23 +558,48 @@ public final class CliController {
         }
       }
 
-      let result = try await processor.processAudioFile(
-        at: taskEntries[index].fileNamePath,
-        fileId: taskEntries[index].id.uuidString
-      ) { @Sendable progress in
-        Task { @MainActor in
-          // Update progress information
-          self.taskEntries[index].progressPercentage = progress.percentage
-          self.taskEntries[index].estimatedTimeRemaining = progress.estimatedTimeRemaining
-          self.taskEntries[index].currentLoudness = progress.currentLoudness
+      writeDebugInfo("About to call processor.processAudioFile")
+      writeDebugInfo("File URL: \(taskEntries[index].url)")
+      writeDebugInfo("File path: \(taskEntries[index].url.path)")
+      writeDebugInfo(
+        "File exists: \(FileManager.default.fileExists(atPath: taskEntries[index].url.path))"
+      )
 
-          // Display progress bar
-          self.displayProgress(progress, for: self.taskEntries[index].fileName)
-        }
+      // Check file attributes
+      do {
+        let attributes = try FileManager.default.attributesOfItem(
+          atPath: taskEntries[index].url.path
+        )
+        writeDebugInfo("File size: \(attributes[.size] ?? "unknown")")
+        writeDebugInfo(
+          "File permissions: \(String(format: "%o", (attributes[.posixPermissions] as? NSNumber)?.uintValue ?? 0))"
+        )
+      } catch {
+        writeDebugInfo("Could not read file attributes: \(error)")
       }
 
+      // Test if we can actually read the file data
+      do {
+        let data = try Data(contentsOf: taskEntries[index].url, options: [.mappedIfSafe])
+        writeDebugInfo("Successfully read \(data.count) bytes from file")
+      } catch {
+        writeDebugInfo("Failed to read file data: \(error)")
+      }
+
+      let result = try await processor.processAudioFile(
+        at: taskEntries[index].url,
+        fileId: taskEntries[index].id.uuidString,
+        progressCallback: progressCallback
+      )
+      #if DEBUG
+      writeToStandardError("\n")
+      #endif
+      writeDebugInfo("Audio processing completed successfully")
+
       // Clear progress line and update with results
-      clearProgressLine()
+      await MainActor.run {
+        clearProgressLine()
+      }
 
       taskEntries[index].programLoudness = result.integratedLoudness
       taskEntries[index].loudnessRange = result.loudnessRange
@@ -495,33 +610,60 @@ public final class CliController {
       taskEntries[index].progressPercentage = nil
 
     } catch {
-      clearProgressLine()
+      await MainActor.run {
+        clearProgressLine()
+      }
       taskEntries[index].status = .failed
       taskEntries[index].progressPercentage = nil
 
       // Print detailed error information
+      let fileName = taskEntries[index].fileName
       if let nsError = error as NSError? {
-        print(
-          "Error processing \(taskEntries[index].fileName): \(nsError.localizedDescription)",
-          to: &standardError
+        writeToStandardError(
+          "Error processing \(fileName): \(nsError.localizedDescription)\n"
         )
         if let recoverySuggestion = nsError.localizedRecoverySuggestion {
-          print("  \(recoverySuggestion)", to: &standardError)
+          writeToStandardError("  \(recoverySuggestion)\n")
         }
       } else {
-        print(
-          "Error processing \(taskEntries[index].fileName): \(error.localizedDescription)",
-          to: &standardError
+        writeToStandardError(
+          "Error processing \(fileName): \(error.localizedDescription)\n"
         )
       }
     }
   }
 
-  private func displayProgress(
-    _ progress: ExtAudioProcessor.ProcessingProgress, for fileName: String
-  ) {
+  @Sendable
+  nonisolated private func progressCallback(
+    _ progress: ExtAudioProcessor.ProcessingProgress
+  ) async {
+    // Simplified progress handling for CLI with debug info
+    guard let fileId = progress.fileId, let fileUUID = UUID(uuidString: fileId) else {
+      writeDebugInfo(
+        "File ID missing for this callback, aborting callback process.\n"
+      )
+      return
+    }
+    let matchedTask = await taskEntries.first {
+      $0.id == fileUUID
+    }
+    guard let matchedTask else {
+      writeDebugInfo(
+        "No task matched for this callback, aborting callback process.\n"
+      )
+      return
+    }
+
+    let fileName = matchedTask.fileName // Capture the filename
+    // writeDebugInfo("Progress callback started :") // Disable this line for now.
+
     // Only show progress bar in interactive terminals, not when piped
-    guard isInteractiveTerminal else { return }
+    guard isatty(STDOUT_FILENO) != 0 else {
+      writeDebugInfo(
+        "Skipping progress bar (not interactive terminal)\n"
+      )
+      return
+    }
 
     let percentage = Int(floor(progress.percentage))
     let totalWidth = 30
@@ -533,17 +675,40 @@ public final class CliController {
     let progressBar = filledPart + emptyPart
 
     // Use stderr for progress to avoid interfering with stdout output
-    FileHandle.standardError.write(
-      Data(String(format: "\r[%@] %3d%% - %@", progressBar, percentage, fileName).utf8)
+    writeToStandardError(
+      String(format: "\r[%@] %3d%% - %@", progressBar, percentage, fileName)
     )
   }
 
+  @MainActor
   private func clearProgressLine() {
     // Only clear progress line in interactive terminals
-    guard isInteractiveTerminal else { return }
+    guard Self.isInteractiveTerminal else { return }
 
     // Use stderr to clear the progress line
-    FileHandle.standardError.write(Data(("\r" + String(repeating: " ", count: 80) + "\r").utf8))
+    writeToStandardError("\r" + String(repeating: " ", count: 80) + "\r")
+  }
+
+  private func displayProgress(
+    _ progress: ExtAudioProcessor.ProcessingProgress,
+    for fileName: String
+  ) {
+    // Only show progress bar in interactive terminals, not when piped
+    guard Self.isInteractiveTerminal else { return }
+
+    let percentage = Int(floor(progress.percentage))
+    let totalWidth = 30
+    let filledWidth = Int(Double(totalWidth) * progress.percentage / 100.0)
+    let emptyWidth = totalWidth - filledWidth
+
+    let filledPart = String(repeating: "=", count: filledWidth)
+    let emptyPart = String(repeating: "-", count: emptyWidth)
+    let progressBar = filledPart + emptyPart
+
+    // Use stderr for progress to avoid interfering with stdout output
+    writeToStandardError(
+      String(format: "\r[%@] %3d%% - %@", progressBar, percentage, fileName)
+    )
   }
 
   private func formatResult(for entry: TaskEntry) -> String {
@@ -565,12 +730,36 @@ public final class CliController {
   }
 }
 
-// MARK: - StandardError
+// MARK: - Console Print APIs
 
-private struct StandardError: TextOutputStream {
-  mutating func write(_ string: String) {
-    FileHandle.standardError.write(Data(string.utf8))
+// Helper function for Actor to write to stderr safely
+private func writeToStandardError(_ message: String) {
+  FileHandle.standardError.write(Data(message.utf8))
+}
+
+/// Write debug information to standard error, only active in DEBUG builds
+private func writeDebugInfo(_ message: String) {
+  #if DEBUG
+  FileHandle.standardError.write(Data("[DEBUG] \(message)\n".utf8))
+  #endif
+}
+
+// MARK: - URL Path APIs
+
+extension URL {
+  fileprivate var pathGuarded: String {
+    #if canImport(Darwin)
+    if #available(macOS 13.0, *) {
+      path(percentEncoded: false)
+    } else {
+      path
+    }
+    #else
+    path(percentEncoded: false)
+    #endif
   }
 }
 
-@MainActor private var standardError = StandardError()
+// MARK: - Shared NSOpenPanel Instance
+
+@MainActor private let openPanel = NSOpenPanel()
