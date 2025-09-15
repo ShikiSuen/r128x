@@ -116,6 +116,7 @@ public actor ExtAudioProcessor {
 
   // Progress tracking
   public struct ProcessingProgress: Codable, Hashable, Sendable {
+    public let fileId: String?
     public let percentage: Double
     public let framesProcessed: Int64
     public let totalFrames: Int64
@@ -141,7 +142,7 @@ public actor ExtAudioProcessor {
   public func processAudioFile(
     at audioFileURL: URL,
     fileId: String? = nil,
-    progressCallback: ((ProcessingProgress) -> Void)? = nil,
+    progressCallback: ((ProcessingProgress) async -> Void)? = nil,
     taskTrackingVM: TaskTrackingVMProtocol? = nil
   ) async throws
     -> MeasuredResult {
@@ -483,6 +484,7 @@ public actor ExtAudioProcessor {
         let currentLoudness = await ebur128State.loudnessMomentary()
 
         let progressInfo = ProcessingProgress(
+          fileId: fileId,
           percentage: progressPercentage,
           framesProcessed: Int64(fileFramesRead),
           totalFrames: fileLengthInFrames,
@@ -491,7 +493,7 @@ public actor ExtAudioProcessor {
         )
 
         // Call progress callback if provided
-        progressCallback?(progressInfo)
+        await progressCallback?(progressInfo)
 
         // Send progress update through AsyncStream if taskTrackingVM is provided
         if let taskTrackingVM = taskTrackingVM,
