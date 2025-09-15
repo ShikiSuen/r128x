@@ -6,7 +6,33 @@
 import R128xGUIKit
 import SwiftUI
 
+#if os(macOS)
+import R128xCLIKit
+#endif
+
+// MARK: - MainEntry
+
 @main
+struct MainEntry {
+  static func main() {
+    let lowercasedVarArgs = CommandLine.arguments.map { $0.lowercased() }
+    #if os(macOS)
+    if lowercasedVarArgs.contains("--cli") {
+      Task {
+        await CliController.runMainAndExit(mas: true)
+      }
+      RunLoop.main.run()
+    } else {
+      MainApp.main()
+    }
+    #else
+    MainApp.main()
+    #endif
+  }
+}
+
+// MARK: - MainApp
+
 struct MainApp: App {
   var body: some Scene {
     R128xScene()

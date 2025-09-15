@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5B09D3222E782951009B9967 /* R128xCLIKit in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 5B09D3212E782951009B9967 /* R128xCLIKit */; };
 		5B517EF62C12F0D500F0FA00 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5B517EF52C12F0D500F0FA00 /* InfoPlist.xcstrings */; };
 		5B7044082E756AB100EB0114 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5B7044072E756AB100EB0114 /* AppIcon.icon */; };
 		5BDCA1B62A6D51D400F7202E /* MainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BDCA1B52A6D51D400F7202E /* MainApp.swift */; };
@@ -62,6 +63,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5B09D3222E782951009B9967 /* R128xCLIKit in Frameworks */,
 				5BE60CA92E774BAB00BAAC08 /* R128xGUIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -159,6 +161,7 @@
 			name = "r128x-swiftui";
 			packageProductDependencies = (
 				5BE60CA82E774BAB00BAAC08 /* R128xGUIKit */,
+				5B09D3212E782951009B9967 /* R128xCLIKit */,
 			);
 			productName = "r128x-swiftui";
 			productReference = 5BDCA1B32A6D51D400F7202E /* r128x-swiftui.app */;
@@ -519,6 +522,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		5B09D3212E782951009B9967 /* R128xCLIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = R128xCLIKit;
+		};
 		5BE60CA82E774BAB00BAAC08 /* R128xGUIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = R128xGUIKit;
