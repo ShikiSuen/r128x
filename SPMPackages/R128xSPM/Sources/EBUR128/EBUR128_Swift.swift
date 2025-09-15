@@ -116,6 +116,7 @@ public enum EBUR128Error: Error {
   case noMem
   case invalidMode
   case invalidChannelIndex
+  case duplicatedTypesAcrossChannels
   case noChange
 }
 
@@ -309,11 +310,35 @@ public actor EBUR128State {
 
   // 設置通道類型
   public func setChannel(_ channelNumber: Int, value: EBUR128Channel) throws {
-    guard channelNumber < channels else { throw EBUR128Error.invalidChannelIndex }
-    if value == .dualMono, channels != 1 || channelNumber != 0 {
+    try setChannels(since: channelNumber, value)
+  }
+
+  // 批次設置聲道類型 - 使用 Swift 可變參數語法
+  public func setChannels(since beginningChannelIndex: Int, _ values: EBUR128Channel...) throws {
+    let actualValuesUsed = values.filter { $0 != .unused }
+    let actualValuesSet = Set(actualValuesUsed)
+    guard actualValuesSet.count == actualValuesUsed.count else {
+      throw EBUR128Error.duplicatedTypesAcrossChannels
+    }
+
+    let channelIndicesToModify = beginningChannelIndex ..< (beginningChannelIndex + values.count)
+    let channelIndicesAllowed = 0 ..< channels
+
+    guard channelIndicesAllowed.contains(channelIndicesToModify) else {
       throw EBUR128Error.invalidChannelIndex
     }
-    channelMap[channelNumber] = value
+
+    // 檢查是否有 dualMono 聲道的無效配置
+    for (channelIndex, value) in zip(channelIndicesToModify, values) {
+      if value == .dualMono, channels != 1 || channelIndex != 0 {
+        throw EBUR128Error.invalidChannelIndex
+      }
+    }
+
+    // 設置所有聲道
+    for (channelIndex, value) in zip(channelIndicesToModify, values) {
+      channelMap[channelIndex] = value
+    }
   }
 
   // 添加音頻幀
