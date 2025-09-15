@@ -31,6 +31,7 @@ public final class MainViewModel {
     "mp3",
     "mp2",
     "m4a",
+    "aac",
     "wav",
     "aif",
     "ogg",
