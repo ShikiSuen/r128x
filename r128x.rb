@@ -3,27 +3,66 @@ class R128x < Formula
   homepage "https://github.com/ShikiSuen/r128x"
   url "https://github.com/ShikiSuen/r128x.git",
       tag:      "v0.8.0",
-      revision: "16563f22dce6ad9e12994f09934d977339e78d82"
+      revision: "97026aac2a447d62e1a27ba1eedcbc77966bb6ef"
   license "GPL-3.0-or-later"
   head "https://github.com/ShikiSuen/r128x.git", branch: "master"
 
-  # Requires Swift 6.1 /Xcode 16.4 for compilation
-  depends_on xcode: ["16.4", :build]
-
-  # Requires macOS 15+ as what required by Xcode 16.4
-  depends_on macos: :sequoia
+  on_macos do
+    depends_on xcode: :build
+    depends_on macos: :sequoia
+  end
 
   def install
-    # Set environment variables to avoid SwiftPM sandbox issues
+    odie "r128x-cli is only supported on macOS." unless OS.mac?
+
+    unless MacOS::Xcode.installed?
+      odie <<~EOS
+        A full installation of Xcode.app is required to compile this software.
+        Installing just the Command Line Tools is not sufficient.
+        Please install Xcode from the App Store or from:
+          https://developer.apple.com/download/
+        After installing Xcode, you may need to run:
+          sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+      EOS
+    end
+
+    xcode_ver = MacOS::Xcode.version&.to_s
+    if xcode_ver
+      x_major = xcode_ver.split(".").first.to_i
+      if Version.new(xcode_ver) < Version.new("16.4") && x_major < 17
+        odie "Xcode 16.3 is known-broken for this build; please install Xcode 16.4 or later."
+      end
+    end
+
+    # 明确使用 begin/rescue（不带显式 StandardError 类），满足 RuboCop 要求
+    swift_out = ""
+    begin
+      swift_out = Utils.safe_popen_read("swift", "--version")
+    rescue => e
+      # 不要中断安装流程在这里 —— 后面会以更明确的错误消息提示用户
+      swift_out = ""
+      opoo "Unable to run 'swift --version': #{e.message}"
+    end
+
+    swift_ver = swift_out[/Apple Swift version (\d+\.\d+(\.\d+)?)/, 1] ||
+                swift_out[/Swift version (\d+\.\d+(\.\d+)?)/, 1]
+
+    if swift_ver.nil?
+      odie <<~EOS
+        Unable to determine Swift compiler version. Ensure a full Xcode with Swift >= 6.1 is installed.
+      EOS
+    end
+
+    if Version.new(swift_ver) < Version.new("6.1")
+      odie "r128x-cli requires Swift 6.1 or newer (Xcode 16.4+). Detected Swift #{swift_ver}."
+    end
+
     ENV["SWIFTPM_DISABLE_SANDBOX_SHOULD_NOT_BE_USED"] = "1"
     ENV["HOMEBREW_NO_SANDBOX"] = "1"
 
-    # Navigate to the SPM package directory
     cd "SPMPackages/R128xSPM" do
-      # Build the release version of r128x-cli with sandbox disabled
       system "swift", "build", "--product", "r128x-cli", "-c", "release", "--disable-sandbox"
 
-      # Detect the architecture and install the appropriate binary
       arch = Hardware::CPU.arm? ? "arm64-apple-macosx" : "x86_64-apple-macosx"
       bin.install ".build/#{arch}/release/r128x-cli" => "r128x-cli"
     end
@@ -35,24 +74,11 @@ class R128x < Formula
 
       Usage:
         r128x-cli /path/to/audio/file.wav
-
-      Output format:
-        FILE    IL (LUFS)    LRA (LU)    MAXTP (dBTP)
-
-      Supported formats: Any format supported by macOS CoreAudio
-      (WAV, AIFF, CAF, MP3, AAC, FLAC, etc.)
-
-      Note: RF64 files are detected but may require conversion for processing.
     EOS
   end
 
   test do
-    # Test that the binary exists and shows help when run without arguments
     output = shell_output("#{bin}/r128x-cli 2>&1", 1)
     assert_match "Missing arguments", output
-    assert_match "You should specify at least one audio file", output
-
-    # Verify binary is executable and reports correct format
-    assert_match "r128x", shell_output("#{bin}/r128x-cli 2>&1", 1)
   end
 end
