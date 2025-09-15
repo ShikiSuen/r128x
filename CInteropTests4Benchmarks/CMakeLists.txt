@@ -34,8 +34,8 @@ if (ENABLE_TEST)
         endif()
 
         # Download real-world test audio file
-        set(TEST_AUDIO_URL "https://upload.wikimedia.org/wikipedia/commons/6/69/Internationale-ru.ogg")
-        set(TEST_AUDIO_FILE "${CMAKE_CURRENT_BINARY_DIR}/Internationale-ru.ogg")
+        set(TEST_AUDIO_URL "https://raw.githubusercontent.com/ShikiSuen/r128x/master/ValueAdd/theInternationale.ogg")
+        set(TEST_AUDIO_FILE "${CMAKE_CURRENT_BINARY_DIR}/theInternationale.ogg")
         
         if(NOT EXISTS "${TEST_AUDIO_FILE}")
             MESSAGE(STATUS "Downloading real-world test audio file: ${TEST_AUDIO_URL}")
