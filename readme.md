@@ -23,13 +23,57 @@ Binaries of all versions are not provided anymore since the release of v0.5.1.
 
 You are expected to either compile the binary by yourself or buy at Mac App Store.
 
-The charged fee is not mandatory since you can always compile the binaries for your own purposes.
+The charged fee is not mandatory since you can always compile the binaries for your own purposes. However, I will really appreciate if you can buy a copy on Mac App Store to support the development and maintenance of this app.
 
-For `r128x-cli` users, here are the installation commands for Homebrew:
+For `r128x-cli` users, you have three options:
+
+### 1. Mac App Store
+
+Mac App Store GUI version (since v0.9.0) can also be used as a CLI. You just need to add an extra flag `--cli`:
+
+```
+/Applications/r128x-swiftui.app/Contents/MacOS/r128x-swiftui --cli --help
+===========================================================
+r128x - EBU R128 Loudness Measurement Tool
+
+USAGE:
+    r128x-swiftui --cli [OPTIONS] <file1> [file2] [file3] ...
+
+ARGUMENTS:
+    <file>    Audio file(s) to analyze
+
+OPTIONS:
+    --cli         Enable CLI mode (otherwise, this app will run in GUI mode)
+    -h, --help    Show this help message (Only works when CLI mode is enabled)
+
+EXAMPLES:
+    r128x-swiftui --cli audio.wav
+    r128x-swiftui --cli *.wav
+    r128x-swiftui --cli song1.mp3 song2.flac song3.aac
+
+OUTPUT:
+    Results are displayed in tab-separated format:
+    FILE    IL (LUFS)    LRA (LU)    MAXTP (dBTP)
+
+SANDBOX COMPATIBILITY:
+    In the Mac App Store version, the app will show permission dialogs
+    to request access to your audio files when using CLI mode.
+    This ensures compatibility with macOS sandbox security requirements.
+```
+
+### 2. Homebrew
 ```
 brew tap shikisuen/r128x https://github.com/shikisuen/r128x.git
 brew install shikisuen/r128x/r128x
 ```
+
+### 3. Compile by yourself
+
+Please read the next section.
+
+> **Why the bloody hell you don't provide binary downloads of CLI directly on GitHub?**
+>
+> Because it is really hard to automatically manage the codesign-notarization process for a CLI app. This process is necessary against potential hindrance from macOS built-in GateKeeper.
 
 ### How to Compile ###
 
