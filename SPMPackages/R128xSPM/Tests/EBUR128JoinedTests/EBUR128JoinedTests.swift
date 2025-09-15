@@ -1,51 +1,54 @@
 import Foundation
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
 import Testing
 
 @testable import EBUR128
 @testable import ExtAudioProcessor
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 /// An extension that provides async support for fetching a URL
 ///
 /// Needed because the Linux version of Swift does not support async URLSession yet.
 extension URLSession {
-    enum AsyncError: Error {
-        case invalidUrlResponse, missingResponseData
-    }
+  enum AsyncError: Error {
+    case invalidUrlResponse, missingResponseData
+  }
 
-    /// A reimplementation of `URLSession.shared.asyncData(from: url)` required for Linux
-    ///
-    /// ref: https://gist.github.com/aronbudinszky/66cdb71d734ae48a2609c7f2c094a02d
-    ///
-    /// - Parameter url: The URL for which to load data.
-    /// - Returns: Data and response.
-    ///
-    /// - Usage:
-    ///
-    ///     let (data, response) = try await URLSession.shared.asyncData(from: url)
-    func asyncData(from url: URL) async throws -> (Data, URLResponse) {
-        try await withCheckedThrowingContinuation { continuation in
-            let task = self.dataTask(with: url) { data, response, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                    return
-                }
-                guard let response = response as? HTTPURLResponse else {
-                    continuation.resume(throwing: AsyncError.invalidUrlResponse)
-                    return
-                }
-                guard let data = data else {
-                    continuation.resume(throwing: AsyncError.missingResponseData)
-                    return
-                }
-                continuation.resume(returning: (data, response))
-            }
-            task.resume()
+  /// A reimplementation of `URLSession.shared.asyncData(from: url)` required for Linux
+  ///
+  /// ref: https://gist.github.com/aronbudinszky/66cdb71d734ae48a2609c7f2c094a02d
+  ///
+  /// - Parameter url: The URL for which to load data.
+  /// - Returns: Data and response.
+  ///
+  /// - Usage:
+  ///
+  ///     let (data, response) = try await URLSession.shared.asyncData(from: url)
+  func asyncData(from url: URL) async throws -> (Data, URLResponse) {
+    try await withCheckedThrowingContinuation { continuation in
+      let task = self.dataTask(with: url) { data, response, error in
+        if let error = error {
+          continuation.resume(throwing: error)
+          return
         }
+        guard let response = response as? HTTPURLResponse else {
+          continuation.resume(throwing: AsyncError.invalidUrlResponse)
+          return
+        }
+        guard let data = data else {
+          continuation.resume(throwing: AsyncError.missingResponseData)
+          return
+        }
+        continuation.resume(returning: (data, response))
+      }
+      task.resume()
     }
+  }
 }
+
+// MARK: - EBUR128JoinedTests
 
 @Suite
 struct EBUR128JoinedTests {
@@ -56,7 +59,8 @@ struct EBUR128JoinedTests {
     #if canImport(AudioToolbox)
     // Download the test audio file from GitHub raw content
     let audioURL = URL(
-      string: "https://raw.githubusercontent.com/ShikiSuen/r128x/master/ValueAdd/theInternationale.ogg"
+      string:
+      "https://raw.githubusercontent.com/ShikiSuen/r128x/master/ValueAdd/theInternationale.ogg"
     )!
     print("Downloading test audio file from: \(audioURL)")
 

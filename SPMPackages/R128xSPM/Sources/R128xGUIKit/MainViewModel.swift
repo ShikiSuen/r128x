@@ -153,7 +153,8 @@ public final class MainViewModel {
 
       // Check if there are any files that need processing
       let hasFilesToProcess = entries.contains { entry in
-        (entry.status == .processing && entry.progressPercentage == nil) || entry.status == .failed
+        (entry.status == .processing && entry.progressPercentage == nil)
+          || entry.status == .failed
       }
 
       guard hasFilesToProcess else {
