@@ -21,4 +21,4 @@
 
 import R128xCLIKit
 
-await CliController.runMainAndExit()
+await CliController.runMainAndExit(mas: false)
