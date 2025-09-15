@@ -2,6 +2,7 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
 
+#if canImport(Darwin)
 import Foundation
 
 import struct ExtAudioProcessor.ProgressUpdate
@@ -152,7 +153,8 @@ public final class MainViewModel {
 
       // Check if there are any files that need processing
       let hasFilesToProcess = entries.contains { entry in
-        (entry.status == .processing && entry.progressPercentage == nil) || entry.status == .failed
+        (entry.status == .processing && entry.progressPercentage == nil)
+          || entry.status == .failed
       }
 
       guard hasFilesToProcess else {
@@ -434,3 +436,4 @@ public final class MainViewModel {
 extension Bool {
   fileprivate var negative: Bool { !self }
 }
+#endif

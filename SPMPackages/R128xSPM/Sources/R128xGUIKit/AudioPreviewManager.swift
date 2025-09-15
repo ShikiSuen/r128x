@@ -2,6 +2,7 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `AGPL-3.0-or-later`.
 
+#if canImport(Darwin)
 import Foundation
 
 import struct ExtAudioProcessor.TaskEntry
@@ -274,3 +275,4 @@ extension AudioPreviewManager {
   /// Shared instance for global access
   public static let shared = AudioPreviewManager()
 }
+#endif
