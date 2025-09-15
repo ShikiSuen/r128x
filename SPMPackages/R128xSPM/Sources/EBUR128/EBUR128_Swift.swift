@@ -23,12 +23,66 @@ extension Array where Element: Sendable {
   }
 }
 
+// MARK: - Array extension for batch operations with QuadState
+
+extension Array where Element == [Double] {
+  /// 批次設置連續的四個值，類似於 setChannels(since:) 的語法糖
+  /// - Parameters:
+  ///   - channel: 通道索引
+  ///   - since: 起始索引（通常為 1）
+  ///   - quadState: 包含四個值的 QuadState
+  mutating func setQuadValues(
+    channel: Int,
+    since startIndex: Int,
+    _ quadState: EBUR128State.QuadState
+  ) {
+    guard channel < count, startIndex + 3 < self[channel].count else { return }
+    self[channel][startIndex] = quadState.s1
+    self[channel][startIndex + 1] = quadState.s2
+    self[channel][startIndex + 2] = quadState.s3
+    self[channel][startIndex + 3] = quadState.s4
+  }
+
+  /// 批次獲取連續的四個值作為 QuadState
+  /// - Parameters:
+  ///   - channel: 通道索引
+  ///   - since: 起始索引（通常為 1）
+  /// - Returns: 包含四個值的 QuadState，如果索引越界則返回 nil
+  func getQuadValues(channel: Int, since startIndex: Int) -> EBUR128State.QuadState? {
+    guard channel < count, startIndex + 3 < self[channel].count else { return nil }
+    return .init(
+      s1: self[channel][startIndex],
+      s2: self[channel][startIndex + 1],
+      s3: self[channel][startIndex + 2],
+      s4: self[channel][startIndex + 3]
+    )
+  }
+
+  /// 批次設置多個通道的相同位置值
+  /// - Parameters:
+  ///   - channels: 通道索引範圍
+  ///   - since: 起始索引
+  ///   - quadStates: 每個通道對應的 QuadState 值
+  mutating func setQuadValues(
+    channels: Range<Int>,
+    since startIndex: Int,
+    _ quadStates: EBUR128State.QuadState...
+  ) {
+    for (i, channel) in channels.enumerated() where i < quadStates.count {
+      setQuadValues(channel: channel, since: startIndex, quadStates[i])
+    }
+  }
+}
+
 // MARK: - Cross-platform vDSP fallbacks
 
 #if !canImport(Accelerate)
 // Fallback implementations for platforms without Accelerate
 private func vDSP_maxmgvD(
-  _ input: UnsafePointer<Double>, _ stride: Int, _ result: inout Double, _ count: Int
+  _ input: UnsafePointer<Double>,
+  _ stride: Int,
+  _ result: inout Double,
+  _ count: Int
 ) {
   result = 0.0
   for i in 0 ..< count {
@@ -226,7 +280,8 @@ public actor EBUR128State {
     // 先初始化臨時緩衝區變量，避免後續使用前未初始化
     self.tempBuffer = Array(repeating: 0.0, count: Int(sampleRate))
     self.tempBufferArray = Array(
-      repeating: Array(repeating: 0.0, count: Int(sampleRate)), count: channels
+      repeating: Array(repeating: 0.0, count: Int(sampleRate)),
+      count: channels
     )
 
     guard channels > 0, channels <= 64 else { throw EBUR128Error.noMem }
@@ -271,7 +326,8 @@ public actor EBUR128State {
       self.audioDataFrames = Int(min(adjustedFramesInt64, Int64(Int.max)))
     }
     self.audioData = Array(
-      repeating: Array(repeating: 0.0, count: audioDataFrames), count: channels
+      repeating: Array(repeating: 0.0, count: audioDataFrames),
+      count: channels
     )
     self.audioDataIndex = 0
 
@@ -285,6 +341,12 @@ public actor EBUR128State {
     let filterCoefResults = Self.initFilter(sampleRate: self.sampleRate)
     self.filterCoefA = filterCoefResults.filterCoefA
     self.filterCoefB = filterCoefResults.filterCoefB
+
+    // 初始化優化的濾波器係數結構
+    self.filterCoefficients = FilterCoefficients(
+      filterCoefA: filterCoefResults.filterCoefA,
+      filterCoefB: filterCoefResults.filterCoefB
+    )
 
     // 初始化濾波器
     self.filterState = Array(repeating: Array(repeating: 0.0, count: 5), count: channels)
@@ -662,9 +724,132 @@ public actor EBUR128State {
 
   // MARK: Internal
 
+  struct QuadState: Codable, Hashable, Sendable {
+    // MARK: Lifecycle
+
+    public init(s1: Double, s2: Double, s3: Double, s4: Double) {
+      self.s1 = s1
+      self.s2 = s2
+      self.s3 = s3
+      self.s4 = s4
+    }
+
+    public init(from tuple: (s1: Double, s2: Double, s3: Double, s4: Double)) {
+      self.s1 = tuple.s1
+      self.s2 = tuple.s2
+      self.s3 = tuple.s3
+      self.s4 = tuple.s4
+    }
+
+    // MARK: Public
+
+    /// 返回所有值都為零的 QuadState
+    public static var zero: QuadState {
+      QuadState(s1: 0, s2: 0, s3: 0, s4: 0)
+    }
+
+    public var s1: Double
+    public var s2: Double
+    public var s3: Double
+    public var s4: Double
+
+    public var asTuple: (s1: Double, s2: Double, s3: Double, s4: Double) {
+      (s1: s1, s2: s2, s3: s3, s4: s4)
+    }
+
+    /// 檢查是否有任何值接近零（需要清零以避免浮點精度問題）
+    public var hasNearZeroValues: Bool {
+      abs(s1) < Double.leastNormalMagnitude || abs(s2) < Double.leastNormalMagnitude
+        || abs(s3) < Double.leastNormalMagnitude || abs(s4) < Double.leastNormalMagnitude
+    }
+
+    /// 計算所有元素的和
+    public var sum: Double {
+      s1 + s2 + s3 + s4
+    }
+
+    /// 元素對元素的乘法運算
+    public static func * (lhs: QuadState, rhs: QuadState) -> QuadState {
+      QuadState(
+        s1: lhs.s1 * rhs.s1,
+        s2: lhs.s2 * rhs.s2,
+        s3: lhs.s3 * rhs.s3,
+        s4: lhs.s4 * rhs.s4
+      )
+    }
+
+    /// 標量乘法運算
+    public static func * (lhs: QuadState, rhs: Double) -> QuadState {
+      QuadState(
+        s1: lhs.s1 * rhs,
+        s2: lhs.s2 * rhs,
+        s3: lhs.s3 * rhs,
+        s4: lhs.s4 * rhs
+      )
+    }
+
+    /// 標量乘法運算（交換律）
+    public static func * (lhs: Double, rhs: QuadState) -> QuadState {
+      rhs * lhs
+    }
+
+    /// 將所有狀態值向右移動一位，並設置 s1 為新值
+    public mutating func shift(newValue: Double) {
+      s4 = s3
+      s3 = s2
+      s2 = s1
+      s1 = newValue
+    }
+  }
+
+  /// 濾波器係數結構，用於封裝和簡化濾波器計算
+  internal struct FilterCoefficients {
+    // MARK: Lifecycle
+
+    init(filterCoefA: [Double], filterCoefB: [Double]) {
+      self.b0 = filterCoefB[0]
+      self.bQuad = QuadState(
+        s1: filterCoefB[1],
+        s2: filterCoefB[2],
+        s3: filterCoefB[3],
+        s4: filterCoefB[4]
+      )
+      self.aQuad = QuadState(
+        s1: filterCoefA[1],
+        s2: filterCoefA[2],
+        s3: filterCoefA[3],
+        s4: filterCoefA[4]
+      )
+    }
+
+    // MARK: Internal
+
+    let b0: Double
+    let bQuad: QuadState // b1, b2, b3, b4
+    let aQuad: QuadState // a1, a2, a3, a4
+
+    /// 應用 IIR 濾波器並更新狀態
+    @inline(__always)
+    func applyFilter(input: Double, state: inout QuadState) -> Double {
+      // 計算濾波器輸入
+      let v0 = input - (aQuad * state).sum
+
+      // 計算輸出
+      let output = b0 * v0 + (bQuad * state).sum
+
+      // 更新狀態
+      state.shift(newValue: v0)
+
+      return output
+    }
+  }
+
   // 濾波器相關 - make filter coefficients internal for testing
   internal let filterCoefB: [Double]
   internal let filterCoefA: [Double]
+
+  // 優化的濾波器係數結構
+  internal let filterCoefficients: FilterCoefficients
 
   // MARK: Private
 
@@ -802,20 +987,9 @@ public actor EBUR128State {
     let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
     guard !activeChannels.isEmpty else { return }
 
-    // Precompute filter coefficients once
-    let a1 = filterCoefA[1]
-    let a2 = filterCoefA[2]
-    let a3 = filterCoefA[3]
-    let a4 = filterCoefA[4]
-    let b0 = filterCoefB[0]
-    let b1 = filterCoefB[1]
-    let b2 = filterCoefB[2]
-    let b3 = filterCoefB[3]
-    let b4 = filterCoefB[4]
-
     // 為活躍通道加載濾波器狀態
     var filterStates = activeChannels.map { c in
-      (s1: filterState[c][1], s2: filterState[c][2], s3: filterState[c][3], s4: filterState[c][4])
+      filterState.getQuadValues(channel: c, since: 1) ?? QuadState.zero
     }
 
     let baseAudioIndex = audioDataIndex / channels
@@ -826,34 +1000,17 @@ public actor EBUR128State {
 
       // Process all active channels at this sample position
       for (activeIdx, c) in activeChannels.enumerated() {
-        // IIR filter calculation
-        var v0 = src[c][i] - a1 * filterStates[activeIdx].s1
-        v0 -= a2 * filterStates[activeIdx].s2
-        v0 -= a3 * filterStates[activeIdx].s3
-        v0 -= a4 * filterStates[activeIdx].s4
-
-        // Calculate output
-        audioData[c][audioIndex] = b0 * v0 + b1 * filterStates[activeIdx].s1
-        audioData[c][audioIndex] += b2 * filterStates[activeIdx].s2
-        audioData[c][audioIndex] += b3 * filterStates[activeIdx].s3
-        audioData[c][audioIndex] += b4 * filterStates[activeIdx].s4
-
-        // Update filter state
-        filterStates[activeIdx] = (
-          s1: v0,
-          s2: filterStates[activeIdx].s1,
-          s3: filterStates[activeIdx].s2,
-          s4: filterStates[activeIdx].s3
+        // Apply filter using the optimized FilterCoefficients
+        audioData[c][audioIndex] = filterCoefficients.applyFilter(
+          input: src[c][i],
+          state: &filterStates[activeIdx]
         )
       }
     }
 
     // Store filter states back
     for (activeIdx, c) in activeChannels.enumerated() {
-      filterState[c][1] = filterStates[activeIdx].s1
-      filterState[c][2] = filterStates[activeIdx].s2
-      filterState[c][3] = filterStates[activeIdx].s3
-      filterState[c][4] = filterStates[activeIdx].s4
+      filterState.setQuadValues(channel: c, since: 1, filterStates[activeIdx])
     }
   }
 
@@ -1016,34 +1173,23 @@ public actor EBUR128State {
     // 順序處理所有通道
     for c in activeChannels {
       await processSingleChannelOptimized(
-        channel: c, channelData: src[c], framesToProcess: framesToProcess
+        channel: c,
+        channelData: src[c],
+        framesToProcess: framesToProcess
       )
     }
   }
 
   // 單通道優化處理，針對並行執行優化
   private func processSingleChannelOptimized(
-    channel c: Int, channelData: [Double], framesToProcess: Int
+    channel c: Int,
+    channelData: [Double],
+    framesToProcess: Int
   ) async {
     if framesToProcess <= 0 { return }
 
-    // 預計算濾波器係數，減少陣列查找
-    let a1 = filterCoefA[1]
-    let a2 = filterCoefA[2]
-    let a3 = filterCoefA[3]
-    let a4 = filterCoefA[4]
-
-    let b0 = filterCoefB[0]
-    let b1 = filterCoefB[1]
-    let b2 = filterCoefB[2]
-    let b3 = filterCoefB[3]
-    let b4 = filterCoefB[4]
-
-    // 使用局部變量減少記憶體訪問
-    var s1 = filterState[c][1]
-    var s2 = filterState[c][2]
-    var s3 = filterState[c][3]
-    var s4 = filterState[c][4]
+    // 使用 QuadState 減少記憶體訪問和管理複雜度
+    guard var state = filterState.getQuadValues(channel: c, since: 1) else { return }
 
     // 向量化處理大塊數據
     if framesToProcess >= 16 {
@@ -1059,22 +1205,16 @@ public actor EBUR128State {
           let frameIndexInt64 = Int64(processedFrames) + Int64(i)
           let frameIndex = Int(min(frameIndexInt64, Int64(Int.max)))
 
-          // IIR 濾波器計算
-          let v0 = channelData[frameIndex] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
-
           // 計算輸出索引，優化模除運算 - prevent overflow
           let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(frameIndex)
           let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
           let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
-          // 計算輸出
-          audioData[c][idx] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
-
-          // 更新狀態變量
-          s4 = s3
-          s3 = s2
-          s2 = s1
-          s1 = v0
+          // 應用濾波器使用優化的 FilterCoefficients
+          audioData[c][idx] = filterCoefficients.applyFilter(
+            input: channelData[frameIndex],
+            state: &state
+          )
         }
 
         processedFrames += currentBatchSize
@@ -1082,33 +1222,24 @@ public actor EBUR128State {
     } else {
       // 小塊數據使用直接處理
       for i in 0 ..< framesToProcess {
-        let v0 = channelData[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
-
         // Prevent overflow in audio index calculation
         let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
         let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
         let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
-        audioData[c][idx] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
-
-        s4 = s3
-        s3 = s2
-        s2 = s1
-        s1 = v0
+        audioData[c][idx] = filterCoefficients.applyFilter(
+          input: channelData[i],
+          state: &state
+        )
       }
     }
 
     // 寫回濾波器狀態
-    filterState[c][1] = s1
-    filterState[c][2] = s2
-    filterState[c][3] = s3
-    filterState[c][4] = s4
+    filterState.setQuadValues(channel: c, since: 1, state)
 
     // 處理非常小的值以避免浮點精度問題
-    for j in 1 ... 4 {
-      if abs(filterState[c][j]) < Double.leastNormalMagnitude {
-        filterState[c][j] = 0.0
-      }
+    if state.hasNearZeroValues {
+      filterState.setQuadValues(channel: c, since: 1, QuadState.zero)
     }
   }
 
@@ -1122,85 +1253,50 @@ public actor EBUR128State {
         tempBuffer = Array(repeating: 0.0, count: max(framesCount, 8192))
       }
 
+      // 獲取濾波器狀態
+      guard var state = filterState.getQuadValues(channel: c, since: 1) else { continue }
+
       // 使用優化的濾波器處理
       if framesCount >= 8 {
-        // 預計算濾波器係數項，減少重複計算
-        let a1 = filterCoefA[1]
-        let a2 = filterCoefA[2]
-        let a3 = filterCoefA[3]
-        let a4 = filterCoefA[4]
-
-        let b0 = filterCoefB[0]
-        let b1 = filterCoefB[1]
-        let b2 = filterCoefB[2]
-        let b3 = filterCoefB[3]
-        let b4 = filterCoefB[4]
-
         // 批次處理濾波器，減少狀態查找開銷
         let batchSize = 32
         for batchStart in stride(from: 0, to: framesCount, by: batchSize) {
           let batchEnd = min(batchStart + batchSize, framesCount)
 
           for i in batchStart ..< batchEnd {
-            // 計算 IIR 濾波器輸入
-            var v0 = channelData[i]
-            v0 -= a1 * filterState[c][1]
-            v0 -= a2 * filterState[c][2]
-            v0 -= a3 * filterState[c][3]
-            v0 -= a4 * filterState[c][4]
-
             // 計算輸出索引，減少模除運算 - prevent overflow
             let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
             let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
             let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
-            // 計算濾波器輸出
-            audioData[c][idx] = b0 * v0
-            audioData[c][idx] += b1 * filterState[c][1]
-            audioData[c][idx] += b2 * filterState[c][2]
-            audioData[c][idx] += b3 * filterState[c][3]
-            audioData[c][idx] += b4 * filterState[c][4]
-
-            // 優化狀態更新 - 使用位移而非逐個賦值
-            filterState[c][4] = filterState[c][3]
-            filterState[c][3] = filterState[c][2]
-            filterState[c][2] = filterState[c][1]
-            filterState[c][1] = v0
+            // 應用濾波器使用優化的 FilterCoefficients
+            audioData[c][idx] = filterCoefficients.applyFilter(
+              input: channelData[i],
+              state: &state
+            )
           }
         }
       } else {
         // 對於較小的幀數使用直接循環
         for i in 0 ..< framesCount {
-          var v0 = channelData[i]
-          v0 -= filterCoefA[1] * filterState[c][1]
-          v0 -= filterCoefA[2] * filterState[c][2]
-          v0 -= filterCoefA[3] * filterState[c][3]
-          v0 -= filterCoefA[4] * filterState[c][4]
-
           // Prevent overflow in audio index calculation
           let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
           let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
           let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
-          audioData[c][idx] = filterCoefB[0] * v0
-          audioData[c][idx] += filterCoefB[1] * filterState[c][1]
-          audioData[c][idx] += filterCoefB[2] * filterState[c][2]
-          audioData[c][idx] += filterCoefB[3] * filterState[c][3]
-          audioData[c][idx] += filterCoefB[4] * filterState[c][4]
-
-          // 更新濾波器狀態
-          filterState[c][4] = filterState[c][3]
-          filterState[c][3] = filterState[c][2]
-          filterState[c][2] = filterState[c][1]
-          filterState[c][1] = v0
+          audioData[c][idx] = filterCoefficients.applyFilter(
+            input: channelData[i],
+            state: &state
+          )
         }
       }
 
-      // 批次處理非常小的值以避免浮點精度問題
-      for j in 1 ... 4 {
-        if abs(filterState[c][j]) < Double.leastNormalMagnitude {
-          filterState[c][j] = 0.0
-        }
+      // 寫回濾波器狀態
+      filterState.setQuadValues(channel: c, since: 1, state)
+
+      // 處理非常小的值以避免浮點精度問題
+      if state.hasNearZeroValues {
+        filterState.setQuadValues(channel: c, since: 1, QuadState.zero)
       }
     }
   }
@@ -1224,35 +1320,18 @@ public actor EBUR128State {
 
   // 單通道濾波處理，針對並行執行優化
   private func processSingleChannelFilter(
-    channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int
+    channel c: Int,
+    srcPtr: UnsafePointer<Double>,
+    framesToProcess: Int
   ) async {
-    // 預計算濾波器係數，減少陣列查找
-    let a1 = filterCoefA[1]
-    let a2 = filterCoefA[2]
-    let a3 = filterCoefA[3]
-    let a4 = filterCoefA[4]
-
-    let b0 = filterCoefB[0]
-    let b1 = filterCoefB[1]
-    let b2 = filterCoefB[2]
-    let b3 = filterCoefB[3]
-    let b4 = filterCoefB[4]
-
     // 批次處理，減少循環開銷
     let batchSize = 64
+    guard var state = filterState.getQuadValues(channel: c, since: 1) else { return }
+
     for batchStart in stride(from: 0, to: framesToProcess, by: batchSize) {
       let batchEnd = min(batchStart + batchSize, framesToProcess)
 
-      // 預取濾波器狀態以減少重複訪問
-      var s1 = filterState[c][1]
-      var s2 = filterState[c][2]
-      var s3 = filterState[c][3]
-      var s4 = filterState[c][4]
-
       for i in batchStart ..< batchEnd {
-        // 計算濾波器輸入
-        let v0 = srcPtr[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
-
         // 計算輸出索引，優化模除運算 - prevent overflow with proper bounds checking
         let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
         let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
@@ -1261,92 +1340,61 @@ public actor EBUR128State {
         // 確保索引在範圍內
         guard idx >= 0, idx < audioData[c].count else { continue }
 
-        // 計算輸出樣本
-        audioData[c][idx] = b0 * v0 + b1 * s1 + b2 * s2 + b3 * s3 + b4 * s4
-
-        // 更新狀態變量
-        s4 = s3
-        s3 = s2
-        s2 = s1
-        s1 = v0
+        // 計算輸出樣本使用優化的 FilterCoefficients
+        audioData[c][idx] = filterCoefficients.applyFilter(
+          input: srcPtr[i],
+          state: &state
+        )
       }
-
-      // 寫回濾波器狀態
-      filterState[c][1] = s1
-      filterState[c][2] = s2
-      filterState[c][3] = s3
-      filterState[c][4] = s4
     }
 
+    // 寫回濾波器狀態
+    filterState.setQuadValues(channel: c, since: 1, state)
+
     // 處理非常小的值以避免浮點精度問題
-    for j in 1 ... 4 {
-      if abs(filterState[c][j]) < Double.leastNormalMagnitude {
-        filterState[c][j] = 0.0
-      }
+    if state.hasNearZeroValues {
+      filterState.setQuadValues(channel: c, since: 1, QuadState.zero)
     }
   }
 
   // 原始指針版本的濾波器（作為後備）
   private func filterSamplesPointers(_ src: [UnsafePointer<Double>], framesToProcess: Int) {
-    // 安全處理臨時緩衝區，避免懸掛指針問題
-    tempBuffer.withUnsafeMutableBufferPointer { v0Buffer in
-      for c in 0 ..< channels where channelMap[c] != .unused {
-        let srcPtr = src[c]
+    for c in 0 ..< channels where channelMap[c] != .unused {
+      let srcPtr = src[c]
 
-        // 步骤1: 提前计算滤波器系数相关部分
-        let a1Term = filterCoefA[1] * filterState[c][1]
-        let a2Term = filterCoefA[2] * filterState[c][2]
-        let a3Term = filterCoefA[3] * filterState[c][3]
-        let a4Term = filterCoefA[4] * filterState[c][4]
+      // 獲取濾波器狀態
+      guard var state = filterState.getQuadValues(channel: c, since: 1) else { continue }
 
-        // 步骤2: 使用 vDSP 计算第一部分
-        let count = min(framesToProcess, v0Buffer.count)
-        for i in 0 ..< count {
-          v0Buffer[i] = srcPtr[i] - a1Term - a2Term - a3Term - a4Term
-        }
+      let count = framesToProcess
 
-        // 步骤3: 计算输出并更新滤波器状态
-        for i in 0 ..< count {
-          // Prevent overflow in audio index calculation before modulo
-          let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
-          let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
-          let idx = audioIndex % audioData[c].count
+      // 步骤: 直接使用優化的 FilterCoefficients 处理
+      for i in 0 ..< count {
+        // Prevent overflow in audio index calculation before modulo
+        let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
+        let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
+        let idx = audioIndex % audioData[c].count
 
-          // 计算输出样本
-          audioData[c][idx] = filterCoefB[0] * v0Buffer[i]
-          audioData[c][idx] += filterCoefB[1] * filterState[c][1]
-          audioData[c][idx] += filterCoefB[2] * filterState[c][2]
-          audioData[c][idx] += filterCoefB[3] * filterState[c][3]
-          audioData[c][idx] += filterCoefB[4] * filterState[c][4]
+        // 計算輸出樣本使用優化的 FilterCoefficients
+        audioData[c][idx] = filterCoefficients.applyFilter(
+          input: srcPtr[i],
+          state: &state
+        )
+      }
 
-          // 更新滤波器状态
-          if i < framesToProcess - 1 {
-            filterState[c][4] = filterState[c][3]
-            filterState[c][3] = filterState[c][2]
-            filterState[c][2] = filterState[c][1]
-            filterState[c][1] = v0Buffer[i]
-          } else {
-            // 对最后一个样本特殊处理，确保状态正确
-            filterState[c][4] = filterState[c][3]
-            filterState[c][3] = filterState[c][2]
-            filterState[c][2] = filterState[c][1]
-            filterState[c][1] = v0Buffer[i]
-          }
-        }
+      // 寫回濾波器狀態
+      filterState.setQuadValues(channel: c, since: 1, state)
 
-        // 处理非常小的值以避免浮点精度问题
-        for j in 1 ... 4 {
-          if abs(filterState[c][j]) < Double.leastNormalMagnitude {
-            filterState[c][j] = 0.0
-          }
-        }
+      // 處理非常小的值以避免浮點精度問題
+      if state.hasNearZeroValues {
+        filterState.setQuadValues(channel: c, since: 1, QuadState.zero)
       }
     }
   }
 
   #if canImport(Accelerate)
   private func filterSamplesPointersUltraFast(
-    _ src: [UnsafePointer<Double>], framesToProcess: Int
+    _ src: [UnsafePointer<Double>],
+    framesToProcess: Int
   ) async {
     guard framesToProcess > 0 else { return }
 
@@ -1360,14 +1408,12 @@ public actor EBUR128State {
 
   // Ultra-fast single channel processing with maximum vectorization
   private func processChannelUltraFast(
-    channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int
+    channel c: Int,
+    srcPtr: UnsafePointer<Double>,
+    framesToProcess: Int
   ) async {
-    // Pre-cache all filter coefficients for maximum performance
-    let filterA = (filterCoefA[1], filterCoefA[2], filterCoefA[3], filterCoefA[4])
-    let filterB = (filterCoefB[0], filterCoefB[1], filterCoefB[2], filterCoefB[3], filterCoefB[4])
-
-    // Cache filter state for ultra-fast access
-    var state = (filterState[c][1], filterState[c][2], filterState[c][3], filterState[c][4])
+    // Cache filter state as QuadState for ultra-fast access
+    guard var state = filterState.getQuadValues(channel: c, since: 1) else { return }
 
     // Ultra-large batch processing for maximum efficiency
     let ultraBatchSize = min(framesToProcess, 1024)
@@ -1384,19 +1430,6 @@ public actor EBUR128State {
       for i in 0 ..< currentBatchSize {
         let inputSample = srcPtr[processedFrames + i]
 
-        // Ultra-optimized IIR filter calculation
-        var v0 = inputSample
-        v0 -= filterA.0 * state.0
-        v0 -= filterA.1 * state.1
-        v0 -= filterA.2 * state.2
-        v0 -= filterA.3 * state.3
-
-        var output = filterB.0 * v0
-        output += filterB.1 * state.0
-        output += filterB.2 * state.1
-        output += filterB.3 * state.2
-        output += filterB.4 * state.3
-
         // Ultra-fast index calculation with proper bounds checking
         let audioIndex = baseAudioIndex + processedFrames + i
         let wrappedIndex = audioIndex % audioFrameLimit
@@ -1404,30 +1437,23 @@ public actor EBUR128State {
         // Ensure index is within bounds and write directly to audioData array
         guard wrappedIndex >= 0, wrappedIndex < audioData[c].count else { continue }
 
-        // Fixed: Write directly to the audioData array, not local copy
-        audioData[c][wrappedIndex] = output
-
-        // Ultra-optimized state shift
-        state.3 = state.2
-        state.2 = state.1
-        state.1 = state.0
-        state.0 = v0
+        // Apply filter using ultra-optimized FilterCoefficients
+        audioData[c][wrappedIndex] = filterCoefficients.applyFilter(
+          input: inputSample,
+          state: &state
+        )
       }
 
       processedFrames += currentBatchSize
     }
 
     // Write back cached state
-    filterState[c][1] = state.0
-    filterState[c][2] = state.1
-    filterState[c][3] = state.2
-    filterState[c][4] = state.3
+    filterState.setQuadValues(channel: c, since: 1, state)
 
-    // Denormal cleanup
-    if abs(state.0) < Double.leastNormalMagnitude { filterState[c][1] = 0.0 }
-    if abs(state.1) < Double.leastNormalMagnitude { filterState[c][2] = 0.0 }
-    if abs(state.2) < Double.leastNormalMagnitude { filterState[c][3] = 0.0 }
-    if abs(state.3) < Double.leastNormalMagnitude { filterState[c][4] = 0.0 }
+    // Denormal cleanup using QuadState convenience method
+    if state.hasNearZeroValues {
+      filterState.setQuadValues(channel: c, since: 1, QuadState.zero)
+    }
   }
   #endif
 
