@@ -101,9 +101,12 @@ struct EBUR128JoinedTests {
 
           // More frequent progress reporting for debugging
           if progressReports.count % 5 == 0 || progressReports.count <= 20 {
-            print(
-              "Progress: \(String(format: "%.2f", progress.percentage))% (\(progress.framesProcessed)/\(progress.totalFrames) frames) - Current loudness: \(String(format: "%.2f", progress.currentLoudness ?? -999.0)) LUFS"
-            )
+            let percentage = String(format: "%.2f", progress.percentage)
+            let frames = "\(progress.framesProcessed)/\(progress.totalFrames)"
+            let loudness = String(format: "%.2f", progress.currentLoudness ?? -999.0)
+            let message =
+              "Progress: \(percentage)% (\(frames) frames) - Current loudness: \(loudness) LUFS"
+            print(message)
           }
         }
       }
@@ -129,22 +132,32 @@ struct EBUR128JoinedTests {
         let lastNonZeroLoudness = await progressTracker.lastNonZeroLoudness
 
         print("\n=== Real-World Audio Processing Results ===")
-        print("Processing time: \(String(format: "%.4f", processingTime)) seconds")
-        print("Integrated Loudness: \(String(format: "%.3f", result.integratedLoudness)) LUFS")
-        print("Loudness Range: \(String(format: "%.2f", result.loudnessRange)) LU")
-        print("Maximum True Peak: \(String(format: "%.3f", result.maxTruePeak)) dBFS")
+        let formattedTime = String(format: "%.4f", processingTime)
+        print("Processing time: \(formattedTime) seconds")
+
+        let formattedLoudness = String(format: "%.3f", result.integratedLoudness)
+        print("Integrated Loudness: \(formattedLoudness) LUFS")
+
+        let formattedRange = String(format: "%.2f", result.loudnessRange)
+        print("Loudness Range: \(formattedRange) LU")
+
+        let formattedPeak = String(format: "%.3f", result.maxTruePeak)
+        print("Maximum True Peak: \(formattedPeak) dBFS")
         print("Progress reports received: \(progressReports.count)")
-        print(
-          "Last non-zero loudness during processing: \(lastNonZeroLoudness.map { String(format: "%.3f", $0) } ?? "None")"
-        )
+
+        let loudnessText = lastNonZeroLoudness.map { String(format: "%.3f", $0) } ?? "None"
+        let loudnessMessage = "Last non-zero loudness during processing: \(loudnessText)"
+        print(loudnessMessage)
 
         if let firstProgress = progressReports.first, let lastProgress = progressReports.last {
-          print(
-            "Progress range: \(String(format: "%.2f", firstProgress.percentage))% to \(String(format: "%.2f", lastProgress.percentage))%"
-          )
-          print(
+          let firstPercentage = String(format: "%.2f", firstProgress.percentage)
+          let lastPercentage = String(format: "%.2f", lastProgress.percentage)
+          let progressRange = "Progress range: \(firstPercentage)% to \(lastPercentage)%"
+          print(progressRange)
+
+          let finalDetails =
             "Final progress details: \(lastProgress.framesProcessed) / \(lastProgress.totalFrames) frames processed"
-          )
+          print(finalDetails)
         }
 
         // Verify basic processing succeeded
@@ -165,7 +178,10 @@ struct EBUR128JoinedTests {
           // (e.g., very short files, or files where most content is below the gating threshold)
           if result.integratedLoudness == -Double.infinity {
             print(
-              "⚠️  Integrated loudness is -inf despite valid processing - this may be normal for short files or content below gating threshold"
+              "⚠️  Integrated loudness is -inf despite valid processing"
+            )
+            print(
+              "   (this may be normal for short files or content below gating threshold)"
             )
             print(
               "🔍 This suggests the audio content doesn't meet EBU R128 requirements for integrated loudness measurement"
@@ -215,9 +231,9 @@ struct EBUR128JoinedTests {
             lastProgress.percentage >= 95.0,
             "Final progress should be close to 100% (at least 95%)"
           )
-          print(
-            "Progress test passed with final progress: \(String(format: "%.2f", lastProgress.percentage))%"
-          )
+          let finalPercentage = String(format: "%.2f", lastProgress.percentage)
+          let progressMessage = "Progress test passed with final progress: \(finalPercentage)%"
+          print(progressMessage)
         }
 
         // Performance benchmark for real audio
@@ -229,16 +245,17 @@ struct EBUR128JoinedTests {
 
         if processingTime > 0 {
           let throughputMBps = Double(fileSize) / (processingTime * 1024 * 1024)
-          print("Processing throughput: \(String(format: "%.2f", throughputMBps)) MB/s")
+          let formattedThroughput = String(format: "%.2f", throughputMBps)
+          print("Processing throughput: \(formattedThroughput) MB/s")
 
           // Estimate real-time processing ratio (rough estimate)
           if let lastProgress = progressReports.last, lastProgress.totalFrames > 0 {
             // Assuming typical sample rates, estimate duration
             let estimatedDuration = Double(lastProgress.totalFrames) / 44100.0 // Conservative estimate
             let realTimeRatio = estimatedDuration / processingTime
-            print(
-              "Estimated real-time processing ratio: \(String(format: "%.1f", realTimeRatio))x"
-            )
+            let ratioText = String(format: "%.1f", realTimeRatio)
+            let ratioMessage = "Estimated real-time processing ratio: \(ratioText)x"
+            print(ratioMessage)
           }
         }
 
