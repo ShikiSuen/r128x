@@ -139,7 +139,7 @@ public actor ExtAudioProcessor {
   /// - Parameter taskTrackingVM: Progress view model for stream-based updates
   /// - Returns: MeasuredResult containing (integrated loudness, loudness range, maximum true peak), etc.
   public func processAudioFile(
-    at audioFilePath: String,
+    at audioFileURL: URL,
     fileId: String? = nil,
     progressCallback: ((ProcessingProgress) -> Void)? = nil,
     taskTrackingVM: TaskTrackingVMProtocol? = nil
@@ -156,11 +156,11 @@ public actor ExtAudioProcessor {
     }
 
     // Check for RF64 format and provide helpful error messages
-    if RF64Support.isRF64File(at: audioFilePath) {
-      let supportStatus = RF64Support.getRF64SupportStatus(for: audioFilePath)
+    if RF64Support.isRF64File(at: audioFileURL) {
+      let supportStatus = RF64Support.getRF64SupportStatus(for: audioFileURL)
 
       // Test if CoreAudio supports this RF64 file
-      if !RF64Support.testCoreAudioRF64Support(at: audioFilePath) {
+      if !RF64Support.testCoreAudioRF64Support(at: audioFileURL) {
         throw NSError(
           domain: "ExtAudioProcessor",
           code: -1,
@@ -172,15 +172,12 @@ public actor ExtAudioProcessor {
       }
     }
 
-    // Create URL for audio file
-    let fileURL = URL(fileURLWithPath: audioFilePath)
-
     var audioFile: ExtAudioFileRef?
-    var status = ExtAudioFileOpenURL(fileURL as CFURL, &audioFile)
+    var status = ExtAudioFileOpenURL(audioFileURL as CFURL, &audioFile)
     guard status == noErr, let audioFile = audioFile else {
       // Provide RF64-specific error message if this is an RF64 file
-      if RF64Support.isRF64File(at: audioFilePath) {
-        let supportStatus = RF64Support.getRF64SupportStatus(for: audioFilePath)
+      if RF64Support.isRF64File(at: audioFileURL) {
+        let supportStatus = RF64Support.getRF64SupportStatus(for: audioFileURL)
         throw NSError(
           domain: "ExtAudioProcessor",
           code: Int(status),

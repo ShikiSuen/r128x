@@ -45,7 +45,7 @@ extension TaskEntry {
     do {
       let measured = try await ExtAudioProcessor()
         .processAudioFile(
-          at: fileNamePath,
+          at: url,
           fileId: id.uuidString,
           progressCallback: { @Sendable _ in
             // Could potentially update UI here with progress, but for now just process

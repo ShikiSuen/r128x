@@ -45,11 +45,10 @@ public enum RF64Support {
   // MARK: - Public Interface
 
   /// Check if a file is in RF64 format
-  /// - Parameter filePath: Path to the audio file
+  /// - Parameter fileURL: URL to the audio file
   /// - Returns: True if the file is RF64 format, false otherwise
-  public static func isRF64File(at filePath: String) -> Bool {
+  public static func isRF64File(at fileURL: URL) -> Bool {
     do {
-      let fileURL = URL(fileURLWithPath: filePath)
       let data = try Data(contentsOf: fileURL, options: [.mappedIfSafe])
 
       guard data.count >= 12 else { return false }
@@ -62,14 +61,13 @@ public enum RF64Support {
   }
 
   /// Attempt to test RF64 support in CoreAudio
-  /// - Parameter filePath: Path to an RF64 file
+  /// - Parameter fileURL: URL to an RF64 file
   /// - Returns: True if CoreAudio can handle the RF64 file natively
   @available(macOS 10.5, iOS 2.0, *)
-  public static func testCoreAudioRF64Support(at filePath: String) -> Bool {
+  public static func testCoreAudioRF64Support(at fileURL: URL) -> Bool {
     #if canImport(AudioToolbox)
-    guard isRF64File(at: filePath) else { return false }
+    guard isRF64File(at: fileURL) else { return false }
 
-    let fileURL = URL(fileURLWithPath: filePath)
     var audioFile: ExtAudioFileRef?
     let status = ExtAudioFileOpenURL(fileURL as CFURL, &audioFile)
 
@@ -85,12 +83,11 @@ public enum RF64Support {
   }
 
   /// Parse RF64 file header and extract format information
-  /// - Parameter filePath: Path to the RF64 file
+  /// - Parameter fileURL: URL to the RF64 file
   /// - Returns: Tuple containing (dataSize, sampleCount, isValidRF64)
-  public static func parseRF64Info(at filePath: String) throws -> (
+  public static func parseRF64Info(at fileURL: URL) throws -> (
     dataSize: UInt64, sampleCount: UInt64, isValidRF64: Bool
   ) {
-    let fileURL = URL(fileURLWithPath: filePath)
     let fileHandle = try FileHandle(forReadingFrom: fileURL)
     defer { fileHandle.closeFile() }
 
@@ -150,19 +147,19 @@ public enum RF64Support {
   }
 
   /// Get a user-friendly error message for RF64 issues
-  /// - Parameter filePath: Path to the RF64 file
+  /// - Parameter fileURL: URL to the RF64 file
   /// - Returns: A descriptive error message about RF64 support status
-  public static func getRF64SupportStatus(for filePath: String) -> String {
-    guard isRF64File(at: filePath) else {
+  public static func getRF64SupportStatus(for fileURL: URL) -> String {
+    guard isRF64File(at: fileURL) else {
       return "File is not in RF64 format"
     }
 
     #if canImport(AudioToolbox)
-    if testCoreAudioRF64Support(at: filePath) {
+    if testCoreAudioRF64Support(at: fileURL) {
       return "RF64 format supported by CoreAudio on this system"
     } else {
       do {
-        let info = try parseRF64Info(at: filePath)
+        let info = try parseRF64Info(at: fileURL)
         let dataSizeGB = Double(info.dataSize) / (1024.0 * 1024.0 * 1024.0)
         return String(
           format:
