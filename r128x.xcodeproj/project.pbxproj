@@ -399,7 +399,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "r128x-swiftui/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "r128x-swiftui";
+				INFOPLIST_KEY_CFBundleDisplayName = r128x;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 Manuel Naudin & Shiki Suen. All rights reserved.";
@@ -464,7 +464,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "r128x-swiftui/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "r128x-swiftui";
+				INFOPLIST_KEY_CFBundleDisplayName = r128x;
+				"INFOPLIST_KEY_CFBundleDisplayName[sdk=iphoneos*]" = r128x;
+				"INFOPLIST_KEY_CFBundleDisplayName[sdk=macosx*]" = "r128x-SwiftUI";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2023 Manuel Naudin & Shiki Suen. All rights reserved.";
