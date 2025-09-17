@@ -6,8 +6,8 @@
 import Foundation
 
 #if canImport(Accelerate)
-import Accelerate
-import simd
+  import Accelerate
+  import simd
 #endif
 
 // MARK: - Array extension for concurrent processing
@@ -26,40 +26,40 @@ extension Array where Element: Sendable {
 // MARK: - Cross-platform vDSP fallbacks
 
 #if !canImport(Accelerate)
-// Fallback implementations for platforms without Accelerate
-private func vDSP_maxmgvD(
-  _ input: UnsafePointer<Double>, _ stride: Int, _ result: inout Double, _ count: Int
-) {
-  result = 0.0
-  for i in 0 ..< count {
-    let value = abs(input[i * stride])
-    if value > result {
-      result = value
+  // Fallback implementations for platforms without Accelerate
+  private func vDSP_maxmgvD(
+    _ input: UnsafePointer<Double>, _ stride: Int, _ result: inout Double, _ count: Int
+  ) {
+    result = 0.0
+    for i in 0..<count {
+      let value = abs(input[i * stride])
+      if value > result {
+        result = value
+      }
     }
   }
-}
 
-private func vDSP_vspdp(
-  _ input: UnsafePointer<Float>,
-  _ inputStride: Int,
-  _ output: UnsafeMutablePointer<Double>,
-  _ outputStride: Int,
-  _ count: Int
-) {
-  for i in 0 ..< count {
-    output[i * outputStride] = Double(input[i * inputStride])
+  private func vDSP_vspdp(
+    _ input: UnsafePointer<Float>,
+    _ inputStride: Int,
+    _ output: UnsafeMutablePointer<Double>,
+    _ outputStride: Int,
+    _ count: Int
+  ) {
+    for i in 0..<count {
+      output[i * outputStride] = Double(input[i * inputStride])
+    }
   }
-}
 
-private func vDSP_svesqD(_ input: [Double], _ stride: Int, _ result: inout Double, _ count: Int) {
-  result = 0.0
-  for i in 0 ..< count {
-    let value = input[i * stride]
-    result += value * value
+  private func vDSP_svesqD(_ input: [Double], _ stride: Int, _ result: inout Double, _ count: Int) {
+    result = 0.0
+    for i in 0..<count {
+      let value = input[i * stride]
+      result += value * value
+    }
   }
-}
 
-private typealias vDSP_Length = Int
+  private typealias vDSP_Length = Int
 #endif
 
 // MARK: - EBUR128Channel
@@ -237,7 +237,7 @@ public actor EBUR128State {
     self.mode = mode
 
     // 初始化通道映射
-    self.channelMap = (0 ..< channels).map {
+    self.channelMap = (0..<channels).map {
       switch $0 {
       case 0: return .left
       case 1: return .right
@@ -267,7 +267,7 @@ public actor EBUR128State {
       // Use Int64 to prevent overflow in addition operation
       let adjustedFramesInt64 =
         Int64(audioDataFrames) + Int64(samplesIn100ms)
-          - Int64(audioDataFrames % Int(samplesIn100ms))
+        - Int64(audioDataFrames % Int(samplesIn100ms))
       self.audioDataFrames = Int(min(adjustedFramesInt64, Int64(Int.max)))
     }
     self.audioData = Array(
@@ -321,8 +321,8 @@ public actor EBUR128State {
       throw EBUR128Error.duplicatedTypesAcrossChannels
     }
 
-    let channelIndicesToModify = beginningChannelIndex ..< (beginningChannelIndex + values.count)
-    let channelIndicesAllowed = 0 ..< channels
+    let channelIndicesToModify = beginningChannelIndex..<(beginningChannelIndex + values.count)
+    let channelIndicesAllowed = 0..<channels
 
     guard channelIndicesAllowed.contains(channelIndicesToModify) else {
       throw EBUR128Error.invalidChannelIndex
@@ -350,8 +350,8 @@ public actor EBUR128State {
     guard frames > 0 else { return }
 
     // Sample-position-first peak calculation for better cache locality
-    for i in 0 ..< frames {
-      for c in 0 ..< channels {
+    for i in 0..<frames {
+      for c in 0..<channels {
         let absValue = abs(src[c][i])
         if absValue > prevSamplePeak[c] { prevSamplePeak[c] = absValue }
         if absValue > samplePeak[c] { samplePeak[c] = absValue }
@@ -379,8 +379,9 @@ public actor EBUR128State {
       if shortTermFrameCounter >= Int(samplesIn100ms) * 30 {
         var stEnergy: Double?
         if energyShortTermSync(output: &stEnergy),
-           let energy = stEnergy,
-           energy >= histogramEnergyBoundaries[0] {
+          let energy = stEnergy,
+          energy >= histogramEnergyBoundaries[0]
+        {
           if useHistogram {
             let index = EBUR128State.findHistogramIndex(energy)
             shortTermBlockEnergyHistogram[index] += 1
@@ -410,38 +411,39 @@ public actor EBUR128State {
 
   // 添加一個高效方法，可以直接處理原始指標
   public func addFramesPointers(_ srcWrapped: [UniquePointer<Double>], framesToProcess: Int)
-    async throws {
+    async throws
+  {
     guard srcWrapped.count == channels else { throw EBUR128Error.invalidChannelIndex }
     let src = srcWrapped.map(\.pointer)
 
     // 優化 sample peak 計算
-    for c in 0 ..< channels {
+    for c in 0..<channels {
       prevSamplePeak[c] = 0.0
       prevTruePeak[c] = 0.0
 
       // 使用 vDSP 快速計算峰值
       if framesToProcess > 0 {
         #if canImport(Accelerate)
-        var peak = 0.0
-        vDSP_maxmgvD(src[c], 1, &peak, vDSP_Length(framesToProcess))
-        prevSamplePeak[c] = peak
+          var peak = 0.0
+          vDSP_maxmgvD(src[c], 1, &peak, vDSP_Length(framesToProcess))
+          prevSamplePeak[c] = peak
         #else
-        // 手動計算峰值作為後備
-        var peak = 0.0
-        for i in 0 ..< framesToProcess {
-          let val = abs(src[c][i])
-          if val > peak { peak = val }
-        }
-        prevSamplePeak[c] = peak
+          // 手動計算峰值作為後備
+          var peak = 0.0
+          for i in 0..<framesToProcess {
+            let val = abs(src[c][i])
+            if val > peak { peak = val }
+          }
+          prevSamplePeak[c] = peak
         #endif
       }
     }
 
     // 處理音頻幀 - 直接使用優化的 filterSamplesPointers 方法
     #if canImport(Accelerate)
-    await filterSamplesPointersUltraFast(src, framesToProcess: framesToProcess)
+      await filterSamplesPointersUltraFast(src, framesToProcess: framesToProcess)
     #else
-    await filterSamplesPointersOptimized(src, framesToProcess: framesToProcess)
+      await filterSamplesPointersOptimized(src, framesToProcess: framesToProcess)
     #endif
 
     // Prevent overflow in audioDataIndex calculation
@@ -460,7 +462,8 @@ public actor EBUR128State {
       if shortTermFrameCounter >= Int(samplesIn100ms) * 30 {
         var stEnergy: Double?
         if await energyShortTerm(output: &stEnergy),
-           stEnergy! >= histogramEnergyBoundaries[0] {
+          stEnergy! >= histogramEnergyBoundaries[0]
+        {
           if useHistogram {
             let index = EBUR128State.findHistogramIndex(stEnergy!)
             shortTermBlockEnergyHistogram[index] += 1
@@ -468,7 +471,7 @@ public actor EBUR128State {
             shortTermBlockList.add(stEnergy!)
           }
         }
-        shortTermFrameCounter -= Int(samplesIn100ms) * 10 // 滑動窗口：減去1秒，保持2秒重疊
+        shortTermFrameCounter -= Int(samplesIn100ms) * 10  // 滑動窗口：減去1秒，保持2秒重疊
       }
     }
 
@@ -493,9 +496,9 @@ public actor EBUR128State {
     if useHistogram {
       let startIndex =
         relativeThreshold < histogramEnergyBoundaries[0]
-          ? 0 : EBUR128State.findHistogramIndex(relativeThreshold)
+        ? 0 : EBUR128State.findHistogramIndex(relativeThreshold)
 
-      for i in startIndex ..< 1000 {
+      for i in startIndex..<1000 {
         sum += Double(blockEnergyHistogram[i]) * histogramEnergies[i]
         count += blockEnergyHistogram[i]
       }
@@ -522,7 +525,8 @@ public actor EBUR128State {
 
   public func loudnessMomentary() -> Double {
     var energy: Double?
-    if energyInIntervalSync(intervalFrames: Int(samplesIn100ms) * 4, output: &energy), energy! > 0.0 {
+    if energyInIntervalSync(intervalFrames: Int(samplesIn100ms) * 4, output: &energy), energy! > 0.0
+    {
       return EBUR128State.energyToLoudness(energy!)
     }
     return -Double.infinity
@@ -555,7 +559,7 @@ public actor EBUR128State {
     var stlSize = 0
 
     if useHistogram {
-      for i in 0 ..< 1000 {
+      for i in 0..<1000 {
         stlPower += Double(shortTermBlockEnergyHistogram[i]) * histogramEnergies[i]
         stlSize += shortTermBlockEnergyHistogram[i]
       }
@@ -586,7 +590,7 @@ public actor EBUR128State {
       }
 
       var count = 0
-      for i in startIndex ..< 1000 {
+      for i in startIndex..<1000 {
         count += shortTermBlockEnergyHistogram[i]
       }
 
@@ -676,7 +680,7 @@ public actor EBUR128State {
   // 直方圖能量邊界和能量值
   private var histogramEnergies: [Double] = {
     var energies = [Double](repeating: 0.0, count: 1000)
-    for i in 0 ..< 1000 {
+    for i in 0..<1000 {
       energies[i] = pow(10.0, (Double(i) / 10.0 - 69.95 + 0.691) / 10.0)
     }
     return energies
@@ -685,7 +689,7 @@ public actor EBUR128State {
   private var histogramEnergyBoundaries: [Double] = {
     var boundaries = [Double](repeating: 0.0, count: 1001)
     boundaries[0] = pow(10.0, (-70.0 + 0.691) / 10.0)
-    for i in 1 ..< 1001 {
+    for i in 1..<1001 {
       boundaries[i] = pow(10.0, (Double(i) / 10.0 - 70.0 + 0.691) / 10.0)
     }
     return boundaries
@@ -799,7 +803,7 @@ public actor EBUR128State {
     guard framesToProcess > 0 else { return }
 
     // Identify active channels upfront
-    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
+    let activeChannels = (0..<channels).filter { channelMap[$0] != .unused }
     guard !activeChannels.isEmpty else { return }
 
     // Precompute filter coefficients once
@@ -821,17 +825,19 @@ public actor EBUR128State {
     let baseAudioIndex = audioDataIndex / channels
 
     // Process sample-by-sample across all active channels
-    for i in 0 ..< framesToProcess {
+    for i in 0..<framesToProcess {
       let audioIndex = (baseAudioIndex + i) % audioDataFrames
 
       // Process all active channels at this sample position
       for (activeIdx, c) in activeChannels.enumerated() {
         // IIR filter calculation
-        let v0 = src[c][i] - a1 * filterStates[activeIdx].s1 - a2 * filterStates[activeIdx].s2
+        let v0 =
+          src[c][i] - a1 * filterStates[activeIdx].s1 - a2 * filterStates[activeIdx].s2
           - a3 * filterStates[activeIdx].s3 - a4 * filterStates[activeIdx].s4
 
         // Calculate output
-        audioData[c][audioIndex] = b0 * v0 + b1 * filterStates[activeIdx].s1 + b2 * filterStates[activeIdx].s2
+        audioData[c][audioIndex] =
+          b0 * v0 + b1 * filterStates[activeIdx].s1 + b2 * filterStates[activeIdx].s2
           + b3 * filterStates[activeIdx].s3 + b4 * filterStates[activeIdx].s4
 
         // Update filter state
@@ -859,7 +865,7 @@ public actor EBUR128State {
 
     // 直接計算所有活躍通道的能量總和
     var totalSum = 0.0
-    for c in 0 ..< channels where channelMap[c] != .unused {
+    for c in 0..<channels where channelMap[c] != .unused {
       totalSum += calculateChannelSumSync(
         channel: c,
         currentFrameIndex: currentFrameIndex,
@@ -887,7 +893,8 @@ public actor EBUR128State {
 
   // 同步單通道能量計算
   private func calculateChannelSumSync(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int)
-    -> Double {
+    -> Double
+  {
     var channelSum = 0.0
 
     if currentFrameIndex < framesPerBlock {
@@ -899,29 +906,29 @@ public actor EBUR128State {
       // 第一段
       if firstPartFrames > 0 {
         #if canImport(Accelerate)
-        var firstSum = 0.0
-        vDSP_svesqD(audioData[c], 1, &firstSum, vDSP_Length(firstPartFrames))
-        channelSum += firstSum
+          var firstSum = 0.0
+          vDSP_svesqD(audioData[c], 1, &firstSum, vDSP_Length(firstPartFrames))
+          channelSum += firstSum
         #else
-        for i in 0 ..< firstPartFrames {
-          channelSum += audioData[c][i] * audioData[c][i]
-        }
+          for i in 0..<firstPartFrames {
+            channelSum += audioData[c][i] * audioData[c][i]
+          }
         #endif
       }
 
       // 第二段
       if secondPartFrames > 0, secondPartStart < audioDataFrames {
         #if canImport(Accelerate)
-        var secondSum = 0.0
-        let count = min(secondPartFrames, audioDataFrames - secondPartStart)
-        let secondPartData = Array(audioData[c][secondPartStart ..< (secondPartStart + count)])
-        vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(count))
-        channelSum += secondSum
+          var secondSum = 0.0
+          let count = min(secondPartFrames, audioDataFrames - secondPartStart)
+          let secondPartData = Array(audioData[c][secondPartStart..<(secondPartStart + count)])
+          vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(count))
+          channelSum += secondSum
         #else
-        let endIndex = min(secondPartStart + secondPartFrames, audioDataFrames)
-        for i in secondPartStart ..< endIndex {
-          channelSum += audioData[c][i] * audioData[c][i]
-        }
+          let endIndex = min(secondPartStart + secondPartFrames, audioDataFrames)
+          for i in secondPartStart..<endIndex {
+            channelSum += audioData[c][i] * audioData[c][i]
+          }
         #endif
       }
     } else {
@@ -933,14 +940,14 @@ public actor EBUR128State {
       }
 
       #if canImport(Accelerate)
-      var blockSum = 0.0
-      let blockData = Array(audioData[c][startIndex ..< currentFrameIndex])
-      vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
-      channelSum = blockSum
+        var blockSum = 0.0
+        let blockData = Array(audioData[c][startIndex..<currentFrameIndex])
+        vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
+        channelSum = blockSum
       #else
-      for i in startIndex ..< currentFrameIndex {
-        channelSum += audioData[c][i] * audioData[c][i]
-      }
+        for i in startIndex..<currentFrameIndex {
+          channelSum += audioData[c][i] * audioData[c][i]
+        }
       #endif
     }
 
@@ -969,7 +976,7 @@ public actor EBUR128State {
 
   // Direct true peak calculation - simplified for performance
   private func calculateTruePeakDirect(_ src: [[Double]]) {
-    for c in 0 ..< channels where channelMap[c] != .unused {
+    for c in 0..<channels where channelMap[c] != .unused {
       let buf = src[c]
       guard !buf.isEmpty else { continue }
 
@@ -977,7 +984,7 @@ public actor EBUR128State {
 
       // Simple upsampling and peak detection - match C implementation
       if buf.count > 1 {
-        for i in 0 ..< buf.count - 1 {
+        for i in 0..<buf.count - 1 {
           let s0 = buf[i]
           let s1 = buf[i + 1]
 
@@ -1007,7 +1014,7 @@ public actor EBUR128State {
   // 並行優化版本的濾波器 - 使用順序處理以避免 Swift 6.1 並發問題
   private func filterSamplesOptimized(_ src: [[Double]], framesToProcess: Int) async {
     // 獲取活躍通道列表
-    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
+    let activeChannels = (0..<channels).filter { channelMap[$0] != .unused }
 
     // 順序處理所有通道
     for c in activeChannels {
@@ -1050,7 +1057,7 @@ public actor EBUR128State {
         let remainingFrames = framesToProcess - processedFrames
         let currentBatchSize = min(batchSize, remainingFrames)
 
-        for i in 0 ..< currentBatchSize {
+        for i in 0..<currentBatchSize {
           // Prevent overflow in frame index calculation
           let frameIndexInt64 = Int64(processedFrames) + Int64(i)
           let frameIndex = Int(min(frameIndexInt64, Int64(Int.max)))
@@ -1077,7 +1084,7 @@ public actor EBUR128State {
       }
     } else {
       // 小塊數據使用直接處理
-      for i in 0 ..< framesToProcess {
+      for i in 0..<framesToProcess {
         let v0 = channelData[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
 
         // Prevent overflow in audio index calculation
@@ -1101,7 +1108,7 @@ public actor EBUR128State {
     filterState[c][4] = s4
 
     // 處理非常小的值以避免浮點精度問題
-    for j in 1 ... 4 {
+    for j in 1...4 {
       if abs(filterState[c][j]) < Double.leastNormalMagnitude {
         filterState[c][j] = 0.0
       }
@@ -1109,7 +1116,7 @@ public actor EBUR128State {
   }
 
   private func filterSamples(_ src: [[Double]]) {
-    for c in 0 ..< channels where channelMap[c] != .unused {
+    for c in 0..<channels where channelMap[c] != .unused {
       let channelData = src[c]
       let framesCount = channelData.count
 
@@ -1137,13 +1144,11 @@ public actor EBUR128State {
         for batchStart in stride(from: 0, to: framesCount, by: batchSize) {
           let batchEnd = min(batchStart + batchSize, framesCount)
 
-          for i in batchStart ..< batchEnd {
+          for i in batchStart..<batchEnd {
             // 計算 IIR 濾波器輸入
-            let v0 = channelData[i] -
-              a1 * filterState[c][1] -
-              a2 * filterState[c][2] -
-              a3 * filterState[c][3] -
-              a4 * filterState[c][4]
+            let v0 =
+              channelData[i] - a1 * filterState[c][1] - a2 * filterState[c][2] - a3
+              * filterState[c][3] - a4 * filterState[c][4]
 
             // 計算輸出索引，減少模除運算 - prevent overflow
             let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
@@ -1151,11 +1156,9 @@ public actor EBUR128State {
             let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
             // 計算濾波器輸出
-            audioData[c][idx] = b0 * v0 +
-              b1 * filterState[c][1] +
-              b2 * filterState[c][2] +
-              b3 * filterState[c][3] +
-              b4 * filterState[c][4]
+            audioData[c][idx] =
+              b0 * v0 + b1 * filterState[c][1] + b2 * filterState[c][2] + b3 * filterState[c][3]
+              + b4 * filterState[c][4]
 
             // 優化狀態更新 - 使用位移而非逐個賦值
             filterState[c][4] = filterState[c][3]
@@ -1166,23 +1169,20 @@ public actor EBUR128State {
         }
       } else {
         // 對於較小的幀數使用直接循環
-        for i in 0 ..< framesCount {
-          let v0 = channelData[i] -
-            filterCoefA[1] * filterState[c][1] -
-            filterCoefA[2] * filterState[c][2] -
-            filterCoefA[3] * filterState[c][3] -
-            filterCoefA[4] * filterState[c][4]
+        for i in 0..<framesCount {
+          let v0 =
+            channelData[i] - filterCoefA[1] * filterState[c][1] - filterCoefA[2] * filterState[c][2]
+            - filterCoefA[3] * filterState[c][3] - filterCoefA[4] * filterState[c][4]
 
           // Prevent overflow in audio index calculation
           let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
           let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
           let idx = audioIndex < audioDataFrames ? audioIndex : audioIndex - audioDataFrames
 
-          audioData[c][idx] = filterCoefB[0] * v0 +
-            filterCoefB[1] * filterState[c][1] +
-            filterCoefB[2] * filterState[c][2] +
-            filterCoefB[3] * filterState[c][3] +
-            filterCoefB[4] * filterState[c][4]
+          audioData[c][idx] =
+            filterCoefB[0] * v0 + filterCoefB[1] * filterState[c][1] + filterCoefB[2]
+            * filterState[c][2] + filterCoefB[3] * filterState[c][3] + filterCoefB[4]
+            * filterState[c][4]
 
           // 更新濾波器狀態
           filterState[c][4] = filterState[c][3]
@@ -1193,7 +1193,7 @@ public actor EBUR128State {
       }
 
       // 批次處理非常小的值以避免浮點精度問題
-      for j in 1 ... 4 {
+      for j in 1...4 {
         if abs(filterState[c][j]) < Double.leastNormalMagnitude {
           filterState[c][j] = 0.0
         }
@@ -1203,14 +1203,15 @@ public actor EBUR128State {
 
   // 優化版本的濾波器 - 移除並行處理以避免 Swift 6.1 的 UnsafePointer 並發問題
   private func filterSamplesPointersOptimized(_ src: [UnsafePointer<Double>], framesToProcess: Int)
-    async {
+    async
+  {
     // 確保臨時緩衝區足夠大
     if tempBuffer.count < framesToProcess {
       tempBuffer = Array(repeating: 0.0, count: max(framesToProcess, 8192))
     }
 
     // 獲取活躍通道列表
-    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
+    let activeChannels = (0..<channels).filter { channelMap[$0] != .unused }
 
     // 順序處理所有通道以避免 UnsafePointer 的並發問題
     for c in activeChannels {
@@ -1245,7 +1246,7 @@ public actor EBUR128State {
       var s3 = filterState[c][3]
       var s4 = filterState[c][4]
 
-      for i in batchStart ..< batchEnd {
+      for i in batchStart..<batchEnd {
         // 計算濾波器輸入
         let v0 = srcPtr[i] - a1 * s1 - a2 * s2 - a3 * s3 - a4 * s4
 
@@ -1275,7 +1276,7 @@ public actor EBUR128State {
     }
 
     // 處理非常小的值以避免浮點精度問題
-    for j in 1 ... 4 {
+    for j in 1...4 {
       if abs(filterState[c][j]) < Double.leastNormalMagnitude {
         filterState[c][j] = 0.0
       }
@@ -1286,7 +1287,7 @@ public actor EBUR128State {
   private func filterSamplesPointers(_ src: [UnsafePointer<Double>], framesToProcess: Int) {
     // 安全處理臨時緩衝區，避免懸掛指針問題
     tempBuffer.withUnsafeMutableBufferPointer { v0Buffer in
-      for c in 0 ..< channels where channelMap[c] != .unused {
+      for c in 0..<channels where channelMap[c] != .unused {
         let srcPtr = src[c]
 
         // 步骤1: 提前计算滤波器系数相关部分
@@ -1297,23 +1298,22 @@ public actor EBUR128State {
 
         // 步骤2: 使用 vDSP 计算第一部分
         let count = min(framesToProcess, v0Buffer.count)
-        for i in 0 ..< count {
+        for i in 0..<count {
           v0Buffer[i] = srcPtr[i] - a1Term - a2Term - a3Term - a4Term
         }
 
         // 步骤3: 计算输出并更新滤波器状态
-        for i in 0 ..< count {
+        for i in 0..<count {
           // Prevent overflow in audio index calculation before modulo
           let audioIndexInt64 = Int64(audioDataIndex) / Int64(channels) + Int64(i)
           let audioIndex = Int(min(audioIndexInt64, Int64(Int.max)))
           let idx = audioIndex % audioData[c].count
 
           // 计算输出样本
-          audioData[c][idx] = filterCoefB[0] * v0Buffer[i] +
-            filterCoefB[1] * filterState[c][1] +
-            filterCoefB[2] * filterState[c][2] +
-            filterCoefB[3] * filterState[c][3] +
-            filterCoefB[4] * filterState[c][4]
+          audioData[c][idx] =
+            filterCoefB[0] * v0Buffer[i] + filterCoefB[1] * filterState[c][1] + filterCoefB[2]
+            * filterState[c][2] + filterCoefB[3] * filterState[c][3] + filterCoefB[4]
+            * filterState[c][4]
 
           // 更新滤波器状态
           if i < framesToProcess - 1 {
@@ -1331,7 +1331,7 @@ public actor EBUR128State {
         }
 
         // 处理非常小的值以避免浮点精度问题
-        for j in 1 ... 4 {
+        for j in 1...4 {
           if abs(filterState[c][j]) < Double.leastNormalMagnitude {
             filterState[c][j] = 0.0
           }
@@ -1341,82 +1341,86 @@ public actor EBUR128State {
   }
 
   #if canImport(Accelerate)
-  private func filterSamplesPointersUltraFast(
-    _ src: [UnsafePointer<Double>], framesToProcess: Int
-  ) async {
-    guard framesToProcess > 0 else { return }
+    private func filterSamplesPointersUltraFast(
+      _ src: [UnsafePointer<Double>], framesToProcess: Int
+    ) async {
+      guard framesToProcess > 0 else { return }
 
-    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
+      let activeChannels = (0..<channels).filter { channelMap[$0] != .unused }
 
-    // 順序處理以避免 UnsafePointer 的並發問題
-    for c in activeChannels {
-      await processChannelUltraFast(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
+      // 順序處理以避免 UnsafePointer 的並發問題
+      for c in activeChannels {
+        await processChannelUltraFast(channel: c, srcPtr: src[c], framesToProcess: framesToProcess)
+      }
     }
-  }
 
-  // Ultra-fast single channel processing with maximum vectorization
-  private func processChannelUltraFast(
-    channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int
-  ) async {
-    // Pre-cache all filter coefficients for maximum performance
-    let filterA = (filterCoefA[1], filterCoefA[2], filterCoefA[3], filterCoefA[4])
-    let filterB = (filterCoefB[0], filterCoefB[1], filterCoefB[2], filterCoefB[3], filterCoefB[4])
+    // Ultra-fast single channel processing with maximum vectorization
+    private func processChannelUltraFast(
+      channel c: Int, srcPtr: UnsafePointer<Double>, framesToProcess: Int
+    ) async {
+      // Pre-cache all filter coefficients for maximum performance
+      let filterA = (filterCoefA[1], filterCoefA[2], filterCoefA[3], filterCoefA[4])
+      let filterB = (filterCoefB[0], filterCoefB[1], filterCoefB[2], filterCoefB[3], filterCoefB[4])
 
-    // Cache filter state for ultra-fast access
-    var state = (filterState[c][1], filterState[c][2], filterState[c][3], filterState[c][4])
+      // Cache filter state for ultra-fast access
+      var state = (filterState[c][1], filterState[c][2], filterState[c][3], filterState[c][4])
 
-    // Ultra-large batch processing for maximum efficiency
-    let ultraBatchSize = min(framesToProcess, 1024)
-    let audioFrameLimit = audioDataFrames
-    let channelCount = channels
-    let baseAudioIndex = Int(audioDataIndex) / channelCount
+      // Ultra-large batch processing for maximum efficiency
+      let ultraBatchSize = min(framesToProcess, 1024)
+      let audioFrameLimit = audioDataFrames
+      let channelCount = channels
+      let baseAudioIndex = Int(audioDataIndex) / channelCount
 
-    var processedFrames = 0
-    while processedFrames < framesToProcess {
-      let remainingFrames = framesToProcess - processedFrames
-      let currentBatchSize = min(ultraBatchSize, remainingFrames)
+      var processedFrames = 0
+      while processedFrames < framesToProcess {
+        let remainingFrames = framesToProcess - processedFrames
+        let currentBatchSize = min(ultraBatchSize, remainingFrames)
 
-      // Vectorized ultra-fast processing
-      for i in 0 ..< currentBatchSize {
-        let inputSample = srcPtr[processedFrames + i]
+        // Vectorized ultra-fast processing
+        for i in 0..<currentBatchSize {
+          let inputSample = srcPtr[processedFrames + i]
 
-        // Ultra-optimized IIR filter calculation
-        let v0 = inputSample - filterA.0 * state.0 - filterA.1 * state.1 - filterA.2 * state.2 - filterA.3 * state.3
-        let output = filterB.0 * v0 + filterB.1 * state.0 + filterB.2 * state.1 + filterB.3 * state.2 + filterB
-          .4 * state.3
+          // Ultra-optimized IIR filter calculation
+          let v0 =
+            inputSample - filterA.0 * state.0 - filterA.1 * state.1 - filterA.2 * state.2 - filterA
+            .3 * state.3
+          let output =
+            filterB.0 * v0 + filterB.1 * state.0 + filterB.2 * state.1 + filterB.3 * state.2
+            + filterB
+            .4 * state.3
 
-        // Ultra-fast index calculation with proper bounds checking
-        let audioIndex = baseAudioIndex + processedFrames + i
-        let wrappedIndex = audioIndex % audioFrameLimit
+          // Ultra-fast index calculation with proper bounds checking
+          let audioIndex = baseAudioIndex + processedFrames + i
+          let wrappedIndex = audioIndex % audioFrameLimit
 
-        // Ensure index is within bounds and write directly to audioData array
-        guard wrappedIndex >= 0, wrappedIndex < audioData[c].count else { continue }
+          // Ensure index is within bounds and write directly to audioData array
+          guard wrappedIndex >= 0, wrappedIndex < audioData[c].count else { continue }
 
-        // Fixed: Write directly to the audioData array, not local copy
-        audioData[c][wrappedIndex] = output
+          // Fixed: Write directly to the audioData array, not local copy
+          audioData[c][wrappedIndex] = output
 
-        // Ultra-optimized state shift
-        state.3 = state.2
-        state.2 = state.1
-        state.1 = state.0
-        state.0 = v0
+          // Ultra-optimized state shift
+          state.3 = state.2
+          state.2 = state.1
+          state.1 = state.0
+          state.0 = v0
+        }
+
+        processedFrames += currentBatchSize
       }
 
-      processedFrames += currentBatchSize
+      // Write back cached state
+      filterState[c][1] = state.0
+      filterState[c][2] = state.1
+      filterState[c][3] = state.2
+      filterState[c][4] = state.3
+
+      // Denormal cleanup
+      if abs(state.0) < Double.leastNormalMagnitude { filterState[c][1] = 0.0 }
+      if abs(state.1) < Double.leastNormalMagnitude { filterState[c][2] = 0.0 }
+      if abs(state.2) < Double.leastNormalMagnitude { filterState[c][3] = 0.0 }
+      if abs(state.3) < Double.leastNormalMagnitude { filterState[c][4] = 0.0 }
     }
-
-    // Write back cached state
-    filterState[c][1] = state.0
-    filterState[c][2] = state.1
-    filterState[c][3] = state.2
-    filterState[c][4] = state.3
-
-    // Denormal cleanup
-    if abs(state.0) < Double.leastNormalMagnitude { filterState[c][1] = 0.0 }
-    if abs(state.1) < Double.leastNormalMagnitude { filterState[c][2] = 0.0 }
-    if abs(state.2) < Double.leastNormalMagnitude { filterState[c][3] = 0.0 }
-    if abs(state.3) < Double.leastNormalMagnitude { filterState[c][4] = 0.0 }
-  }
   #endif
 
   // 計算門限塊能量 - 優化版本
@@ -1425,7 +1429,7 @@ public actor EBUR128State {
     let currentFrameIndex = audioDataIndex / channels
 
     // 獲取活躍通道列表
-    let activeChannels = (0 ..< channels).filter { channelMap[$0] != .unused }
+    let activeChannels = (0..<channels).filter { channelMap[$0] != .unused }
 
     // 順序計算每個通道的能量
     var channelSums = [Double]()
@@ -1463,7 +1467,8 @@ public actor EBUR128State {
 
   // 單通道能量計算，針對並行執行優化
   private func calculateChannelSum(channel c: Int, currentFrameIndex: Int, framesPerBlock: Int)
-    async -> Double {
+    async -> Double
+  {
     var channelSum = 0.0
 
     // 優化：使用向量化操作計算平方和
@@ -1476,29 +1481,29 @@ public actor EBUR128State {
       // 第一段
       if firstPartFrames > 0 {
         #if canImport(Accelerate)
-        var firstSum = 0.0
-        vDSP_svesqD(audioData[c], 1, &firstSum, vDSP_Length(firstPartFrames))
-        channelSum += firstSum
+          var firstSum = 0.0
+          vDSP_svesqD(audioData[c], 1, &firstSum, vDSP_Length(firstPartFrames))
+          channelSum += firstSum
         #else
-        for i in 0 ..< firstPartFrames {
-          channelSum += audioData[c][i] * audioData[c][i]
-        }
+          for i in 0..<firstPartFrames {
+            channelSum += audioData[c][i] * audioData[c][i]
+          }
         #endif
       }
 
       // 第二段
       if secondPartFrames > 0, secondPartStart < audioDataFrames {
         #if canImport(Accelerate)
-        var secondSum = 0.0
-        let count = min(secondPartFrames, audioDataFrames - secondPartStart)
-        let secondPartData = Array(audioData[c][secondPartStart ..< (secondPartStart + count)])
-        vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(count))
-        channelSum += secondSum
+          var secondSum = 0.0
+          let count = min(secondPartFrames, audioDataFrames - secondPartStart)
+          let secondPartData = Array(audioData[c][secondPartStart..<(secondPartStart + count)])
+          vDSP_svesqD(secondPartData, 1, &secondSum, vDSP_Length(count))
+          channelSum += secondSum
         #else
-        let endIndex = min(secondPartStart + secondPartFrames, audioDataFrames)
-        for i in secondPartStart ..< endIndex {
-          channelSum += audioData[c][i] * audioData[c][i]
-        }
+          let endIndex = min(secondPartStart + secondPartFrames, audioDataFrames)
+          for i in secondPartStart..<endIndex {
+            channelSum += audioData[c][i] * audioData[c][i]
+          }
         #endif
       }
     } else {
@@ -1507,18 +1512,18 @@ public actor EBUR128State {
 
       // 添加邊界檢查以防止索引越界
       guard startIndex >= 0, currentFrameIndex <= audioData[c].count else {
-        return 0.0 // 返回 0 為無效的通道數據
+        return 0.0  // 返回 0 為無效的通道數據
       }
 
       #if canImport(Accelerate)
-      var blockSum = 0.0
-      let blockData = Array(audioData[c][startIndex ..< currentFrameIndex])
-      vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
-      channelSum = blockSum
+        var blockSum = 0.0
+        let blockData = Array(audioData[c][startIndex..<currentFrameIndex])
+        vDSP_svesqD(blockData, 1, &blockSum, vDSP_Length(framesPerBlock))
+        channelSum = blockSum
       #else
-      for i in startIndex ..< currentFrameIndex {
-        channelSum += audioData[c][i] * audioData[c][i]
-      }
+        for i in startIndex..<currentFrameIndex {
+          channelSum += audioData[c][i] * audioData[c][i]
+        }
       #endif
     }
 
@@ -1545,7 +1550,7 @@ public actor EBUR128State {
     var count = 0
 
     if useHistogram {
-      for i in 0 ..< 1000 {
+      for i in 0..<1000 {
         sum += Double(blockEnergyHistogram[i]) * histogramEnergies[i]
         count += blockEnergyHistogram[i]
       }
