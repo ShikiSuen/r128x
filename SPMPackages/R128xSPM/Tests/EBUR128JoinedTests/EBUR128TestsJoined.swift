@@ -50,7 +50,8 @@ extension URLSession {
 
 // MARK: - EBUR128TestsJoined
 
-@Suite("EBUR128Tests - RealWorld")
+@MainActor
+@Suite("EBUR128Tests - RealWorld", .serialized)
 struct EBUR128TestsJoined {
   @Test
   func testRealWorldAudioFile() async throws {
