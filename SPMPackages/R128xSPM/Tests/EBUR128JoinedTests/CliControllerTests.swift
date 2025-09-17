@@ -34,12 +34,12 @@ struct CliControllerTests {
       return controller
     }
 
-    let exitCode = await result.processFiles(filePaths: [rf64URL.path(percentEncoded: false)])
+    let exitCode = await result.processFiles(fileURLs: [rf64URL])
 
     // Should have failed due to invalid RF64 file
     #expect(exitCode == 1, "Should have failed processing invalid RF64 file")
 
-    let taskEntries = await MainActor.run { result.taskEntries }
+    let taskEntries = await result.taskEntries
     #expect(!taskEntries.isEmpty, "Should have created task entries")
 
     if let entry = taskEntries.first {
@@ -53,12 +53,14 @@ struct CliControllerTests {
   @Test("Test CliController with non-existent file")
   func testCliControllerWithNonExistentFile() async throws {
     let controller = await MainActor.run { CliController() }
-    let exitCode = await controller.processFiles(filePaths: ["/non/existent/file.wav"])
+    let exitCode = await controller.processFiles(
+      fileURLs: [URL(fileURLWithPath: "/private/var/tmp/nonexistent/file.wav")]
+    )
 
     // Should have failed due to non-existent file
     #expect(exitCode == 1, "Should have failed processing non-existent file")
 
-    let taskEntries = await MainActor.run { controller.taskEntries }
+    let taskEntries = await controller.taskEntries
     #expect(!taskEntries.isEmpty, "Should have created task entries")
 
     if let entry = taskEntries.first {
@@ -84,15 +86,15 @@ struct CliControllerTests {
       try? FileManager.default.removeItem(at: invalidFile2)
     }
 
-    let exitCode = await controller.processFiles(filePaths: [
-      invalidFile1.path(percentEncoded: false),
-      invalidFile2.path(percentEncoded: false),
+    let exitCode = await controller.processFiles(fileURLs: [
+      invalidFile1,
+      invalidFile2,
     ])
 
     // Should have failed due to invalid files
     #expect(exitCode == 1, "Should have failed processing invalid files")
 
-    let taskEntries = await MainActor.run { controller.taskEntries }
+    let taskEntries = await controller.taskEntries
     #expect(taskEntries.count == 2, "Should have created 2 task entries")
 
     for entry in taskEntries {
@@ -137,11 +139,9 @@ struct CliControllerTests {
 
       // Test that the help is displayed correctly in MAS mode
       // We need to create a custom test that simulates the help display
-      await MainActor.run {
-        let controller = CliController()
-        // Simulate the help display by directly calling printHelp with masMode: true
-        controller.printHelp(executableName: "test-r128x", masMode: true)
-      }
+      let controller = CliController()
+      // Simulate the help display by directly calling printHelp with masMode: true
+      await controller.printHelp(executableName: "test-r128x", masMode: true)
     case .failure:
       Issue.record("MAS mode help parsing should not fail")
     }
@@ -153,7 +153,7 @@ struct CliControllerTests {
 
     // In non-sandboxed environment, permission should be granted automatically
     let granted = await controller.requestFileAccessPermission(for: ["/tmp/test.wav"])
-    #expect(granted == true, "Permission should be granted in non-sandboxed environment")
+    #expect(granted != nil, "Permission should be granted in non-sandboxed environment")
   }
 
   @Test("Test CliController run method with MAS mode")
@@ -216,14 +216,14 @@ struct ErrorHandlingTests {
       "/root/restricted/file.wav",
       "not-a-path",
       "/tmp/\0invalid\0path.wav",
-    ]
+    ].map { URL(fileURLWithPath: $0) }
 
-    let exitCode = await controller.processFiles(filePaths: invalidPaths)
+    let exitCode = await controller.processFiles(fileURLs: invalidPaths)
 
     // Should have failed due to invalid paths
     #expect(exitCode == 1, "Should have failed processing invalid paths")
 
-    let taskEntries = await MainActor.run { controller.taskEntries }
+    let taskEntries = await controller.taskEntries
     #expect(taskEntries.count == invalidPaths.count, "Should have created entries for all paths")
 
     for entry in taskEntries {
@@ -237,14 +237,14 @@ struct ErrorHandlingTests {
 
     // Use a directory path instead of file
     let tempDir = FileManager.default.temporaryDirectory
-    let directoryPath = tempDir.path(percentEncoded: false)
+    let directoryPath = tempDir
 
-    let exitCode = await controller.processFiles(filePaths: [directoryPath])
+    let exitCode = await controller.processFiles(fileURLs: [directoryPath])
 
     // Should have failed because it's a directory, not a file
     #expect(exitCode == 1, "Should have failed when given a directory instead of file")
 
-    let taskEntries = await MainActor.run { controller.taskEntries }
+    let taskEntries = await controller.taskEntries
     #expect(!taskEntries.isEmpty, "Should have created task entries")
 
     if let entry = taskEntries.first {
@@ -263,12 +263,12 @@ struct ErrorHandlingTests {
     try Data().write(to: emptyFile)
     defer { try? FileManager.default.removeItem(at: emptyFile) }
 
-    let exitCode = await controller.processFiles(filePaths: [emptyFile.path(percentEncoded: false)])
+    let exitCode = await controller.processFiles(fileURLs: [emptyFile])
 
     // Should have failed due to empty file
     #expect(exitCode == 1, "Should have failed processing empty file")
 
-    let taskEntries = await MainActor.run { controller.taskEntries }
+    let taskEntries = await controller.taskEntries
     #expect(!taskEntries.isEmpty, "Should have created task entries")
 
     if let entry = taskEntries.first {
@@ -297,14 +297,12 @@ struct ErrorHandlingTests {
     try data.write(to: corruptedFile)
     defer { try? FileManager.default.removeItem(at: corruptedFile) }
 
-    let exitCode = await controller.processFiles(filePaths: [
-      corruptedFile.path(percentEncoded: false),
-    ])
+    let exitCode = await controller.processFiles(fileURLs: [corruptedFile])
 
     // Should have failed due to corrupted file
     #expect(exitCode == 1, "Should have failed processing corrupted file")
 
-    let taskEntries = await MainActor.run { controller.taskEntries }
+    let taskEntries = await controller.taskEntries
     #expect(!taskEntries.isEmpty, "Should have created task entries")
 
     if let entry = taskEntries.first {
@@ -325,17 +323,12 @@ struct ErrorHandlingTests {
     try "This is not an audio file".write(to: validFile, atomically: true, encoding: .utf8)
     defer { try? FileManager.default.removeItem(at: validFile) }
 
-    let filePaths = [
-      validFile.path(percentEncoded: false),
-      invalidFile.path(percentEncoded: false),
-    ]
-
-    let exitCode = await controller.processFiles(filePaths: filePaths)
+    let exitCode = await controller.processFiles(fileURLs: [validFile, invalidFile])
 
     // Should have failed due to at least one failure
     #expect(exitCode == 1, "Should have failed when any file fails")
 
-    let taskEntries = await MainActor.run { controller.taskEntries }
+    let taskEntries = await controller.taskEntries
     #expect(taskEntries.count == 2, "Should have created 2 task entries")
 
     // All should have failed (non-audio file and non-existent file)

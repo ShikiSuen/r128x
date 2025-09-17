@@ -120,7 +120,7 @@ struct EBUR128TestsJoined {
 
       do {
         let result = try await processor.processAudioFile(
-          at: tempAudioFile.path(percentEncoded: false),
+          at: tempAudioFile,
           fileId: "lInternationale-test",
           progressCallback: { @Sendable progress in
             Task {
