@@ -28,7 +28,7 @@ struct RF64SupportTests {
 
     // Test RF64 detection
     #expect(
-      RF64Support.isRF64File(at: rf64URL.path(percentEncoded: false)), "Should detect RF64 format"
+      RF64Support.isRF64File(at: rf64URL), "Should detect RF64 format"
     )
 
     // Create temporary WAV test file
@@ -40,7 +40,7 @@ struct RF64SupportTests {
 
     // Test WAV detection (should not be RF64)
     #expect(
-      !RF64Support.isRF64File(at: wavURL.path(percentEncoded: false)),
+      !RF64Support.isRF64File(at: wavURL),
       "Should not detect regular WAV as RF64"
     )
   }
@@ -49,7 +49,7 @@ struct RF64SupportTests {
   func testRF64FileDetectionWithInvalidFile() throws {
     // Test with non-existent file
     #expect(
-      !RF64Support.isRF64File(at: "/nonexistent/file.wav"),
+      !RF64Support.isRF64File(at: URL(fileURLWithPath: "/private/var/tmp/nonexistent/file.wav")),
       "Should handle non-existent files gracefully"
     )
 
@@ -63,7 +63,7 @@ struct RF64SupportTests {
       defer { try? FileManager.default.removeItem(at: emptyURL) }
 
       #expect(
-        !RF64Support.isRF64File(at: emptyURL.path(percentEncoded: false)),
+        !RF64Support.isRF64File(at: emptyURL),
         "Should handle empty files gracefully"
       )
     } catch {
@@ -83,7 +83,7 @@ struct RF64SupportTests {
     defer { try? FileManager.default.removeItem(at: rf64URL) }
 
     // Test RF64 info parsing
-    let info = try RF64Support.parseRF64Info(at: rf64URL.path(percentEncoded: false))
+    let info = try RF64Support.parseRF64Info(at: rf64URL)
 
     #expect(info.isValidRF64, "Should parse as valid RF64")
     #expect(info.dataSize == 0x0000_0001_0000_0000, "Should parse correct data size")
@@ -101,7 +101,7 @@ struct RF64SupportTests {
 
     // Test RF64 info parsing with WAV file (should fail)
     #expect(throws: RF64Support.RF64Error.self) {
-      try RF64Support.parseRF64Info(at: wavURL.path(percentEncoded: false))
+      try RF64Support.parseRF64Info(at: wavURL)
     }
   }
 
@@ -117,7 +117,7 @@ struct RF64SupportTests {
     try rf64Data.write(to: rf64URL)
     defer { try? FileManager.default.removeItem(at: rf64URL) }
 
-    let rf64Status = RF64Support.getRF64SupportStatus(for: rf64URL.path(percentEncoded: false))
+    let rf64Status = RF64Support.getRF64SupportStatus(for: rf64URL)
     #expect(!rf64Status.isEmpty, "Should provide non-empty status message for RF64 files")
     #expect(rf64Status.contains("RF64"), "Status message should mention RF64 format")
 
@@ -128,7 +128,7 @@ struct RF64SupportTests {
     try wavData.write(to: wavURL)
     defer { try? FileManager.default.removeItem(at: wavURL) }
 
-    let wavStatus = RF64Support.getRF64SupportStatus(for: wavURL.path(percentEncoded: false))
+    let wavStatus = RF64Support.getRF64SupportStatus(for: wavURL)
     #expect(wavStatus.contains("not in RF64 format"), "Should indicate when file is not RF64")
   }
 
@@ -146,7 +146,7 @@ struct RF64SupportTests {
     // Test CoreAudio RF64 support (expected to fail with test data)
     #if canImport(AudioToolbox)
     let isSupported = RF64Support.testCoreAudioRF64Support(
-      at: rf64URL.path(percentEncoded: false)
+      at: rf64URL
     )
     // We expect this to be false since our test data is not a valid audio file
     #expect(!isSupported, "Test RF64 data should not be supported by CoreAudio")
@@ -159,7 +159,7 @@ struct RF64SupportTests {
     try wavData.write(to: wavURL)
     defer { try? FileManager.default.removeItem(at: wavURL) }
 
-    let wavSupported = RF64Support.testCoreAudioRF64Support(at: wavURL.path(percentEncoded: false))
+    let wavSupported = RF64Support.testCoreAudioRF64Support(at: wavURL)
     #expect(!wavSupported, "WAV file should not be tested for RF64 support")
   }
 
@@ -244,7 +244,7 @@ struct RF64IntegrationTests {
     let processor = ExtAudioProcessor()
 
     do {
-      _ = try await processor.processAudioFile(at: rf64URL.path(percentEncoded: false))
+      _ = try await processor.processAudioFile(at: rf64URL)
       Issue.record("Should have thrown an error for unsupported RF64 file")
     } catch let error as NSError {
       // Verify we get an RF64-specific error message
