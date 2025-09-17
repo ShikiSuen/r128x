@@ -3,7 +3,8 @@ import Testing
 
 @testable import EBUR128
 
-@Suite("EBUR128Tests - 1")
+@MainActor
+@Suite("EBUR128Tests - 1", .serialized)
 struct EBUR128TestsAlpha {
   @Test
   func testBasicInitialization() async throws {
