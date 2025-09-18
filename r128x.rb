@@ -2,8 +2,8 @@ class R128x < Formula
   desc "CLI tool for loudness measurement using EBU R128 standard"
   homepage "https://github.com/ShikiSuen/r128x"
   url "https://github.com/ShikiSuen/r128x.git",
-      tag:      "v0.8.0",
-      revision: "97026aac2a447d62e1a27ba1eedcbc77966bb6ef"
+      tag:      "v0.9.0",
+      revision: "4de34ba97cfa2f02f2e4f0038215bd0c5d776238"
   license "GPL-3.0-or-later"
   head "https://github.com/ShikiSuen/r128x.git", branch: "master"
 
