@@ -35,6 +35,7 @@ public final class MainViewModel {
     "wav",
     "aif",
     "ogg",
+    "opus",
     "aiff",
     "caf",
     "alac",
