@@ -27,7 +27,7 @@ jobs:
     
     - name: Set up Homebrew
       id: set-up-homebrew
-      uses: Homebrew/actions/setup-homebrew@master
+      uses: Homebrew/actions/setup-homebrew@main
     
     - name: Select Xcode 16.4
       run: |
@@ -76,6 +76,7 @@ jobs:
     
     - name: Validate formula syntax
       run: |
+        echo "🔍 Trusting Homebrew formula syntax..."
         echo "🔍 Validating Homebrew formula syntax..."
         # Create a local tap and copy the formula into it so we can audit by tap/name
         OWNER="${{ github.repository_owner }}"
@@ -92,6 +93,9 @@ jobs:
         git commit -m "Add r128x formula for testing"
         cd ..
         
+        # ==================
+        brew trust ${TAP_NAME}
+        brew trust --formula ${TAP_NAME}/r128x
         # Tap the local directory (brew accepts a local path as a tap)
         brew tap "${TAP_NAME}" "$(pwd)/local-tap"
         # Audit by tap/name (audit by path is disabled)
